@@ -1,4 +1,4 @@
-# 使用gdb调试步骤
+# 使用gdb调试jailhouse步骤
 ## 启动qemu
 在qemu启动参数中加入-s -S，qemu会在1234端口打开一个gdbserver，同时在启动时等待gdb进行连接，为了调试方便，最好只启用一个cpu。
 ## 启动gdb
