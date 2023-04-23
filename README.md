@@ -1,12 +1,23 @@
-# 矽望社区报告仓库
+# syswonder report
 
-## 20230414 Hypervisor讨论会
+## deploy
 
-时间：2023年4月14日
+Syswonder report uses [docsify](https://docsify.js.org) , just start a web
+server at the docs directory is ok.
 
-内容：
+For example
 
-1. [使用gdb调试jailhouse步骤](https://github.com/Harris-pku/report/blob/main/report/使用gdb调试jailhouse步骤.md)（报告人：lky）
-2. [QEMU模拟ARM64内核.pdf](https://github.com/Harris-pku/report/blob/main/report/QEMU模拟ARM64内核.pdf)（报告人：yjy）
-3. [ARM_SMMU.md](https://github.com/Harris-pku/report/blob/main/report/ARM_SMMU.md)（报告人：cxy）
+```
+git clone https://github.com/syswonder/report
 
+cd report/docs
+
+python -m http.server
+
+```
+
+then open a browser and visit http://localhost:3000
+
+## contribute
+
+commit to your cloned repo and make a PR to https://github.com/syswonder/report
