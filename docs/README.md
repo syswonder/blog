@@ -6,7 +6,7 @@
 
 内容：
 
-1. [ARM64-QEMU-jailhouse](/report/20230421/20230421_ARM64-QEMU-jailhouse.pdf)（报告人：杨竣轶）
+1. [ARM64-QEMU-jailhouse](report/20230421/20230421_ARM64-QEMU-jailhouse.pdf)（报告人：杨竣轶）
 2. [中断虚拟化](/report/20230421/20230421_中断虚拟化.md)（报告人：丁韶峰）
 
 ## 20230414 Hypervisor讨论会
