@@ -207,7 +207,7 @@ exit
 sudo vim rootfs/lib/systemd/system/serial-getty@ttyAMA0.service
 ```
 
-![Untitled](QEMU%E6%A8%A1%E6%8B%9FARM64%E5%86%85%E6%A0%B8%203e60e9f73dc045b4acd22180a63477ef/Untitled%202.png)
+![Untitled](img/Untitled%202.png)
 
 将BindsTo和After开头的行注释掉
 
