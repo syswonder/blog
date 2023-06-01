@@ -1,5 +1,14 @@
 # 矽望社区报告仓库
 
+## 202306 UniKernel 报告分享
+
+时间：2023年6月
+
+内容：
+
+1. [使用 JTAG 调试 树莓派4 的方法](/report/202306/Raspi4-debug-with-jtag.md)（作者：袁世平）
+2. [移植 ArceOS 到 树莓派4 上的问题和解决方法](/report/202306/How-to-run-ArceOS-on-raspi4.md)（作者：袁世平）
+
 ## 20230421 Hypervisor讨论会
 
 时间：2023年4月21日
