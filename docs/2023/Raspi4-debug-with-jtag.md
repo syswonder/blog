@@ -24,11 +24,11 @@
 2. USB 转串口线
 3. ARM-USB-TINY-H
 
-![jtag](./images/jtag.jpg)
+![jtag](./img/jtag.jpg)
 
 3所提到的设备如上图所示，淘宝上可以买到，不过不会配对应的线，其连接树莓派需要串口连接的线，连接电脑则还需要配一根 usb-a 转 usb 的线：
 
-![usb-a](./images/usb-a.jpg)
+![usb-a](./img/usb-a.jpg)
 
 ### **软件：**
 
@@ -44,11 +44,11 @@
 
 1. 串口连接
 
-![serial-connect](./images/serial-connect.jpg)
+![serial-connect](./img/serial-connect.jpg)
 
 2. jtag 连接
 
-![jtag-connect](./images/jtag-connect.jpg)
+![jtag-connect](./img/jtag-connect.jpg)
 
 
 
