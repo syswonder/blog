@@ -53,7 +53,7 @@ make menuconfig
 
 (/root/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-) Cross compiler prefix
 
-![Untitled](img/Untitled.png)
+![Untitled](img/20230421buildoption.png)
 
 ```bash
 # 编译安装
@@ -88,7 +88,7 @@ find . | cpio -o -H newc |gzip > ../rootfs.cpio.gz
 
 把上述文件放在同一个目录上：
 
-![Untitled](img/Untitled%201.png)
+![Untitled](img/20230421samedir.png)
 
 ```bash
 qemu-system-aarch64 \
@@ -104,7 +104,7 @@ qemu-system-aarch64 \
 
 效果：
 
-![截屏2023-04-08 00.13.57.png](img/%25E6%2588%25AA%25E5%25B1%258F2023-04-08_00.13.57.png)
+![截屏2023-04-08 00.13.57.png](img/2023-04-08_00.13.57.png)
 
 由于busybox制作的文件系统过于简单（如没有apt工具），因此，我们需要使用更丰富的ubuntu文件系统来定制。
 
@@ -207,7 +207,7 @@ exit
 sudo vim rootfs/lib/systemd/system/serial-getty@ttyAMA0.service
 ```
 
-![Untitled](img/Untitled%202.png)
+![Untitled](img/20230421edit.png)
 
 将BindsTo和After开头的行注释掉
 
