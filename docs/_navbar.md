@@ -1,3 +1,3 @@
-- [Home](/2023/)
+- [Home](/)
 - Archives
   - [2023](/2023/README.md)

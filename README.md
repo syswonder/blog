@@ -23,9 +23,9 @@ then open a browser and visit http://localhost:8000
 1. place your report file, assume it be 202306_hello.md, at current year
    directory, e.g., 2023.
 
-2. write 2023/README.md, add your report tile, abstract, etc.
+2. modify 2023/README.md, add your report title, data, writer name, abstract, etc.
 
-3. add an item to 2023/_sidebar.md.
+3. add an item of this report to 2023/_sidebar.md.
 
 4. check it is displayed as expected.
 
