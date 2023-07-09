@@ -7,3 +7,4 @@
 - [中断虚拟化](20230421_gicv.md)
 - [使用gdb调试jailhouse](20230414_gdb_debug_jailhouse.md)
 - [ARM SMMU](20230414_ARM_SMMU.md)
+- [Bao Hypervisor](20230709_bao_hypervisor.md)
