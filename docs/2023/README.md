@@ -10,6 +10,16 @@
 
 [正文](20230723_Demonstration_in_QEMU.md)
 
+## Jailhouse中的Hypercall整理
+
+**时间：** 2023年7月21日
+
+**作者：** 郑元昊
+
+**摘要：** 讲述Jailhouse中各个Hypercall的具体操作、四个cell操作中分别在driver和hypervisor层面的具体操作。
+
+[正文](20230721_jailhouse_hypercall.md)
+
 ## ARM64的sdei机制
 
 **时间：** 2023年7月7日
