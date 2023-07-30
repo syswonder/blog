@@ -2,3 +2,4 @@
 - [移植 ArceOS 到 树莓派4 上的问题和解决方法](2023/How-to-run-ArceOS-on-raspi4.md)
 - [如何让jailhouse运行在模拟ARM AArch64的QEMU上](2023/20230421_ARM64-QEMU-jailhouse.md)
 - [使用gdb调试jailhouse](2023/20230414_gdb_debug_jailhouse.md)
+- [在 ArceOS 上运行 Redis](2023/20230730_Redis_On_ArceOS.md)
