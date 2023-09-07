@@ -30,6 +30,16 @@
 
 [正文](20230723_Demonstration_in_QEMU.md)
 
+## Linux中的Memory HotPlug机制
+
+**时间：** 2023年7月21日
+
+**作者：** 杨竣轶
+
+**摘要：** 讲述Linux中的Memory Hotplug机制的原理与实现
+
+[正文](20230721_Linux_Memory_Hotplug.md)
+
 ## Jailhouse中的Hypercall整理
 
 **时间：** 2023年7月21日
