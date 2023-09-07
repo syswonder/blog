@@ -13,38 +13,24 @@
 同时，在运行说明中表述了修改 ArceOS 或 Redis 源码的要求，以及运行命令。
 
 ## 过程问题
-- 传参问题，目前是修改 Redis 源码，将参数写死（argc, argv, port, IP等）。
-- 在 arm 下运行时，Redis 会通过 `fork`，`mmap` 等函数检查环境兼容性，这部分内容修改并已注释掉。
-- 现在 ArceOS 对于 C 语言中的空指针，在 aarch64 下，仍然存在页表映射，映射为0，不会出现地址错误；但在 x86 下会出现空指针错误。
-- 关于出现 `fwrite` 没写完的问题，后续通过对 `fwrite` 进行修改，添加循环来解决了。
-- 注意底层的外部库：`rust-fatfs` 对于写操作，会在达到 cluster 边界时被截断。
+- 传参问题：目前是修改 Redis 源码，将参数写死（argc, argv, port, IP等），并在 server.c/main() 函数一开始进行传入。
+- 系统检查：在 arm 下运行时，Redis 会通过 `fork`，`mmap` 等函数检查环境兼容性，这部分通过 `mmap` 返回返回 `MAP_FAILED` 来避免。
+- 空指针问题：在 aarch64 下，仍然存在页表映射，映射为0，不会出现地址错误；但在 x86 下会出现空指针错误。
+- `fwrite bug`：关于出现 `fwrite` 没写完的问题，后续通过对 `fwrite` 进行修改，检查是否需要继续发送写命令来解决。
+  - 原因在于底层的外部库：`rust-fatfs` 对于写操作，会在达到 cluster 边界时被截断。
   - 例如：cluster size 为 4096B 的时候，一个 5000B 的写操作只能写入前 4096B，需要再发一次写命令。
-- `riscv` 的 `long double` 数据类型存在问题。
-- 目前（0730）已合并完所有的 `Redis` 所需的函数/函数声明到 ArceOS 主线，但 Redis patch 仍在修改中，[目前仓库](https://github.com/coolyjg/arceos/tree/redis-dev4.0)。
+- `riscv` 对于 `long double` 数据类型存在问题：已通过编译选项解决。
+- 目前 `redis-patch` 已合并到[ArceOS主线](https://github.com/rcore-os/arceos)。
 
 ## Qemu 环境
 
 ### 运行方式
 
-- 在 ArceOS 根目录下运行：`git submodule update --init --recursive`，拉取 Redis 源码
-- 运行：`make A=apps/c/redis/ LOG=info FS=y NET=y ARCH=aarch64 SMP=4 run` (for aarch64)，x86 改 `ARCH=x86_64` 即可
+- 运行：`make A=apps/c/redis/ LOG=info BLK=y NET=y ARCH=aarch64 SMP=4 run` (for aarch64)，x86 改 `ARCH=x86_64` 即可。在 make 的过程中会通过 `wget` 拉取 Redis-7.0.12 源码。
 
 ### 运行说明
 
-### 第二次运行
-
-#### 方法一
-
-- 由于 Redis 的 Make 配置文件在重新编译的时候需要手动删除，因此需要在 `apps/c/redis` 目录下运行 `make clean`
-- 然后回到根目录运行：`make clean A=apps/c/redis && make A=apps/c/redis/ LOG=info FS=y NET=y ARCH=aarch64 SMP=4 run` 
-  - 如果修改了源码或者 ArceOS 的源码才需要前面的 `make clean A=apps/c/redis`
-
-#### 方法二
-
-- aarch64:
-  - `qemu-system-aarch64 -m 2G -smp 4 -cpu cortex-a72 -machine virt -kernel apps/c/redis//redis_qemu-virt-aarch64.bin -device virtio-blk-device,drive=disk0 -drive id=disk0,if=none,format=raw,file=disk.img -device virtio-net-device,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555 -nographic`
-- x86_64:
-  - `qemu-system-x86_64 -m 2G -smp 4 -machine q35 -kernel apps/c/redis//redis_pc-x86.elf -device virtio-blk-pci,drive=disk0 -drive id=disk0,if=none,format=raw,file=disk.img -device virtio-net-pci,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555 -nographic -cpu host -accel kvm`
+- 如果存在对编译选项、源码的修改，建议执行 `make clean` 后再重新运行。
 
 ### 测试
 
@@ -61,19 +47,22 @@
 ### 其他说明
 
 - 请使用 `SMP=4` ，因为 Redis 创建的其中一个后台线程会调用 `pthread_mutex_lock` 之后，调用 `pthread_cond_wait`，如果不开启 SMP 的话，现在的锁实现会阻止切换，从而导致这个后台线程一直占有 CPU，Redis 无法提供服务
-- 需要扩大内存
+- 建议使用 `ramdisk` feature。
+- 需要扩大内存（目前不存在） 
   - 修改了 qemu.mk 和 qemu-virt-xxx.toml，将内存提升到 2G
-- 扩大了磁盘大小（具体至少需要多大的磁盘没有测）
+- 扩大了磁盘大小（具体至少需要多大的磁盘没有测）（该问题目前已不存在）
   - 这个问题主要是导致了之前的 `fwrite` 出错，后来修改了 `fwrite` 的实现后不需要特别大的磁盘
     - disk_size = 64MB -> file_size <= 512B
     - disk_size = 8GB -> file_size <= 4096B
 
 - 需要**扩大 fd table 的 fd 数量限制，并且注释掉 flatten_object 中的数量检查**
-- 在之前网络不是异步发的时候，会出现一次连接，多次测试，性能下降；合并主线后已经不出现该情况了
+- 在之前网络不是异步发的时候，会出现一次连接，多次测试，性能下降；合并主线后已经**不出现该情况**了
 - 在服务器端的 log 来看，由于 Redis 会在一定时间执行了一定数量的操作之后，会创建快照，然后 fork 一个子进程出来将这个快照持久化，但现在 fork 会返回 -1，导致 Redis 认为这个 fork 一直在失败，从而不断地重试，影响测试性能，久了会导致卡死。
-  - 解决方法之一是通过 redis-cli 连到之后，执行 `config set save ""` ，但目前看来这个方法没用
-  - 现有的办法是把这段代码注释掉，以及测试 benchmark 的时候必须使用 -c，原理是让 Redis 快速测完，到还没触发 snapshot 就关掉
-- 在 wsl 等环境下需要关闭 kvm
+  - 目前已通过传入参数禁止后台 `fork` 子进程去做快照的保存。
+- 在 wsl 等环境下需要关闭 kvm，或在 `make` 的时候添加 `ACCEL=n`。
+- 目前偶尔出现的一个尚未解决 `x86` 环境下的 bug：
+  - 在 x86 环境下开启 `kvm`，会出现像网络包没对齐的现象：一条指令的结果在下一条指令执行完才被返回到 redis-cli 端。且如果 redis-cli 解析到返回的网络包不对，会报错。
+  - 但能正常执行 `redis-bench`，并且通过 `redis-cli` 连接后，**等待一定时间**，便不会出现该现象，猜测是建立连接过程通过异步发包造成的（该现象在 net 模块改成异步的之后出现的）。
 
 ### 测试结果
 
