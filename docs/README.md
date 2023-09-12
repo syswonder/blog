@@ -18,7 +18,7 @@
 
 **摘要：** 这篇文章主要讲述了如何在树莓派4上运行 ArceOS, 涉及到的内容是树莓派4在各个方面与qemu-virt 之间的差异, 需要对代码进行的修改,包括启动、串口、中断、多核、存储（Ramdisk）等方面。
 
-[正文](2023/How-to-run-ArceOS-on-raspi4.md)
+[正文](2023/20230601_How-to-run-ArceOS-on-raspi4.md)
 
 
 ## 如何让jailhouse运行在模拟ARM AArch64的QEMU上
