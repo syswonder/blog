@@ -1,5 +1,15 @@
 # 矽望社区技术报告 - 2023
 
+## QEMU Loongarch
+
+**时间：**2023年9月13日
+
+**作者：**韩喻泷
+
+**摘要：**研究QEMU对Loongarch的支持情况，以及记录了Loongarch相关指令集/CPU等手册的学习笔记，便于将来移植sysHyper至loongarch架构
+
+[正文](20230913_QEMU_Loongarch.md)
+
 ## ArceOS 运行 Redis
 
 **时间：** 2023年7月30日
