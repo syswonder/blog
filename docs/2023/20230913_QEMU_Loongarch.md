@@ -414,7 +414,7 @@ pub struct HvError {
 
 可使用`hv_err`辅助宏打印错误信息。
 
-`HvSystemConfi`g - 包含jailhouse等相关信息：
+`HvSystemConfig` - 包含jailhouse等相关信息：
 
 ```rust
 /// General descriptor of the system.
