@@ -1,4 +1,4 @@
-# QEMU Loongarch
+# QEMU Loongarch sysHyper移植
 
 wheatfox 2023.9
 enkerewpo@hotmail.com
@@ -22,7 +22,7 @@ wget http://security.ubuntu.com/ubuntu/pool/main/n/nettle/libnettle7_3.5.1+reall
 sudo gdebi libnettle7_3.5.1+really3.5.1-2ubuntu0.2_amd64.deb
 ```
 
-成功启动
+成功启动Mini Linux：
 
 ![Untitled](QEMU%20Loongarch/Untitled%201.png)
 
@@ -47,7 +47,36 @@ q <qemu> use this file as qemu
 
 ![Untitled](QEMU%20Loongarch/Untitled%202.png)
 
-CPU: Loongson3A5000
+## 测试qemu-loongarch-runenv/devel分支
+
+切换到devel分支，运行：
+
+```bash
+docker build -t qemu-la .
+docker run -it qemu-la /bin/bash
+./setup.sh
+./run.sh
+```
+
+![Untitled](QEMU%20Loongarch/Untitled%203_1.png)
+
+其会依次进行cross compile工具包下载、qemu编译、tianocore(UEFI)编译、linux-v6.1.4内核编译（编译时均指定target arch为`loongarch64-unknown-linux-gnu`）。
+
+在运行`run.sh`发生`-append未找到错误`，在上一行末尾还需要再手动加一个`\`，如图：
+
+![Untitled](QEMU%20Loongarch/Untitled%204_1.png)
+
+之后就可以启动loongarch64-linux-v6.1.4：
+
+![Untitled](QEMU%20Loongarch/Untitled%205_1.png)
+
+打印一下CPU信息：
+
+![Untitled](QEMU%20Loongarch/Untitled%206_1.png)
+
+## QEMU支持情况
+
+模拟设备CPU: Loongson3A5000
 
 qemu目前实现了virtio设备、PCIe控制器、UART口、实时时钟和电源管理端口。未实现：
 
@@ -62,7 +91,7 @@ qemu目前实现了virtio设备、PCIe控制器、UART口、实时时钟和电�
 
 ## 中断控制
 
-中断路径: sources -> level3 -> level 2 -> level 1
+中断路径: `sources -> level3 -> level 2 -> level 1`
 
 ```
 - level 1: CPU core interrupt controller(HWI0-HWI7)
@@ -73,11 +102,11 @@ qemu目前实现了virtio设备、PCIe控制器、UART口、实时时钟和电�
     - LS7A UART/RTC/SCI connect to pch_pic 2/3/4
 ```
 
-## 有关CPU核中断控制器
+### 有关CPU核中断控制器
 
-1. 有些CPU产生的中断直接连接本控制器，如Stable Timer、Performance Counter、IPI等。
+有些CPU产生的中断直接连接本控制器，如Stable Timer、Performance Counter、IPI等。
 
-## 有关拓展IO中断控制
+### 有关拓展IO中断控制
 
 1. 每个拓展IO中断irq被映射到CPU核中断控制器HWI0-7
     - 默认所有256个irq被路由到HWI0(CPU int2)
@@ -92,7 +121,7 @@ qemu目前实现了virtio设备、PCIe控制器、UART口、实时时钟和电�
     - 表11-12, 实现
     - 表11-13/14/15 基本实现，但不支持轮转
 
-## LS7A1000中断控制器
+### LS7A1000中断控制器
 
 1. 所有pch-pic irq被映射到extioi_pic irq，使用的是HT Message Interrupt向量（offset `0x200-0x238`），默认所有irq映射到extioi input 0
 2. qemu实现情况：
@@ -101,7 +130,7 @@ qemu目前实现了virtio设备、PCIe控制器、UART口、实时时钟和电�
     - offset 0x200-0x23f, 默认全零
     - offset 0x300/0x320, 未实现
 
-## 如何打开UART中断
+### 如何打开UART中断
 
 io port at `0x1fe001e0`
 
@@ -114,7 +143,7 @@ io port at `0x1fe001e0`
 3. 设置cpu core ieq
 4. 打开global irq
 
-## 当UART irq触发时的操作
+### 当UART irq触发时的操作
 
 1. 响应cpu中断控制器
     - 需要清除中断源，即下一步的动作
@@ -162,7 +191,7 @@ io port at `0x1fe001e0`
     5. 虚拟化扩展（LVZ）
     
 2. 控制状态寄存器（Control and Status Register, **CSR**）
-  在实现虚拟化拓展的情况下，处理器中会有两套CSR，一套属于Host，一套属于Guest。
+    在实现虚拟化拓展的情况下，处理器中会有两套CSR，一套属于Host，一套属于Guest。
 
 3. **龙芯存储访问类型**
     1. 一致可缓存（Coherent Cached）**CC**
@@ -179,16 +208,16 @@ io port at `0x1fe001e0`
     WUC通常用于加速非缓存内存数据，如显存。
     
 4. **原子访存指令**
-  AM*, LL, SC
-  原子地进行“读+修改+写”操作
+    AM*, LL, SC
+    原子地进行“读+修改+写”操作
 
 5. **同步操作指令**
-  龙芯的存储一致性为弱一致性（Weakly Consistency）WC
-  使用同步操作保护写共享单元，保证多个处理器核对写共享单元的访问是互斥的
-  `dbar`,`ibar`,带有dbar功能的AM原子访存指令,`LL-SC`指令对
+    龙芯的存储一致性为弱一致性（Weakly Consistency）WC
+    使用同步操作保护写共享单元，保证多个处理器核对写共享单元的访问是互斥的
+    `dbar`,`ibar`,带有dbar功能的AM原子访存指令,`LL-SC`指令对
 
 6. **龙芯特权架构**
-    
+   
     1. 特权等级
     `PLV0-PLV3`，其中`PLV0`权限最高，可以执行特权指令
     `CSR.CRMD.PLV`域指示当前运行在哪个特权等级
@@ -271,17 +300,17 @@ io port at `0x1fe001e0`
         
     
 9. **例外与中断**
-    1. 中断
+    1. **中断**
         1. 中断类型
         1个核间中断（IPI），1个定时器中断（TI），1个性能检测计数溢出中断（PMI），8个硬中断（HWI0-HWI7），2个软中断（SWI0-SWI1）。
         2. 中断号越大优先级越高
         3. 中断入口
-        在计算入口地址时，中断对应的例外号=自身的中断号+64，中断信号被采样至CSR.ESTAT.IS域。
-    2. 例外
+        在计算入口地址时，中断对应的例外号=自身的中断号+64，中断信号被采样至`CSR.ESTAT.IS`域。
+    2. **例外**
         1. TLB重填例外入口来自`CSR.TLBRENTRY`
         2. 机器错误例外入口来自`CSR.MERRENTRY`
         3. 其他例外称为普通例外，入口地址为“入口页号|页内偏移“的计算方式（按位或），入口页号来自`CSR.EENTRY`
-        入口偏移=$2^{\text{CSR.ECFG.VS}+2}\times (\text{ecode}+64)$
+        入口偏移=![CodeCogsEqn](QEMU%20Loongarch/CodeCogsEqn.gif)
         4. 例外优先级：中断大于例外、取指阶段产生的优先级最高、译码次之、执行次之。
     
 10. **控制状态寄存器一览表**
@@ -301,3 +330,200 @@ io port at `0x1fe001e0`
 3. 在小节4.2.5.2 LDPTE中， 指令格式处的 req 应为 seq。
 
 # 龙芯CPU手册（LS3A5000）
+
+1. **芯片配置寄存器**
+
+   1. 基址为`0x1fe0_0000`，也可以使用IOCSR指令进行访问
+   2. 版本寄存器 `0x0000`
+   3. 芯片特性寄存器 `0x0008`
+   4. 功能设置寄存器 `0x0180`
+   5. 引脚驱动设置寄存器 `0x0188`
+   6. 功能采样寄存器 `0x0190`
+   7. 频率配置寄存器 `0x01B0`
+   8. 路由设置寄存器 `0x0400`
+   9. 其他功能 `0x0420` 包括JTAG, LA132, Stable Clock, extioi等
+
+2. **软件时钟系统**
+
+   1. Stable Counter
+      3A5000中的恒定时钟源，处理器核时钟和结点时钟均来自主时钟，并可以控制分频，而Stable Counter来自输入参考时钟，不随其他时钟频率而变化。
+
+3. **GPIO**
+
+   1. 中断控制寄存器 `0x0510` GPIO中断使能等
+
+4. **处理器核间中断与通信**
+
+5. **IO中断**
+
+   ![Untitled](QEMU%20Loongarch/Untitled%2017_1.png)
+
+   1. **传统IO中断**
+   2. **拓展IO中断**
+      1. 除了兼容原有的传统 IO 中断方式，3A5000 开始支持扩展 I/O 中断，用于将 HT 总线上的 256 位中断直接分发给各个处理器核，而不再通过 HT 的中断线进行转发，提升 IO 中断使用的灵活性。
+      2. **扩展 IO 中断与传统 HT 中断处理的区别**
+         传统的 HT 中断处理方式下，HT 中断由 HT 控制器进行内部处理，直接映射到 HT 配置寄存器上的 256 个中断向量，再由 256 个中断向量分组产生 4 个或 8 个中断，再路由至各个不同的处理器核。由于采用的是传统的中断线连接，不能直接产生跨片中断，由此所有的 HT IO 中断都只能直接由单个芯片进行处理。另一方面，芯片内硬件分发的中断只是以最终的 4 个或 8 个中断为单位，不能按位处理，由此导致硬件中断分发不好用的问题。
+         扩展 IO 中断方式，HT 中断由 HT 控制器直接发给芯片的中断控制器进行处理，中断控制器能直接得到 256 位中断，而不是之前的 4 个或 8 个中断，这 256 位中断每一位都可以独立路由，独立分发，而且可以实现跨片的分发及轮转。
+
+6. 低速IO控制器
+
+   1. UART控制器
+
+      1. UART0 `0x1fe0_01e0`
+      2. UART1 `0x1fe0_01e8`
+
+   2. SPI控制器
+
+   3. I2C控制器等
+
+# sysHyper平台移植Loongarch
+
+rust目前已支持loongarch*-unknown-none的target，这也是我们的目标架构。
+
+[Loongarch Rust编译器](http://www.loongnix.cn/zh/toolchain/Rust/)
+
+[loongarch*-unknown-none* - The rustc book](https://doc.rust-lang.org/rustc/platform-support/loongarch-none.html)
+
+首先导出一份自定义的target JSON：
+
+```bash
+rustc -Z unstable-options --target=loongarch64-unknown-none-softfloat --print target-spec-json > loongarch64.json
+```
+
+下一步则需要将代码中aarch64相关的代码用loongarch体系结构重写，并用rust的cfg进行target控制。
+
+## Jailhouse Hypervisor
+
+![Untitled](QEMU%20Loongarch/Untitled%2018_1.png)
+
+## sysHyper
+
+`HvResult` - 对`Result`的包装，包含`HvError`
+
+`HvError` - sysHyper的错误信息：
+
+```rust
+pub struct HvError {
+   num: HvErrorNum,
+   loc_line: u32,
+   loc_col: u32,
+   loc_file: &'static str,
+   msg: Option<String>,
+}
+```
+
+可使用`hv_err`辅助宏打印错误信息。
+
+`HvSystemConfi`g - 包含jailhouse等相关信息：
+
+```rust
+/// General descriptor of the system.
+#[derive(Clone, Copy, Debug)]
+#[repr(C, packed)]
+pub struct HvSystemConfig {
+   pub signature: [u8; 6],
+   pub revision: u16,
+   flags: u32,
+
+   /// Jailhouse's location in memory
+   pub hypervisor_memory: HvMemoryRegion,
+   pub debug_console: HvConsole,
+   pub platform_info: PlatformInfo,
+   pub root_cell: HvCellDesc,
+   // CellConfigLayout placed here.
+}
+```
+
+`HvMemoryRegion` - 用于存储内存区域信息
+
+```rust
+#[derive(Clone, Copy, Debug)]
+#[repr(C, packed)]
+pub struct HvMemoryRegion {
+   pub phys_start: u64,
+   pub virt_start: u64,
+   pub size: u64,
+   pub flags: MemFlags,
+}
+```
+
+`HvCellDesc` - 用于存储内存区域信息
+
+```rust
+pub struct HvCellDesc {
+   signature: [u8; 6],
+   revision: u16,
+
+   name: [u8; HV_CELL_NAME_MAXLEN + 1],
+   id: u32, // set by the driver
+   flags: u32,
+
+   pub cpu_set_size: u32,
+   pub num_memory_regions: u32,
+   pub num_cache_regions: u32,
+   pub num_irqchips: u32,
+   pub pio_bitmap_size: u32,
+   pub num_pci_devices: u32,
+   pub num_pci_caps: u32,
+
+   vpci_irq_base: u32,
+
+   cpu_reset_address: u64,
+   msg_reply_timeout: u64,
+
+   console: HvConsole,
+}
+```
+
+`HvCellDesc` - Jailhouse Cell信息
+
+```rust
+/// The jailhouse cell configuration.
+///
+/// @note Keep Config._HEADER_FORMAT in jailhouse-cell-linux in sync with this
+/// structure.
+#[derive(Clone, Copy, Debug)]
+#[repr(C, packed)]
+pub struct HvCellDesc {
+   signature: [u8; 6],
+   revision: u16,
+
+   name: [u8; HV_CELL_NAME_MAXLEN + 1],
+   id: u32, // set by the driver
+   flags: u32,
+
+   pub cpu_set_size: u32,
+   pub num_memory_regions: u32,
+   pub num_cache_regions: u32,
+   pub num_irqchips: u32,
+   pub pio_bitmap_size: u32,
+   pub num_pci_devices: u32,
+   pub num_pci_caps: u32,
+
+   vpci_irq_base: u32,
+
+   cpu_reset_address: u64,
+   msg_reply_timeout: u64,
+
+   console: HvConsole,
+}
+```
+
+`main.rs`的`main`流程：
+
+1. 检查当前进入的CPU是否为0号primary，若是则进入`primary_init_early`
+2. 否则`wait_for_counter(INIT_EARLY_OK<1)`，即等待`primary_init_early`完成
+  3. `primary_init_early`流程：
+     1. `memory::init_heap`
+     2. `system_config.check`
+     3. `memory::init_frame_allocator`
+     4. `memory::init_hv_page_table`
+     5. `cell::init`
+4. 所有CPU等待是否全部CPU均初始化完成
+5. 若上一条成功，则CPU0进入`primary_init_late`
+6. 其他同上，等待CPU0完成
+   1. `primary_init_late`目前内部无操作
+7. 运行`gicv3_cpu_init`
+8. 运行`cpu_data.activate_vmm`（每个CPU都进入）
+   1. `PerCpu::return_linux`
+      1. `vmreturn(PerCpu::guest_reg())`
