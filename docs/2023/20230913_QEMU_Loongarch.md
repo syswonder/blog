@@ -140,7 +140,7 @@ io port at `0x1fe001e0`
     - set ht message interrupt vector (byte at offset `0x202` equal the target extioi irq number)
 2. 设置extioi
     - enable mapped extioi irq
-3. 设置cpu core ieq
+3. 设置cpu core irq
 4. 打开global irq
 
 ### 当UART irq触发时的操作
@@ -292,7 +292,7 @@ io port at `0x1fe001e0`
         load且V=1，特权合规，但NR=1
         8. **页不可执行例外**
         取指且V=1，特权合规，但NX=1
-    5. TLB的初始化 - invtlb r0.r0
+    5. TLB的初始化 - `invtlb r0.r0`
        
         ![Untitled](QEMU%20Loongarch/Untitled%208.png)
         
@@ -369,8 +369,8 @@ io port at `0x1fe001e0`
 
    1. UART控制器
 
-      1. UART0 `0x1fe0_01e0`
-      2. UART1 `0x1fe0_01e8`
+      1. UART0 `0x1fe001e0`
+      2. UART1 `0x1fe001e8`
 
    2. SPI控制器
 
@@ -444,34 +444,6 @@ pub struct HvMemoryRegion {
    pub virt_start: u64,
    pub size: u64,
    pub flags: MemFlags,
-}
-```
-
-`HvCellDesc` - 用于存储内存区域信息
-
-```rust
-pub struct HvCellDesc {
-   signature: [u8; 6],
-   revision: u16,
-
-   name: [u8; HV_CELL_NAME_MAXLEN + 1],
-   id: u32, // set by the driver
-   flags: u32,
-
-   pub cpu_set_size: u32,
-   pub num_memory_regions: u32,
-   pub num_cache_regions: u32,
-   pub num_irqchips: u32,
-   pub pio_bitmap_size: u32,
-   pub num_pci_devices: u32,
-   pub num_pci_caps: u32,
-
-   vpci_irq_base: u32,
-
-   cpu_reset_address: u64,
-   msg_reply_timeout: u64,
-
-   console: HvConsole,
 }
 ```
 
