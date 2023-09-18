@@ -1,4 +1,4 @@
-# 树莓派运行 ArceOS 问题总结
+# 树莓派4B运行 ArceOS 问题总结
 
 时间：2023.6.1
 
@@ -8,9 +8,71 @@
 
 
 
+## 2023 年 9月 更新
+
+因为目前 ArceOS 中的 feature 发生了一些改变，之前部分的代码都经过了一定的重构。
+
+同时因为李明老师实验了在 qemu 上模拟树莓派4运行 ArceOS，也是对这个工作的一个很好的完善，所以更新一下这个文档，以方便后面的同学更好的了解和上手这部分的代码。
+
+### 在 QEMU 上运行树莓派4
+
+目前的 qemu 最新版也是不支持树莓派4的，这里用了 github 上一个项目 https://github.com/0xMirasio/qemu-patch-raspberry4 来编译得到可以支持树莓派4 的 qemu-system-aarch64 
+
+操作：
+
+```
+git clone https://github.com/0xMirasio/qemu-patch-raspberry4
+cd qemu-patch-raspberry4
+mkdir build
+cd build
+../configure
+make
+```
+
+编译时间比较久，之后执行
+
+```
+./qemu-system-aarch64 -M help | grep raspi
+```
+
+可以看到已经支持了树莓派4
+
+```
+raspi0               Raspberry Pi Zero (revision 1.2)
+raspi1ap             Raspberry Pi A+ (revision 1.1)
+raspi2b              Raspberry Pi 2B (revision 1.1)
+raspi3ap             Raspberry Pi 3A+ (revision 1.0)
+raspi3b              Raspberry Pi 3B (revision 1.2)
+raspi4b1g            Raspberry Pi 4B (revision 1.1)
+raspi4b2g            Raspberry Pi 4B (revision 1.2)
+```
+
+接下来编译 ArceOS 在 raspi4 上的镜像：
+
+```
+# Hello
+make A=apps/helloworld ARCH=aarch64 PLATFORM=aarch64-raspi4 SMP=4
+# shell using ramdisk
+make A=apps/fs/shell ARCH=aarch64 PLATFORM=aarch64-raspi4 SMP=4 BLK=y FEATURES=driver-ramdisk
+# shell using sd card
+make A=apps/fs/shell ARCH=aarch64 PLATFORM=aarch64-raspi4 SMP=4 BLK=y FEATURES=driver-bcm2835-sdhci
+```
+
+使用 qemu-system-aarch64 运行镜像
+
+```
+# run hello world
+./qemu-system-aarch64 -m 2G -smp 4 -cpu cortex-a72 -machine raspi4b2g -nographic -kernel {yourpath}/helloworld_aarch64-raspi4.bin
+
+# run fs/shell using sd card
+./qemu-system-aarch64 -m 2G -smp 4 -cpu cortex-a72 -machine raspi4b2g -nographic -device if=sd,index=0,media=disk -kernel {yourpath}/shell_aarch64-raspi4.bin
+```
+
+====== end of September update =====
+
+
+
 本文中简称 rust-raspberrypi-OS-tutorials 为 Tutorial
-
-
 
 ## 摘要
 
