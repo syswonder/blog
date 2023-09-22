@@ -398,6 +398,8 @@ rustc -Z unstable-options --target=loongarch64-unknown-none-softfloat --print ta
 
 ## sysHyper
 
+### config.rs
+
 `HvResult` - 对`Result`的包装，包含`HvError`
 
 `HvError` - sysHyper的错误信息：
@@ -499,3 +501,45 @@ pub struct HvCellDesc {
 8. 运行`cpu_data.activate_vmm`（每个CPU都进入）
    1. `PerCpu::return_linux`
       1. `vmreturn(PerCpu::guest_reg())`
+
+### tock registers
+
+利用tock registers库可以方便地进行寄存器字段定义。
+
+[tock-registers](https://crates.io/crates/tock-registers)
+
+### hypercall module
+
+`HyperCallCode`，即HyperCall构造函数中的code信息，表示对Hypervisor的操作
+
+```rust
+numeric_enum! {
+    #[repr(u64)]
+    #[derive(Debug, Eq, PartialEq, Copy, Clone)]
+    pub enum HyperCallCode {
+        HypervisorDisable = 0,
+        HypervisorCellCreate = 1,
+    }
+}
+```
+
+`HyperCall`结构，数据成员为cpu_data（`PerCpu`）
+
+```rust
+pub struct HyperCall<'a> {
+    cpu_data: &'a mut PerCpu,
+}
+```
+
+`HyperCall`的impl函数成员
+
+```rust
+pub fn new(cpu_data: &'a mut PerCpu) -> Self
+pub fn hypercall(&mut self, code: u64, arg0: u64, _arg1: u64) -> HvResult // 构造函数
+fn hypervisor_disable(&mut self) -> HyperCallResult // Disable
+fn hypervisor_cell_create(&mut self) -> HyperCallResult // 创建一个Hypervisor Cell
+```
+
+该module下还有一个`arch_send_event`函数，用于向体系结构进行对应的配置，通过`ICC_SGI1R_EL1`寄存器实现。
+
+[ARM GIC（十） GICv3软中断](https://zhuanlan.zhihu.com/p/212546832)
