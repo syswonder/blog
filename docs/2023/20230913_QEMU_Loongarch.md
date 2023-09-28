@@ -543,3 +543,170 @@ fn hypervisor_cell_create(&mut self) -> HyperCallResult // 创建一个Hyperviso
 该module下还有一个`arch_send_event`函数，用于向体系结构进行对应的配置，通过`ICC_SGI1R_EL1`寄存器实现。
 
 [ARM GIC（十） GICv3软中断](https://zhuanlan.zhihu.com/p/212546832)
+
+# ARM 体系结构虚拟化
+
+## Overview
+
+ARM® Architecture Reference Manual
+ARMv8, for ARMv8-A architecture profile
+
+Chapter D1 The AArch64 System Level Programmers’ Model
+
+1. **异常等级模型(Exception Level Model)**
+    1. `EL0` 应用程序
+    2. `EL1` OS内核
+    3. `EL2` Hypervisor
+    4. `EL3` Secure Monitor
+2. **Security State**
+    
+    1. `Secure State` - 此时PE可以访问安全和非安全的物理地址空间
+    2. `Non-secure State` - PE只能访问非安全物理地址空间，不能访问Secure System Control相关资源
+3. 整体结构
+    1. 如下图
+       
+        ![Untitled](QEMU%20Loongarch/Untitled%2019.png)
+    
+4. **虚拟化**
+    1. 硬件实现需要支持EL2
+    2. 虚拟机运行于Non-secure EL1, Non-secure EL0（分别对应OS和Application）
+    3. Hypervisor给每个虚拟机分配VMID(Virtual Machine Identifier)
+    4. EL2提供：
+        1. 一些Identification Registers的虚拟值（给Guest OS）
+        2. 在许多场景下Trap，如内存相关、访问寄存器，此时Trap会进入EL2
+        3. 中断路由：
+            1. 路由给当前的Guest OS
+            2. 路由给当前没在运行的Guest OS
+            3. 路由给Hypervisor
+    5. Stage 2转换
+        1. `Stage 1` 将Virtual Address转化为Intermediate Physical Address（VA→IPA）
+        2. `Stage 2` 将IPA转化为Physical Address（IPA→PA）
+5. **虚拟中断**
+    1. SError → Virtual SError
+    2. IRQ → Virtual IRQ
+    3. FIQ → Virtual FIQ
+    4. 启动虚拟中断：`HCR_EL2.{FMO,IMO,AMO}`的routing control bit → 1
+    5. 虚拟中断：Non-secure EL0→EL1 / Non-secure EL1→EL1
+6. **Saved Program Status Registers(SPSRs)**
+    
+    1. 用于保存PE状态（当发生异常）
+       
+        ![Untitled](QEMU%20Loongarch/Untitled%2020.png)
+        
+    2. 例如target到EL2的exception，则PE state保存到`SPSR_EL2`，EL1和EL3同理
+7. **Exception Link Registers(ELRs)** 用于保存异常返回地址
+8. **ESR(Exception Syndrome Register)** 负责指示异常的信息
+   
+    ![Untitled](QEMU%20Loongarch/Untitled%2021.png)
+    
+9. System registers
+10. **System Calls**
+    1. **SVC(Supervisor Call)**
+        1. 运行在EL0的应用程序通过这个指令通知EL1（发送Supervisor Call exception）
+    2. **HVC(Hypervisor Call)**
+        1. 当在Non-secure EL1或更高等级运行时，可以通过该指令通知EL2（发送Hypervisor Call exception）
+    3. **SMC(Secure Monitor Call)**
+        1. 当运行在EL1或更高等级时，该指令可以通知EL3（Secure Monitor Call exception）
+
+## ARM PSCI
+
+Arm Power State Coordination Interface Platform Design Document
+
+![IMG_2712.png](QEMU%20Loongarch/IMG_2712.png)
+
+[ARM系列 -- PSCI - 极术社区 - 连接开发者与智能计算生态](https://aijishu.com/a/1060000000297005)
+
+下面的function功能翻译来自上面的技术博客
+
+- `PSCI_VERSION`：可以调用此API得到当前PSCI的版本信息；
+- `CPU_SUSPEND`：OSPM调用此API使处理器核进入低功耗模式；
+- `CPU_OFF`：此API用于hotplug，从系统中动态移除某个处理器核。被CPU_OFF移除的处理器核只能通过CPU_ON再次加载。与CPU_SUSPEND不同的是，这个接口函数不需要返回值；
+- `CPU_ON`：此API用于动态加载处理器核；
+- `AFFINITY_INFO`：此API允许调度方查询亲和实体（affinity instance）的状态；
+- `MIGRATE`：用于将受信任的操作系统（trusted OS）迁移到另一个处理器核，从而原处理器核可以调用CPU_OFF关闭电源；
+- `MIGRATE_INFO_TYPE`：允许调用方识别受信任操作系统中存在的多核支持级别，通过返回值可以判定受信任操作系统是否必须运行在单一处理器上，是否支持迁移；
+- `MIGRATE_INFO_UP_CPU`：指示受信任的操作系统当前的位置；
+- `SYSTEM_OFF`：系统关闭；
+- `SYSTEM_RESET`：系统冷复位；
+- `SYSTEM_RESET2`：此API是对SYSTEM_RESET的扩展；
+- `MEM_PROTECT`：此API确保内存在交给操作系统加载程序之前被重写，从而提供防止冷重启攻击的保护；
+- `MEM_PROTECT_CHECK_RANGE`：此API用于检查某段内存范围是否受MEM_PROTECT保护；
+- `PSCI_FEATURES`：此API允许调用方检测已实现的PSCI函数及其属性；
+- `CPU_FREEZE`：此API将处理器核设置于低功耗状态（依赖具体设计实现）。与CPU_SUSPEND和CPU_DEFAULT_SUSPEND不同，中断不能唤醒该处理器；与CPU_OFF也不同，不需要迁移；
+- `CPU_DEFAULT_SUSPEND`：此API将处理器核设置于低功耗状态（依赖具体设计实现），与CPU_FREEZE的调用参数不同；
+- `NODE_HW_STATE`：此API允许直接从电源控制器或电源控制逻辑确定节点的电源状态。与AFFINITY_INFO不同，此API返回电源状态的物理视图；
+- `SYSTEM_SUSPEND`：此API相当于CPU_SUSPEND到最深的低功耗状态，但实际系统中有可能实现比CPU_SUSPEND更深的低功耗状态，比如支持RAM挂起；
+- `PSCI_SET_ SUSPEND_MODE`：此API允许设置CPU_SUSPEND用于协调电源状态的模式；
+- `PSCI_STAT_RESIDENCY`：此API返回自冷启动后平台处于某个电源状态的时间；
+- `PSCI_STAT_COUNT`：此API返回自冷启动后平台使用某个电源状态的次数；
+
+## ARM SCMI
+
+Arm® System Control and Management Interface Platform Design Document
+
+[ARM系列 -- SCMI - 极术社区 - 连接开发者与智能计算生态](https://aijishu.com/a/1060000000300745?eqid=fd4b5abf000a80f50000000664816b13)
+
+![IMG_2713.png](QEMU%20Loongarch/IMG_2713.png)
+
+[ARM SCP入门-AP与SCP通信-电子发烧友网](https://www.elecfans.com/d/2184468.html)
+
+1. 包含协议层和传输层
+    1. Protocol
+    2. Transport
+2. OS通常为agent，SCP为platform，**SCP(System Control Processor)**是一个协处理器，专门负责电源等系统管理。
+
+## GICv3
+
+GICv3 and GICv4 Software Overview
+
+[GIC 中断虚拟化](https://zhuanlan.zhihu.com/p/535997324)
+
+1. **基本概念**
+   
+    ![Untitled](QEMU%20Loongarch/Untitled%2022.png)
+    
+    1. **SPI** (Shared Peripheral Interrupt) - 一种全局外围中断，可以路由到指定PE，或到一组PEs
+    2. **PPI** (Private Peripheral Interrupt) - 某个PE自身的外围中断，如Generic Timer
+    3. **SGI** (Software Generated Interrupt) - 软件写SGI寄存器触发
+       
+        ![Untitled](QEMU%20Loongarch/Untitled%2023.png)
+        
+    4. **LPI** (Locality-specific Peripheral Interrupt) - *message-based*中断
+       
+        ![Untitled](QEMU%20Loongarch/Untitled%2024.png)
+        
+        ![Untitled](QEMU%20Loongarch/Untitled%2025.png)
+        
+    5. 一个中断路由示例
+    6. **Distributor** (`GICD_*`)
+        
+        1. SPI的中断优先级配置
+        2. SPI开关配置
+        3. 生成message-based SPIs
+        4. 控制active和pending的SPIs
+        5. …
+    7. **Redistributors** (`GICR_*`)
+        
+        1. SGI和PPI的开关配置
+        2. SGI和PPI优先级配置
+        3. SGI和PPI分组
+        4. …
+    8. **CPU interfaces** (`ICC_*_ELn`)
+        
+        1. 打开中断处理的相关配置
+        2. 接收中断
+        3. 设置PE中断抢占策略
+        4. 选择PE最高优先级的pending中断
+        5. …
+2. **GICv3虚拟化相关**
+   
+    ![Untitled](QEMU%20Loongarch/Untitled%2026.png)
+    
+    ![Untitled](QEMU%20Loongarch/Untitled%2027.png)
+    
+    1. CPU Interface
+        1. Physical CPU interface (`ICC_*_ELn`)
+        2. Virtualization Control (`ICH_*_EL2`)
+        3. Virtual CPU interface (`ICV_*_ELn`)
+    
+    ![Untitled](QEMU%20Loongarch/Untitled%2028.png)
