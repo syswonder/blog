@@ -12,15 +12,61 @@
 
 同时，在运行说明中表述了修改 ArceOS 或 Redis 源码的要求，以及运行命令。
 
-## 过程问题
+## 前期探索记录
+
+### 本地使用 musl-gcc 编译 Redis，熟悉 Redis 编译过程
+
+- 发现：Redis 会编译出来 redis-client, redis-server 等可执行文件，需要的是 redis-server
+- 然后看 Makefile 里面**redis-server 是怎么编译出来的，需要用到哪些源文件**
+- 发现（MAKEFILE 中）：redis-server 需要的 obj：REDIS_SERVER_OBJ，以及三个 .a：hiredis, lua, hdrhistogram
+- 然后理清 redis-server 的所有依赖的 obj 是怎么编译出来的：
+  - REDIS_SERVER_OBJ：来自 redis/src 下的所有 .c -> .o
+  - 三个 .a：来自 redis/deps 
+
+### 修改 include 路径及相关编译参数，合到 Rukos 框架
+
+- **修改 CFLAGS**（这里面包含了 nostd 之类的参数，建议从 arceos/rukos 的 MAKEFILE 看看已经提供了些什么，以及重要的是指向include 头文件的位置，即 -Ixxxx），修改为 arceos 现有的 CFLAGS（先添加 -nostdinc -I（指向include路径），再一步步添加）
+- 这里都是手动敲命令编译的
+- 在这里，由于之前的 include 路径下面只有很少的头文件声明，因此在这里会出现很多的 undefined 的东西，然后**一个个加到 ulib/axlibc/include 里面**，并**添加对应的 .c 文件的函数实现**（先全部写成 unimplemented()）这里花了很多时间
+- 直到能够成功编译出 redis-server.o，在这中间可能会遇到**很多很多**与具体应用相关的报错，需要针对应用添加额外的 CFLAGS
+  - 比如：Redis 中需要指定 USE_JEMALLOC=no，这点是在编译的时候，发现他使用自己实现的 jemalloc，但我们并不需要他这样做
+  - 以及编译中会遇到很多需要额外的编译选项，比如 -mcmodel 什么的，通过自己 google 以及问学长解决
+
+### 匹配现有的 build 框架，静态链接出 ELF 文件，能够通过 `make A=xxxx` 来生成 ELF
+
+- 这里需要熟悉 makefile 的结构，**`ELF = app.o + libaxlibc.a + libc.a`**
+- 理清楚 rukos 的编译、链接到运行的过程
+- 添加 axbuild.mk，需要熟悉一下 axbuild.mk 需要提供什么变量、方法
+- arceos/rukos 编译 axlibc/ 中的 rust 文件，会生成一个 libaxlibc.a 在 target/.... 下（参见 scripts/make/build_c.mk）
+- 编译的 C 文件会生成在 ulib/axlibc/build_xxx 下，这里面有一个 libc.a
+- 链接libaxlibc.a，libc.a 具体的 app.o，注意 LDFLAGS 怎么添加，参见 build_c.mk（这部分在添加了 axbuild.mk 之后应该就不用手动添加 LDFLAGS，但需要检查编译、链接打印出来的信息，看看是否真的传进去了）
+- 这里又可能会出现链接的错误，具体错误具体处理
+  - **出现像 .ebss 之类的未定义符号？** 在链接的时候需要指定 `-T$(LD_SCRIPT)`，LD_SCRIPT 在 `modules/axhal/linker_$(PLATFORM_NAME).lds` 下。
+  - **应用程序有很多的 .o 文件，添加到 axbuild.mk 会很长？** 修改应用的MAKEFILE，使用增量链接（-r）将所有的应用程序相关的.o 打包成一个 .o，例如在 Redis 里面是将所有 .o 打包为了 redis-server.o，参考 `apps/c/redis/redis.patch` 的54-57行。
+
+### 运行！调试！
+
+- 由于前面对所有的函数都是只有声明和空实现，在这里运行起来的时候就能知道哪些函数是空实现，再**一步步补全**
+  - 这一步现在绝大部分函数都补全了实现了
+- 接下来可能会看到（用 printf 查看具体运行到哪儿了会更方便，GDB 由于函数调用太多，容易跟丢）：
+  - 为什么这里是个空指针却不报错？-----> 发现现在 arm 下对空指针会翻译成 0
+  - 为什么这个循环了几次之后突然变成了空指针？ -----> 发现有函数写错了（calloc 多清空了几个字节）
+  - 为什么这个地方会爆出 page fault？ -----> 发现原有的 realloc 没有判断传来的指针是不是空指针
+  - 这个函数在哪儿调用的？ -----> 跟踪源码（很深的函数调用）找到函数，查看参数是不是合法
+  - 为什么启动完突然自己退出了？ ----> 有函数写错了/有的函数明明没实现却没有记录 unimplemented/系统检查失败的
+  - 其余具体问题具体处理
+
+## 遗留问题
+
 - 传参问题：目前是修改 Redis 源码，将参数写死（argc, argv, port, IP等），并在 server.c/main() 函数一开始进行传入。
-- 系统检查：在 arm 下运行时，Redis 会通过 `fork`，`mmap` 等函数检查环境兼容性，这部分通过 `mmap` 返回返回 `MAP_FAILED` 来避免。
+  - 该问题已经在添加了解析 dtb/multiboot 后解决，但需要参考现有的 doc 文件添加对应的参数。
+- 系统检查：在 arm 下运行时，Redis 会通过 `fork`，`mmap` 等函数检查环境兼容性，这部分通过 `mmap` 返回返回 `MAP_FAILED` 来避免。（已解决）
 - 空指针问题：在 aarch64 下，仍然存在页表映射，映射为0，不会出现地址错误；但在 x86 下会出现空指针错误。
 - `fwrite bug`：关于出现 `fwrite` 没写完的问题，后续通过对 `fwrite` 进行修改，检查是否需要继续发送写命令来解决。
   - 原因在于底层的外部库：`rust-fatfs` 对于写操作，会在达到 cluster 边界时被截断。
   - 例如：cluster size 为 4096B 的时候，一个 5000B 的写操作只能写入前 4096B，需要再发一次写命令。
 - `riscv` 对于 `long double` 数据类型存在问题：已通过编译选项解决。
-- 目前 `redis-patch` 已合并到[ArceOS主线](https://github.com/rcore-os/arceos)。
+- 目前 `redis-patch` 已合并到[ArceOS主线](https://github.com/rcore-os/arceos)，以及[Rukos主线](https://github.com/syswonder/rukos)。
 
 ## Qemu 环境
 
@@ -63,6 +109,7 @@
 - 目前偶尔出现的一个尚未解决 `x86` 环境下的 bug：
   - 在 x86 环境下开启 `kvm`，会出现像网络包没对齐的现象：一条指令的结果在下一条指令执行完才被返回到 redis-cli 端。且如果 redis-cli 解析到返回的网络包不对，会报错。
   - 但能正常执行 `redis-bench`，并且通过 `redis-cli` 连接后，**等待一定时间**，便不会出现该现象，猜测是建立连接过程通过异步发包造成的（该现象在 net 模块改成异步的之后出现的）。
+- 在测试 x86 的时候，由于做了优化，现在已经能够达到上百万的性能（在 benchmark 的时候，请添加 -p 16）
 
 ### 测试结果
 
