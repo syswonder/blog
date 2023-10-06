@@ -14,8 +14,8 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/fontawesome.min.css" >
 
   <!-- docsify-gitalk-with-footer plugin -->
-  <link rel="stylesheet" href="//unpkg.com/gitalk/dist/gitalk.css" >
-
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+  <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
 </head>
 
 <body>
@@ -34,14 +34,25 @@
         gfm: true,
         tables: true,
       },
-      gitalk: {
-        clientID: 'cc165785a662b66490f3',
-        clientSecret: 'ce9d01cd05fa48581c5315ad87aedd77113de48b',
-        repo: 'report',
-        owner: 'syswonder',
-        admin: ['caodg'],
-    },
     }
+	// Listen for changes in hash in the URL. If an MD file is found to have changed,
+	// refresh the page to solve the problem of using a single digital comment issue for the entire website.
+	window.onhashchange = function (event) {
+		if (event.newURL.split('?')[0] !== event.oldURL.split('?')[0]) {
+			location.reload()
+		}
+	}
+	var gitalk = new Gitalk({
+		clientID: 'cc165785a662b66490f3',
+		clientSecret: 'ce9d01cd05fa48581c5315ad87aedd77113de48b',
+		repo: 'swdocissues',
+		owner: 'caodg',
+		admin: ['KouweiLee', 'caodg'],
+		id : location.hash.match(/#(.*?)([?]|$)/)[1].substr(0, 50),
+		title: `${location.hash.match(/#(.*?)([?]|$)/)[1]}`, 
+		createIssueManually : true, 
+		// distractionFreeMode: false
+		})
   </script>
   <!-- Docsify v4 -->
   <script src="//unpkg.com/docsify@4"></script>
