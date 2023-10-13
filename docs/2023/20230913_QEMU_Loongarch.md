@@ -24,7 +24,7 @@ sudo gdebi libnettle7_3.5.1+really3.5.1-2ubuntu0.2_amd64.deb
 
 成功启动Mini Linux：
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%201.png)
 
 ```bash
 Run a loongarch virtual machine.
@@ -45,7 +45,7 @@ q <qemu> use this file as qemu
 
 使用图形启动：
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 2.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%202.png)
 
 ## 测试qemu-loongarch-runenv/devel分支
 
@@ -58,21 +58,21 @@ docker run -it qemu-la /bin/bash
 ./run.sh
 ```
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 3_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%203_1.png)
 
 其会依次进行cross compile工具包下载、qemu编译、tianocore(UEFI)编译、linux-v6.1.4内核编译（编译时均指定target arch为`loongarch64-unknown-linux-gnu`）。
 
 在运行`run.sh`发生`-append未找到错误`，在上一行末尾还需要再手动加一个`\`，如图：
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 4_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%204_1.png)
 
 之后就可以启动loongarch64-linux-v6.1.4：
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 5_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%205_1.png)
 
 打印一下CPU信息：
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 6_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%206_1.png)
 
 ## QEMU支持情况
 
@@ -165,7 +165,7 @@ io port at `0x1fe001e0`
 
 编译安装支持Loongarch64的LLVM16+Clang16（Ubuntu22只能apt安装到14）
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 3.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%203.png)
 
 [https://github.com/sunhaiyong1978/CLFS-for-LoongArch](https://github.com/sunhaiyong1978/CLFS-for-LoongArch)
 
@@ -173,13 +173,13 @@ io port at `0x1fe001e0`
 
 之后我下载了官方的cross compile工具包，编译简单的loongarch64程序成功，这里使用的qemu是我自己编译的版本（Github最新release版src），编译时只打开了`qemu-loongarch64`的target。
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 4.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%204.png)
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 5.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%205.png)
 
 查看生成的loongarch汇编：
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 6.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%206.png)
 
 ## 要点整理
 
@@ -272,7 +272,7 @@ io port at `0x1fe001e0`
     1. 包含两种TLB：STLB和MTLB，前者页大小一致（`CSR.STLBPS`的PS域配置），后者每一个页表项对应的页可以不一样大。
     2. STLB多路组相联、MTLB全相联。
        
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 7.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%207.png)
         
     3. 页表项奇偶共用，即不保存奇偶位置，由虚页号最低位判断。
     4. TLB相关例外：
@@ -294,9 +294,9 @@ io port at `0x1fe001e0`
         取指且V=1，特权合规，但NX=1
     5. TLB的初始化 - `invtlb r0.r0`
        
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 8.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%208.png)
         
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 9.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%209.png)
         
     
 9. **例外与中断**
@@ -315,11 +315,11 @@ io port at `0x1fe001e0`
     
 10. **控制状态寄存器一览表**
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 10.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2010.png)
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 11.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2011.png)
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 12.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2012.png)
 
 1. 虚拟化LVZ拓展部分暂未公开文档
 
@@ -356,7 +356,7 @@ io port at `0x1fe001e0`
 
 5. **IO中断**
 
-   ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 17_1.png)
+   ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2017_1.png)
 
    1. **传统IO中断**
    2. **拓展IO中断**
@@ -394,7 +394,7 @@ rustc -Z unstable-options --target=loongarch64-unknown-none-softfloat --print ta
 
 ## Jailhouse Hypervisor
 
-![Untitled](20230913_QEMU_Loongarch.assets/Untitled 18_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2018_1.png)
 
 ## sysHyper
 
@@ -565,7 +565,7 @@ Chapter D1 The AArch64 System Level Programmers’ Model
 3. 整体结构
     1. 如下图
        
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 19.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2019.png)
     
 4. **虚拟化**
     1. 硬件实现需要支持EL2
@@ -591,13 +591,13 @@ Chapter D1 The AArch64 System Level Programmers’ Model
    
     1. 用于保存PE状态（当发生异常）
        
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 20.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2020.png)
         
     2. 例如target到EL2的exception，则PE state保存到`SPSR_EL2`，EL1和EL3同理
 7. **Exception Link Registers(ELRs)** 用于保存异常返回地址
 8. **ESR(Exception Syndrome Register)** 负责指示异常的信息
    
-    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 21.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2021.png)
     
 9. System registers
 10. **System Calls**
@@ -676,19 +676,19 @@ GICv3 and GICv4 Software Overview
 
 1. **基本概念**
    
-    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 22.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2022.png)
     
     1. **SPI** (Shared Peripheral Interrupt) - 一种全局外围中断，可以路由到指定PE，或到一组PEs
     2. **PPI** (Private Peripheral Interrupt) - 某个PE自身的外围中断，如Generic Timer
     3. **SGI** (Software Generated Interrupt) - 软件写SGI寄存器触发
        
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 23.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2023.png)
         
     4. **LPI** (Locality-specific Peripheral Interrupt) - *message-based*中断
        
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 24.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2024.png)
         
-        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 25.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2025.png)
         
     5. 一个中断路由示例
     6. **Distributor** (`GICD_*`)
@@ -713,9 +713,9 @@ GICv3 and GICv4 Software Overview
         5. …
 2. **GICv3虚拟化相关**
    
-    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 26.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2026.png)
     
-    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 27.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2027.png)
     
     1. CPU Interface
         1. Physical CPU interface (`ICC_*_ELn`)
@@ -723,4 +723,4 @@ GICv3 and GICv4 Software Overview
         3. Virtual CPU interface (`ICV_*_ELn`)
 	    ![image-20231013093823893](20230913_QEMU_Loongarch.assets/image-20231013093823893-1697161889927-30.png)
     2. 通过配置 `HCR_EL2.IMO` 项，可以控制NS.EL1级别运行的程序访问` ICC_IAR1_EL1`时取得的是物理值还是虚拟值。
-    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 28.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2028.png)
