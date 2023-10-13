@@ -7,7 +7,7 @@ enkerewpo@hotmail.com
 
 本机环境：
 
-![Untitled](QEMU%20Loongarch/Untitled.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled.png)
 
 参考仓库：
 
@@ -24,7 +24,7 @@ sudo gdebi libnettle7_3.5.1+really3.5.1-2ubuntu0.2_amd64.deb
 
 成功启动Mini Linux：
 
-![Untitled](QEMU%20Loongarch/Untitled%201.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 1.png)
 
 ```bash
 Run a loongarch virtual machine.
@@ -45,7 +45,7 @@ q <qemu> use this file as qemu
 
 使用图形启动：
 
-![Untitled](QEMU%20Loongarch/Untitled%202.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 2.png)
 
 ## 测试qemu-loongarch-runenv/devel分支
 
@@ -58,21 +58,21 @@ docker run -it qemu-la /bin/bash
 ./run.sh
 ```
 
-![Untitled](QEMU%20Loongarch/Untitled%203_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 3_1.png)
 
 其会依次进行cross compile工具包下载、qemu编译、tianocore(UEFI)编译、linux-v6.1.4内核编译（编译时均指定target arch为`loongarch64-unknown-linux-gnu`）。
 
 在运行`run.sh`发生`-append未找到错误`，在上一行末尾还需要再手动加一个`\`，如图：
 
-![Untitled](QEMU%20Loongarch/Untitled%204_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 4_1.png)
 
 之后就可以启动loongarch64-linux-v6.1.4：
 
-![Untitled](QEMU%20Loongarch/Untitled%205_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 5_1.png)
 
 打印一下CPU信息：
 
-![Untitled](QEMU%20Loongarch/Untitled%206_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 6_1.png)
 
 ## QEMU支持情况
 
@@ -165,7 +165,7 @@ io port at `0x1fe001e0`
 
 编译安装支持Loongarch64的LLVM16+Clang16（Ubuntu22只能apt安装到14）
 
-![Untitled](QEMU%20Loongarch/Untitled%203.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 3.png)
 
 [https://github.com/sunhaiyong1978/CLFS-for-LoongArch](https://github.com/sunhaiyong1978/CLFS-for-LoongArch)
 
@@ -173,13 +173,13 @@ io port at `0x1fe001e0`
 
 之后我下载了官方的cross compile工具包，编译简单的loongarch64程序成功，这里使用的qemu是我自己编译的版本（Github最新release版src），编译时只打开了`qemu-loongarch64`的target。
 
-![Untitled](QEMU%20Loongarch/Untitled%204.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 4.png)
 
-![Untitled](QEMU%20Loongarch/Untitled%205.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 5.png)
 
 查看生成的loongarch汇编：
 
-![Untitled](QEMU%20Loongarch/Untitled%206.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 6.png)
 
 ## 要点整理
 
@@ -272,7 +272,7 @@ io port at `0x1fe001e0`
     1. 包含两种TLB：STLB和MTLB，前者页大小一致（`CSR.STLBPS`的PS域配置），后者每一个页表项对应的页可以不一样大。
     2. STLB多路组相联、MTLB全相联。
        
-        ![Untitled](QEMU%20Loongarch/Untitled%207.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 7.png)
         
     3. 页表项奇偶共用，即不保存奇偶位置，由虚页号最低位判断。
     4. TLB相关例外：
@@ -294,9 +294,9 @@ io port at `0x1fe001e0`
         取指且V=1，特权合规，但NX=1
     5. TLB的初始化 - `invtlb r0.r0`
        
-        ![Untitled](QEMU%20Loongarch/Untitled%208.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 8.png)
         
-        ![Untitled](QEMU%20Loongarch/Untitled%209.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 9.png)
         
     
 9. **例外与中断**
@@ -310,16 +310,16 @@ io port at `0x1fe001e0`
         1. TLB重填例外入口来自`CSR.TLBRENTRY`
         2. 机器错误例外入口来自`CSR.MERRENTRY`
         3. 其他例外称为普通例外，入口地址为“入口页号|页内偏移“的计算方式（按位或），入口页号来自`CSR.EENTRY`
-        入口偏移=![CodeCogsEqn](QEMU%20Loongarch/CodeCogsEqn.gif)
+        入口偏移=![CodeCogsEqn](20230913_QEMU_Loongarch.assets/CodeCogsEqn.gif)
         4. 例外优先级：中断大于例外、取指阶段产生的优先级最高、译码次之、执行次之。
     
 10. **控制状态寄存器一览表**
 
-![Untitled](QEMU%20Loongarch/Untitled%2010.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 10.png)
 
-![Untitled](QEMU%20Loongarch/Untitled%2011.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 11.png)
 
-![Untitled](QEMU%20Loongarch/Untitled%2012.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 12.png)
 
 1. 虚拟化LVZ拓展部分暂未公开文档
 
@@ -356,7 +356,7 @@ io port at `0x1fe001e0`
 
 5. **IO中断**
 
-   ![Untitled](QEMU%20Loongarch/Untitled%2017_1.png)
+   ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 17_1.png)
 
    1. **传统IO中断**
    2. **拓展IO中断**
@@ -394,7 +394,7 @@ rustc -Z unstable-options --target=loongarch64-unknown-none-softfloat --print ta
 
 ## Jailhouse Hypervisor
 
-![Untitled](QEMU%20Loongarch/Untitled%2018_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled 18_1.png)
 
 ## sysHyper
 
@@ -559,13 +559,13 @@ Chapter D1 The AArch64 System Level Programmers’ Model
     3. `EL2` Hypervisor
     4. `EL3` Secure Monitor
 2. **Security State**
-    
+   
     1. `Secure State` - 此时PE可以访问安全和非安全的物理地址空间
     2. `Non-secure State` - PE只能访问非安全物理地址空间，不能访问Secure System Control相关资源
 3. 整体结构
     1. 如下图
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2019.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 19.png)
     
 4. **虚拟化**
     1. 硬件实现需要支持EL2
@@ -588,16 +588,16 @@ Chapter D1 The AArch64 System Level Programmers’ Model
     4. 启动虚拟中断：`HCR_EL2.{FMO,IMO,AMO}`的routing control bit → 1
     5. 虚拟中断：Non-secure EL0→EL1 / Non-secure EL1→EL1
 6. **Saved Program Status Registers(SPSRs)**
-    
+   
     1. 用于保存PE状态（当发生异常）
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2020.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 20.png)
         
     2. 例如target到EL2的exception，则PE state保存到`SPSR_EL2`，EL1和EL3同理
 7. **Exception Link Registers(ELRs)** 用于保存异常返回地址
 8. **ESR(Exception Syndrome Register)** 负责指示异常的信息
    
-    ![Untitled](QEMU%20Loongarch/Untitled%2021.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 21.png)
     
 9. System registers
 10. **System Calls**
@@ -612,7 +612,7 @@ Chapter D1 The AArch64 System Level Programmers’ Model
 
 Arm Power State Coordination Interface Platform Design Document
 
-![IMG_2712.png](QEMU%20Loongarch/IMG_2712.png)
+![IMG_2712.png](20230913_QEMU_Loongarch.assets/IMG_2712.png)
 
 [ARM系列 -- PSCI - 极术社区 - 连接开发者与智能计算生态](https://aijishu.com/a/1060000000297005)
 
@@ -646,14 +646,27 @@ Arm® System Control and Management Interface Platform Design Document
 
 [ARM系列 -- SCMI - 极术社区 - 连接开发者与智能计算生态](https://aijishu.com/a/1060000000300745?eqid=fd4b5abf000a80f50000000664816b13)
 
-![IMG_2713.png](QEMU%20Loongarch/IMG_2713.png)
+![IMG_2713.png](20230913_QEMU_Loongarch.assets/IMG_2713.png)
 
 [ARM SCP入门-AP与SCP通信-电子发烧友网](https://www.elecfans.com/d/2184468.html)
 
 1. 包含协议层和传输层
     1. Protocol
     2. Transport
-2. OS通常为agent，SCP为platform，**SCP(System Control Processor)**是一个协处理器，专门负责电源等系统管理。
+2. OS通常为agent，SCP为platform，**SCP(System Control Processor)** 是一个协处理器，专门负责电源等系统管理。
+3. 包含协议：
+    1. Base Protocol - 指示协议的基本信息，如实现了哪些协议，当前有哪些agents等
+    2. Power Domain Management Protocol - 管理电源域的电源状态（Power State）
+    3. System Power Management Protocol - 管理系统关闭、重置、暂停等。
+    4. Performance Domain Management Protocol - 管理性能域（Performance Domain）
+    5. Clock Management Protocol - 管理时钟相关
+    6. Sensor Management Protocol - 管理传感器
+    7. Voltage Domain Management Protocol - 管理电压域的电压值（Voltage Level）
+    8. Power Capping and Monitoring Protocol - 管理功耗限制
+        ![image-20231013094801275](20230913_QEMU_Loongarch.assets/image-20231013094801275.png)
+    9. Pin Control Protocol - 引脚管理
+        ![image-20231013094902982](20230913_QEMU_Loongarch.assets/image-20231013094902982.png)
+
 
 ## GICv3
 
@@ -663,36 +676,36 @@ GICv3 and GICv4 Software Overview
 
 1. **基本概念**
    
-    ![Untitled](QEMU%20Loongarch/Untitled%2022.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 22.png)
     
     1. **SPI** (Shared Peripheral Interrupt) - 一种全局外围中断，可以路由到指定PE，或到一组PEs
     2. **PPI** (Private Peripheral Interrupt) - 某个PE自身的外围中断，如Generic Timer
     3. **SGI** (Software Generated Interrupt) - 软件写SGI寄存器触发
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2023.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 23.png)
         
     4. **LPI** (Locality-specific Peripheral Interrupt) - *message-based*中断
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2024.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 24.png)
         
-        ![Untitled](QEMU%20Loongarch/Untitled%2025.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 25.png)
         
     5. 一个中断路由示例
     6. **Distributor** (`GICD_*`)
-        
+       
         1. SPI的中断优先级配置
         2. SPI开关配置
         3. 生成message-based SPIs
         4. 控制active和pending的SPIs
         5. …
     7. **Redistributors** (`GICR_*`)
-        
+       
         1. SGI和PPI的开关配置
         2. SGI和PPI优先级配置
         3. SGI和PPI分组
         4. …
     8. **CPU interfaces** (`ICC_*_ELn`)
-        
+       
         1. 打开中断处理的相关配置
         2. 接收中断
         3. 设置PE中断抢占策略
@@ -700,13 +713,14 @@ GICv3 and GICv4 Software Overview
         5. …
 2. **GICv3虚拟化相关**
    
-    ![Untitled](QEMU%20Loongarch/Untitled%2026.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 26.png)
     
-    ![Untitled](QEMU%20Loongarch/Untitled%2027.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 27.png)
     
     1. CPU Interface
         1. Physical CPU interface (`ICC_*_ELn`)
         2. Virtualization Control (`ICH_*_EL2`)
         3. Virtual CPU interface (`ICV_*_ELn`)
-    
-    ![Untitled](QEMU%20Loongarch/Untitled%2028.png)
+	    ![image-20231013093823893](20230913_QEMU_Loongarch.assets/image-20231013093823893-1697161889927-30.png)
+    2. 通过配置 `HCR_EL2.IMO` 项，可以控制NS.EL1级别运行的程序访问` ICC_IAR1_EL1`时取得的是物理值还是虚拟值。
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled 28.png)
