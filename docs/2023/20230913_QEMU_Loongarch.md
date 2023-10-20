@@ -794,3 +794,17 @@ https://github.com/siemens/jailhouse-images
 ![image-20231019133056403](20230913_QEMU_Loongarch.assets/image-20231019133056403.png)
 
 树莓派4B成功启动jailhouse环境
+
+![image-20231020132451614](20230913_QEMU_Loongarch.assets/image-20231020132451614.png)
+
+![image-20231020132541387](20230913_QEMU_Loongarch.assets/image-20231020132541387.png)
+
+![image-20231020132638879](20230913_QEMU_Loongarch.assets/image-20231020132638879.png)
+
+尝试启动linux inmate
+
+![image-20231020132858677](20230913_QEMU_Loongarch.assets/image-20231020132858677.png)
+
+可以看到第二个启动的linux只有两个CPU（总共4个）
+
+![image-20231020132937063](20230913_QEMU_Loongarch.assets/image-20231020132937063.png)
