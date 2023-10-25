@@ -724,3 +724,97 @@ GICv3 and GICv4 Software Overview
 	    ![image-20231013093823893](20230913_QEMU_Loongarch.assets/image-20231013093823893-1697161889927-30.png)
     2. 通过配置 `HCR_EL2.IMO` 项，可以控制NS.EL1级别运行的程序访问` ICC_IAR1_EL1`时取得的是物理值还是虚拟值。
         ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2028.png)
+
+# rust-shyper 学习记录
+
+由于rust-shyper相关文档过少，目前首先进行qemu平台的运行尝试
+
+## 编译rust-shyper
+
+首先编译rust-shyper
+
+```bash
+make qemu
+```
+
+
+
+![image-20231025105853383](20230913_QEMU_Loongarch.assets/image-20231025105853383.png)
+
+通过阅读MAKEFILE，可以得知其需要一个rootfs img，即`vm0.img`，需要注意的是，rust-shyper中存在MVM（Managerment VM）的概念，这个MVM系统可以通过加载shyper内核模块，和shyper进行交互，方便地进行控制，其独占0号处理器，且虚拟机号为0
+
+https://blog.csdn.net/zhuwade/article/details/127173739
+
+https://wiki.beyondlogic.org/index.php?title=Cross_Compiling_BusyBox_for_ARM
+
+## 制作rootfs
+
+这里我采用busybox编译一个rootfs，首先去官网下载最新源码，打开`make menuconfig`，我打开了 `Build Options / Build static library (no shared libs)` 选项，之后进行编译和rootfs配置
+
+```bash
+make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- menuconfig
+make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- CONFIG_PREFIX=../build install -j8
+```
+
+![image-20231025113652619](20230913_QEMU_Loongarch.assets/image-20231025113652619.png)
+
+```bash
+cd ../build
+mkdir -p dev etc home lib mnt proc root sys tmp var
+vim etc/inittab
+::sysinit:/etc/init.d/rcS
+::respawn:-/bin/sh
+::askfirst:-/bin/sh
+::cttlaltdel:/bin/umount -a -r
+
+chmod 755 etc/inittab
+mkdir -p etc/init.d/
+vim etc/init.d/rcS
+/bin/mount -a
+
+mkdir -p /dev/pts
+mount -t devpts devpts /dev/pts
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+/sbin/mdev -s
+chmod 755 etc/init.d/rcS
+
+vim etc/fstab
+#device mount-point type option dump fsck
+proc  /proc proc  defaults 0 0
+temps /tmp  rpoc  defaults 0 0
+none  /tmp  ramfs defaults 0 0
+sysfs /sys  sysfs defaults 0 0
+mdev  /dev  ramfs defaults 0 0
+
+cd dev
+sudo mknod console c 5 1
+sudo mknod null c 1 3
+```
+
+之后创建一个ext4 img，并把上面配置好的busybox system root放进去，作为`vm0.img`
+
+```bash
+dd if=/dev/zero of=vm0.img bs=4k count=2048
+mkfs.ext4 vm0.img
+tune2fs -c0 -i0 vm0.img
+mkdir vm0
+sudo mount vm0.img vm0/
+sudo cp -a ./build/* ./vm0/
+sudo umount vm0
+```
+
+## rust-shyper, 启动
+
+复制img到rust-shyper根目录，运行
+
+```bash
+qemu run
+```
+
+可以看到成功启动了rust-shyper和终端
+
+![image-20231025114440818](20230913_QEMU_Loongarch.assets/image-20231025114440818.png)
+
+![image-20231025114506658](20230913_QEMU_Loongarch.assets/image-20231025114506658.png)
+
+![image-20231025114913237](20230913_QEMU_Loongarch.assets/image-20231025114913237.png)
