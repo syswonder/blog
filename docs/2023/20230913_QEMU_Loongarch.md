@@ -729,7 +729,9 @@ GICv3 and GICv4 Software Overview
 
 由于rust-shyper相关文档过少，目前首先进行qemu平台的运行尝试
 
-## 编译rust-shyper
+## QEMU
+
+### 编译rust-shyper
 
 首先编译rust-shyper
 
@@ -747,7 +749,7 @@ https://blog.csdn.net/zhuwade/article/details/127173739
 
 https://wiki.beyondlogic.org/index.php?title=Cross_Compiling_BusyBox_for_ARM
 
-## 制作rootfs
+### 制作rootfs
 
 这里我采用busybox编译一个rootfs，首先去官网下载最新源码，我在menuconfig中打开了 `Build Options / Build static library (no shared libs)` 选项，之后进行编译和rootfs配置
 
@@ -803,7 +805,7 @@ sudo cp -a ./build/* ./vm0/
 sudo umount vm0
 ```
 
-## rust-shyper, 启动
+### rust-shyper, 启动
 
 复制img到rust-shyper根目录，运行
 
@@ -818,3 +820,61 @@ make run # qemu simulation
 ![image-20231025114506658](20230913_QEMU_Loongarch.assets/image-20231025114506658.png)
 
 ![image-20231025114913237](20230913_QEMU_Loongarch.assets/image-20231025114913237.png)
+
+## 树莓派4B
+
+编译面向树莓派4B的rust-shyper
+
+```bash
+make pi4
+```
+
+### U-Boot
+
+首先编译uboot
+
+```bash
+git clone https://github.com/u-boot/u-boot
+cd u-boot
+export CROSS_COMPILE=aarch64-linux-gnu-
+make distclean
+make rpi_4_defconfig
+make -j8
+```
+
+将编译生成的`uboot.bin`放入树莓派启动SD卡的boot分区
+
+```
+# Two partitions for SD card
+/boot  FAT32
+/      EXT4
+```
+
+https://www.raspberrypi.com/documentation/computers/config_txt.html
+
+树莓派使用boot/config.txt文件来代替传统的BIOS启动配置，修改boot/config.txt如下
+
+```
+# Run in 64-bit mode
+arm_64bit=1
+
+[cm4]
+# Enable host mode on the 2711 built-in XHCI USB controller.
+# This line should be removed if the legacy DWC2 controller is required
+# (e.g. for USB device mode) or if USB support is not required.
+# otg_mode=1
+
+[all]
+kernel=u-boot.bin
+enable_uart=1
+core_freq=500
+```
+
+https://zhuanlan.zhihu.com/p/92689086
+
+### 动态启动内核
+
+启动树莓派进入uboot命令行，这时我们还没有加载任何“实际的OS内核”，又因为每次修改内核后重新拔出SD卡写入再插回去太繁琐，而uboot可以通过网络动态加载位于开发机的最新kernel，提高效率。
+
+
+
