@@ -749,7 +749,7 @@ https://wiki.beyondlogic.org/index.php?title=Cross_Compiling_BusyBox_for_ARM
 
 ## 制作rootfs
 
-这里我采用busybox编译一个rootfs，首先去官网下载最新源码，打开`make menuconfig`，我打开了 `Build Options / Build static library (no shared libs)` 选项，之后进行编译和rootfs配置
+这里我采用busybox编译一个rootfs，首先去官网下载最新源码，我在menuconfig中打开了 `Build Options / Build static library (no shared libs)` 选项，之后进行编译和rootfs配置
 
 ```bash
 make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- menuconfig
@@ -808,7 +808,7 @@ sudo umount vm0
 复制img到rust-shyper根目录，运行
 
 ```bash
-qemu run
+make run # qemu simulation
 ```
 
 可以看到成功启动了rust-shyper和终端
