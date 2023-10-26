@@ -821,6 +821,10 @@ make run # qemu simulation
 
 ![image-20231025114913237](20230913_QEMU_Loongarch.assets/image-20231025114913237.png)
 
+但是当我尝试运行tools下的shyper工具，以及安装kernel mod时却无法安装，rust-shyper仓库中的预编译程序无法正常使用
+
+![image-20231026230152327](20230913_QEMU_Loongarch.assets/image-20231026230152327.png)
+
 ## 树莓派4B
 
 编译面向树莓派4B的rust-shyper
@@ -922,7 +926,56 @@ sudo umount /mnt/boot
 sudo umount /mnt/root
 ```
 
-### 动态启动内核
+成功启动uboot
 
-启动树莓派进入uboot命令行，这时我们还没有加载任何“实际的OS内核”，又因为每次修改内核后重新拔出SD卡写入再插回去太繁琐，而uboot可以通过网络动态加载位于开发机的最新kernel，提高效率。
+![image-20231026140739080](20230913_QEMU_Loongarch.assets/image-20231026140739080.png)
 
+> **动态启动内核**
+>
+> 启动树莓派进入uboot命令行，这时我们还没有加载任何“实际的OS内核”，又因为每次修改内核后重新拔出SD卡写入再插回去太繁琐，而uboot可以通过网络动态加载位于开发机的最新kernel，提高效率。
+
+https://stdrc.cc/post/2021/02/23/u-boot-qemu-virt/
+https://stackoverflow.com/questions/39767332/embedded-linux-arm-booting-address/39779338#39779338
+
+```bash
+sudo apt install u-boot-tools
+# mkimage -A arm64 -T kernel -C none -a 0x40000000 -e 0x40000000 -d rust_shyper Image
+
+cat << EOF > boot_cmd.txt
+fatload mmc 0:1 \${kernel_addr_r} Image # load rust-shyper image
+setenv bootargs "console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rw rootwait init=/bin/sh"
+booti \${kernel_addr_r} - \${fdt_addr}
+EOF
+
+mkimage -A arm64 -O -T script -C none -d boot_cmd.txt boot.scr
+sudo cp boot.scr /mnt/boot/
+```
+
+暂未成功通过uboot启动rust-shyper，研究中
+
+### baremetal
+
+接下来尝试不使用uboot，直接在树莓派上启动rust-shyper
+
+#### 树莓派4B启动流程
+
+1. **First Stage Bootloader** (ROM)
+   只读，用于挂载SD卡的FAT32分区
+2. **Second Stage Bootloader** (`bootcode.bin`)
+   该阶段会从SD上检索GPU固件，并将固件写入GPU并启动
+3. **GPU Firmware** (`start.elf`)
+   GPU启动后，搜索附加配置文件`config.txt` `fixup.dat`，并配置CPU，之后将用户代码加载至内存
+4. **User Code** (`kernel8.img` or custom program)
+   即`config.txt`中kernel一项所配置的程序，若不写则使用板子型号对应的默认值
+
+> https://forums.raspberrypi.com/viewtopic.php?t=328000
+> There are currently four default kernel load and start addresses:
+>
+> - `0x8000` for 32-bit kernels ("arm_64bit=1" in config.txt not set)
+> - `0x80000` for older 64-bit kernels ("arm_64bit=1" set, flat image)
+> - `0x200000` for newer 64-bit kernels ("arm_64bit=1" set, gzip'ed Linux ARM64 image)
+> - `0x0` if "kernel_old=1" set
+
+### QEMU-raspi4b
+
+除此之外，我还试着使用民间的支持树莓派4b的QEMU版本启动rust-shyper-pi4，也没有任何串口输出，根据以上信息，暂时不清楚rust-shyper对树莓派4B是否已经实现了完整支持，关于这一点有待继续研究。
