@@ -850,19 +850,56 @@ make -j8
 /      EXT4
 ```
 
+插入SD卡（USB读卡器）到电脑
+
+```bash
+sudo dmesg | tail
+```
+
+![image-20231026132415935](20230913_QEMU_Loongarch.assets/image-20231026132415935.png)
+
+ 可以看到SD卡挂载到了`sdb`，接下来进行分区删除和新建，fdisk指令可参考https://hechao.li/2021/12/20/Boot-Raspberry-Pi-4-Using-uboot-and-Initramfs/
+
+```bash
+sudo fdisk /dev/sdb
+```
+
+我给`/boot`分区分了256MB，剩下的空间作为`/`
+
+![image-20231026133352208](20230913_QEMU_Loongarch.assets/image-20231026133352208.png)
+
+接下来对分区进行格式化
+
+```bash
+sudo mkfs.vfat -F 32 -n boot /dev/sdb1
+sudo mkfs.ext4 -L root /dev/sdb2
+```
+
+![image-20231026133535081](20230913_QEMU_Loongarch.assets/image-20231026133535081.png)
+
+挂载分区
+
+```bash
+sudo mkdir /mnt/boot /mnt/root
+sudo mount /dev/sdb1 /mnt/boot
+sudo mount /dev/sdb2 /mnt/root
+```
+
+```bash
+cd /mnt/boot
+sudo wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bcm2711-rpi-4-b.dtb -o /mnt/bcm2711-rpi-4-b.dtb
+sudo wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf -o /mnt/start4.elf
+sudo wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bootcode.bin -o /mnt/bootcode.bin
+sudo touch config.txt # modified later
+# copy u-boot.bin into /boot as well
+```
+
 https://www.raspberrypi.com/documentation/computers/config_txt.html
 
-树莓派使用boot/config.txt文件来代替传统的BIOS启动配置，修改boot/config.txt如下
+树莓派使用`/boot/config.txt`文件来代替传统的BIOS启动配置，修改`/boot/config.txt`如下
 
 ```
-# Run in 64-bit mode
 arm_64bit=1
-
-[cm4]
-# Enable host mode on the 2711 built-in XHCI USB controller.
-# This line should be removed if the legacy DWC2 controller is required
-# (e.g. for USB device mode) or if USB support is not required.
-# otg_mode=1
 
 [all]
 kernel=u-boot.bin
@@ -872,9 +909,20 @@ core_freq=500
 
 https://zhuanlan.zhihu.com/p/92689086
 
+把之前制作的busybox rootfs同理，复制到`/mnt/root`中
+
+```bash
+sudo cp -a /home/wheatfox/Documents/Code/rootfs/build/* /mnt/root # replace the first path to your busybox build dir
+```
+
+全都做好了之后，卸载SD卡，上板启动
+
+```bash
+sudo umount /mnt/boot
+sudo umount /mnt/root
+```
+
 ### 动态启动内核
 
 启动树莓派进入uboot命令行，这时我们还没有加载任何“实际的OS内核”，又因为每次修改内核后重新拔出SD卡写入再插回去太繁琐，而uboot可以通过网络动态加载位于开发机的最新kernel，提高效率。
-
-
 
