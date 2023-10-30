@@ -979,3 +979,191 @@ sudo cp boot.scr /mnt/boot/
 ### QEMU-raspi4b
 
 除此之外，我还试着使用民间的支持树莓派4b的QEMU版本启动rust-shyper-pi4，也没有任何串口输出，根据以上信息，暂时不清楚rust-shyper对树莓派4B是否已经实现了完整支持，关于这一点有待继续研究。
+
+# Loongarch Linux KVM
+
+## 尝试编译运行
+
+虽然目前龙芯LVZ拓展暂时没有公开手册，但龙芯于10月提交了linux kvm部分的源码，其中涉及到体积结构虚拟化的部分，通过阅读源码，可以了解一部分LVZ的设计
+
+https://lwn.net/Articles/938724/ - Add KVM LoongArch support
+
+首先下载loongarch-linux-kvm源码 https://github.com/loongson/linux-loongarch-kvm 注意切换到kvm-loongarch分支
+
+![image-20231030215112977](20230913_QEMU_Loongarch.assets/image-20231030215112977.png)
+
+然后确保系统内能够找到loongarch-gcc交叉编译工具集 `loongarch64-unknown-linux-gnu-*`
+
+（下载链接：https://github.com/loongson/build-tools/releases/download/2022.09.06/loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz）
+
+```bash
+wget https://github.com/loongson/build-tools/releases/download/2022.09.06/loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz
+sudo tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz  -C /opt
+export PATH=/opt/cross-tools/bin:$PATH
+export LD_LIBRARY_PATH=/opt/cross-tools/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/cross-tools/loongarch64-unknown-linux-gnu/lib/:$LD_LIBRARY_PATH
+```
+
+编译linux
+
+```bash
+git checkout kvm-loongarch
+make ARCH=loongarch CROSS_COMPILE=loongarch64-unknown-linux-gnu- loongson3_defconfig
+make ARCH=loongarch CROSS_COMPILE=loongarch64-unknown-linux-gnu-
+```
+
+![image-20231030215751641](20230913_QEMU_Loongarch.assets/image-20231030215751641.png)
+
+遗憾的是，目前最新的代码似乎还不能正常编译（head=commit-8a9d24f2b0b270c50906564f8ba3dc9d413dc519,https://github.com/loongson/linux-loongarch-kvm/commit/8a9d24f2b0b270c50906564f8ba3dc9d413dc519）提交于2023年9月25日
+
+![image-20231030221224379](20230913_QEMU_Loongarch.assets/image-20231030221224379.png)
+
+如果需要在QEMU中运行支持linux kvm的龙芯架构版本，需要编译使用龙芯自己的QEMU fork（https://github.com/loongson/qemu），以支持虚拟化
+
+```bash
+git checkout kvm-loongarch
+./configure --target-list="loongarch64-softmmu"  --enable-kvm
+make
+```
+
+对应版本的qemu也出现了编译错误：
+
+![image-20231030221418704](20230913_QEMU_Loongarch.assets/image-20231030221418704.png)
+
+## 阅读loongarhc kvm源码
+
+换一个思路，直接阅读kvm部分的源码，从中找到LVZ相关的设计
+
+```
+./arch/loongarch/kvm/*
+./arch/loongarch/include/asm/*
+```
+
+### kvm/main.c
+
+```C
+unsigned long vpid_mask;
+struct kvm_world_switch *kvm_loongarch_ops;
+static struct kvm_context __percpu *vmcs;
+```
+
+`kvm_world_switch`
+`kvm_context`
+
+```c
+struct kvm_context {
+	unsigned long vpid_cache;
+	struct kvm_vcpu *last_vcpu;
+};
+
+struct kvm_world_switch {
+	int (*exc_entry)(void);
+	int (*enter_guest)(struct kvm_run *run, struct kvm_vcpu *vcpu);
+	unsigned long page_order;
+};
+```
+
+可以看到`kvm_context`中有一个`kvm_vcpu`
+
+![image-20231030223255869](20230913_QEMU_Loongarch.assets/image-20231030223255869.png)
+
+```c
+/*
+ * The default value of gcsr_flag[CSR] is 0, and we use this
+ * function to set the flag to 1 (SW_GCSR) or 2 (HW_GCSR) if the
+ * gcsr is software or hardware. It will be used by get/set_gcsr,
+ * if gcsr_flag is HW we should use gcsrrd/gcsrwr to access it,
+ * else use software csr to emulate it.
+ */
+static int gcsr_flag[CSR_MAX_NUMS];
+```
+
+`gcsr_flag[CSR]`数组涉及到两种赋值——软件模拟/硬件
+
+```c
+static inline void set_gcsr_sw_flag(int csr) // 设置对应的CSR为软件模拟模式
+static inline void set_gcsr_hw_flag(int csr) // 设置对应的CSR为硬件模式
+```
+
+`static void kvm_init_gcsr_flag(void)`函数进行了GCSR的初始化
+
+关键部分，启动硬件虚拟化的函数：
+
+```c
+int kvm_arch_hardware_enable(void)
+{
+	unsigned long env, gcfg = 0;
+
+	env = read_csr_gcfg();
+
+	/* First init gcfg, gstat, gintc, gtlbc. All guest use the same config */
+	write_csr_gcfg(0);
+	write_csr_gstat(0);
+	write_csr_gintc(0);
+	clear_csr_gtlbc(CSR_GTLBC_USETGID | CSR_GTLBC_TOTI);
+
+	/*
+	 * Enable virtualization features granting guest direct control of
+	 * certain features:
+	 * GCI=2:       Trap on init or unimplement cache instruction.
+	 * TORU=0:      Trap on Root Unimplement.
+	 * CACTRL=1:    Root control cache.
+	 * TOP=0:       Trap on Previlege.
+	 * TOE=0:       Trap on Exception.
+	 * TIT=0:       Trap on Timer.
+	 */
+	if (env & CSR_GCFG_GCIP_ALL)
+		gcfg |= CSR_GCFG_GCI_SECURE;
+	if (env & CSR_GCFG_MATC_ROOT)
+		gcfg |= CSR_GCFG_MATC_ROOT;
+
+	gcfg |= CSR_GCFG_TIT;
+	write_csr_gcfg(gcfg);
+
+	kvm_flush_tlb_all();
+
+	/* Enable using TGID  */
+	set_csr_gtlbc(CSR_GTLBC_USETGID);
+	kvm_debug("GCFG:%lx GSTAT:%lx GINTC:%lx GTLBC:%lx",
+		  read_csr_gcfg(), read_csr_gstat(), read_csr_gintc(), read_csr_gtlbc());
+
+	return 0;
+}
+```
+
+从https://lwn.net/Articles/938724/中也可以得到虚拟化一些信息，如涉及到kvm mmu的虚拟化、standard kvm_interrupt
+
+### kvm/switch.S
+
+这一部分主要包含了重要的macro`kvm_switch_to_guest`，并且绑定了上文中的`kvm_enter_guest`的汇编代码入口
+
+```assembly
+SYM_FUNC_START(kvm_enter_guest)
+	/* Allocate space in stack bottom */
+	addi.d	a2, sp, -PT_SIZE
+	/* Save host GPRs */
+	kvm_save_host_gpr a2
+
+	/* Save host CRMD, PRMD to stack */
+	csrrd	a3, LOONGARCH_CSR_CRMD
+	st.d	a3, a2, PT_CRMD
+	csrrd	a3, LOONGARCH_CSR_PRMD
+	st.d	a3, a2, PT_PRMD
+
+	addi.d	a2, a1, KVM_VCPU_ARCH
+	st.d	sp, a2, KVM_ARCH_HSP
+	st.d	tp, a2, KVM_ARCH_HTP
+	/* Save per cpu register */
+	st.d	u0, a2, KVM_ARCH_HPERCPU
+
+	/* Save kvm_vcpu to kscratch */
+	csrwr	a1, KVM_VCPU_KS
+	kvm_switch_to_guest
+SYM_INNER_LABEL(kvm_enter_guest_end, SYM_L_LOCAL)
+SYM_FUNC_END(kvm_enter_guest)
+```
+
+
+
+
+
