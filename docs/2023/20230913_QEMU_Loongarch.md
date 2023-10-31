@@ -1014,7 +1014,7 @@ make ARCH=loongarch CROSS_COMPILE=loongarch64-unknown-linux-gnu-
 
 ![image-20231030215751641](20230913_QEMU_Loongarch.assets/image-20231030215751641.png)
 
-遗憾的是，目前最新的代码似乎还不能正常编译（head=commit-8a9d24f2b0b270c50906564f8ba3dc9d413dc519,https://github.com/loongson/linux-loongarch-kvm/commit/8a9d24f2b0b270c50906564f8ba3dc9d413dc519）提交于2023年9月25日
+遗憾的是，目前最新的代码似乎还不能正常编译（head=commit-8a9d24f2b0b270c50906564f8ba3dc9d413dc519,https://github.com/loongson/linux-loongarch-kvm/commit/8a9d24f2b0b270c50906564f8ba3dc9d413dc519）
 
 ![image-20231030221224379](20230913_QEMU_Loongarch.assets/image-20231030221224379.png)
 
@@ -1030,7 +1030,7 @@ make
 
 ![image-20231030221418704](20230913_QEMU_Loongarch.assets/image-20231030221418704.png)
 
-## 阅读loongarhc kvm源码
+## 阅读loongarch kvm源码
 
 换一个思路，直接阅读kvm部分的源码，从中找到LVZ相关的设计
 
@@ -1133,6 +1133,53 @@ int kvm_arch_hardware_enable(void)
 
 从https://lwn.net/Articles/938724/中也可以得到虚拟化一些信息，如涉及到kvm mmu的虚拟化、standard kvm_interrupt
 
+```c
+static int kvm_loongarch_env_init(void)
+    
+/*
+ * PGD register is shared between root kernel and kvm hypervisor.
+ * So world switch entry should be in DMW area rather than TLB area
+ * to avoid page fault reenter.
+ *
+ * In future if hardware pagetable walking is supported, we won't
+ * need to copy world switch code to DMW area.
+ */
+order = get_order(kvm_exception_size + kvm_enter_guest_size);
+addr = (void *)__get_free_pages(GFP_KERNEL, order);
+if (!addr) {
+    free_percpu(vmcs);
+    vmcs = NULL;
+    kfree(kvm_loongarch_ops);
+    kvm_loongarch_ops = NULL;
+    return -ENOMEM;
+}
+```
+
+PTE - Page Table Entry
+PGD - Page Global Directory
+
+> Linux系统中每个进程对应用户空间的pgd是不一样的，但是linux内核的pgd是一样的。当创建一个新的进程时，都要为新进程创建一个新的页面目录PGD，并从内核的页面目录`swapper_pg_dir`中复制内核区间页面目录项至新建进程页面目录PGD的相应位置，具体过程如下：`do_fork() --> copy_mm() --> mm_init() --> pgd_alloc() --> set_pgd_fast() --> get_pgd_slow() --> memcpy(&PGD + USER_PTRS_PER_PGD, swapper_pg_dir +USER_PTRS_PER_PGD, (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t))`
+>
+> 这样一来，每个进程的页面目录就分成了两部分，第一部分为“用户空间”，用来映射其整个进程空间（`0x0000 0000`－`0xBFFF FFFF`）即3G字节的虚拟地址；第二部分为“系统空间”，用来映射（`0xC000 0000`－`0xFFFF FFFF`）1G字节的虚拟地址。可以看出Linux系统中每个进程的页面目录的第二部分是相同的，所以从进程的角度来看，每个进程有4G字节的虚拟空间，较低的3G字节是自己的用户空间，最高的1G字节则为与所有进程以及内核共享的系统空间。每个进程有它自己的PGD( Page Global Directory)，它是一个物理页，并包含一个`pgd_t`数组。 关键字：
+>
+> - PTE:  页表项（page table entry）
+> - PGD (Page Global Directory)
+> - PUD (Page Upper Directory)
+> - PMD (Page Middle Directory)
+> - PT (Page Table)
+>
+> PGD中包含若干PUD的地址，PUD中包含若干PMD的地址，PMD中又包含若干PT的地址。每一个页表项指向一个页框，页框就是真正的物理内存页。
+
+函数调用顺序
+
+```c
+// module_init(kvm_loongarch_init);
+kvm_loongarch_init
+-> kvm_loongarch_env_init
+    -> kvm_init_gcsr_flag
+-> kvm_init // 不在loongarch/kvm目录下
+```
+
 ### kvm/switch.S
 
 这一部分主要包含了重要的macro`kvm_switch_to_guest`，并且绑定了上文中的`kvm_enter_guest`的汇编代码入口
@@ -1163,7 +1210,192 @@ SYM_INNER_LABEL(kvm_enter_guest_end, SYM_L_LOCAL)
 SYM_FUNC_END(kvm_enter_guest)
 ```
 
+### kvm/tlb.c
 
+```c
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (C) 2020-2023 Loongson Technology Corporation Limited
+ */
 
+#include <linux/kvm_host.h>
+#include <asm/tlb.h>
+#include <asm/kvm_csr.h>
 
+/*
+ * kvm_flush_tlb_all() - Flush all root TLB entries for guests.
+ *
+ * Invalidate all entries including GVA-->GPA and GPA-->HPA mappings.
+ */
+void kvm_flush_tlb_all(void)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	invtlb_all(INVTLB_ALLGID, 0, 0);
+	local_irq_restore(flags);
+}
+
+void kvm_flush_tlb_gpa(struct kvm_vcpu *vcpu, unsigned long gpa)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	gpa &= (PAGE_MASK << 1);
+	invtlb(INVTLB_GID_ADDR, read_csr_gstat() & CSR_GSTAT_GID, gpa);
+	local_irq_restore(flags);
+}
+```
+
+注意到里面提到了 GVA->GPA, GPA->HPA 的二级翻译
+
+Guest Virtual Address
+Guest Physical Address
+Hypervisor Physical Address
+
+猜测与ARM的stage2翻译类似
+
+### kvm/vcpu.c
+
+`kvm_one_reg`- https://docs.huihoo.com/doxygen/linux/kernel/3.7/structkvm__one__reg.html
+
+```c
+struct kvm_one_reg {
+    __u64 id;
+    __u64 addr;
+};
+```
+
+`int kvm_vcpu_ioctl_interrupt(struct kvm_vcpu *vcpu, struct kvm_interrupt *irq)`
+
+`kvm_interrupt` - https://docs.huihoo.com/doxygen/linux/kernel/3.7/structkvm__interrupt.html
+
+```c
+/* for KVM_INTERRUPT */
+struct kvm_interrupt {
+    /* in */
+    __u32 irq;
+};
+```
+
+```c
+/*
+ * kvm_check_requests - check and handle pending vCPU requests
+ *
+ * Return: RESUME_GUEST if we should enter the guest
+ *         RESUME_HOST  if we should exit to userspace
+ */
+static int kvm_check_requests(struct kvm_vcpu *vcpu)
+    
+/*
+ * Check and handle pending signal and vCPU requests etc
+ * Run with irq enabled and preempt enabled
+ *
+ * Return: RESUME_GUEST if we should enter the guest
+ *         RESUME_HOST  if we should exit to userspace
+ *         < 0 if we should exit to userspace, where the return value
+ *         indicates an error
+ */
+static int kvm_enter_guest_check(struct kvm_vcpu *vcpu)
+    
+/*
+ * Called with irq enabled
+ *
+ * Return: RESUME_GUEST if we should enter the guest, and irq disabled
+ *         Others if we should exit to userspace
+ */
+static int kvm_pre_enter_guest(struct kvm_vcpu *vcpu)
+
+/*
+ * Return 1 for resume guest and "<= 0" for resume host.
+ */
+static int kvm_handle_exit(struct kvm_run *run, struct kvm_vcpu *vcpu)
+    
+int kvm_arch_vcpu_runnable(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_should_kick(struct kvm_vcpu *vcpu)
+bool kvm_arch_vcpu_in_kernel(struct kvm_vcpu *vcpu)
+vm_fault_t kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf)
+int kvm_arch_vcpu_ioctl_translate(struct kvm_vcpu *vcpu,
+				  struct kvm_translation *tr)
+int kvm_cpu_has_pending_timer(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_dump_regs(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_ioctl_get_mpstate(struct kvm_vcpu *vcpu,
+				struct kvm_mp_state *mp_state)
+int kvm_arch_vcpu_ioctl_set_mpstate(struct kvm_vcpu *vcpu,
+				struct kvm_mp_state *mp_state)
+int kvm_arch_vcpu_ioctl_set_guest_debug(struct kvm_vcpu *vcpu,
+					struct kvm_guest_debug *dbg)
+```
+
+``` c
+/**
+ * kvm_migrate_count() - Migrate timer.
+ * @vcpu:       Virtual CPU.
+ *
+ * Migrate hrtimer to the current CPU by cancelling and restarting it
+ * if the hrtimer is active.
+ *
+ * Must be called when the vCPU is migrated to a different CPU, so that
+ * the timer can interrupt the guest at the new CPU, and the timer irq can
+ * be delivered to the vCPU.
+ */
+static void kvm_migrate_count(struct kvm_vcpu *vcpu)
+{
+	if (hrtimer_cancel(&vcpu->arch.swtimer))
+		hrtimer_restart(&vcpu->arch.swtimer);
+}
+
+static int _kvm_getcsr(struct kvm_vcpu *vcpu, unsigned int id, u64 *val)
+static int _kvm_setcsr(struct kvm_vcpu *vcpu, unsigned int id, u64 val)
+static int kvm_get_one_reg(struct kvm_vcpu *vcpu,
+		const struct kvm_one_reg *reg, u64 *v)
+static int kvm_get_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+static int kvm_set_one_reg(struct kvm_vcpu *vcpu,
+			const struct kvm_one_reg *reg, u64 v)
+static int kvm_set_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+int kvm_arch_vcpu_ioctl_get_sregs(struct kvm_vcpu *vcpu, struct kvm_sregs *sregs)
+int kvm_arch_vcpu_ioctl_set_sregs(struct kvm_vcpu *vcpu, struct kvm_sregs *sregs)
+int kvm_arch_vcpu_ioctl_get_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
+int kvm_arch_vcpu_ioctl_set_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
+static int kvm_vcpu_ioctl_enable_cap(struct kvm_vcpu *vcpu,
+				     struct kvm_enable_cap *cap)
+long kvm_arch_vcpu_ioctl(struct file *filp,
+			 unsigned int ioctl, unsigned long arg)
+int kvm_arch_vcpu_ioctl_get_fpu(struct kvm_vcpu *vcpu, struct kvm_fpu *fpu)
+int kvm_arch_vcpu_ioctl_set_fpu(struct kvm_vcpu *vcpu, struct kvm_fpu *fpu)
+/* Enable FPU and restore context */
+void kvm_own_fpu(struct kvm_vcpu *vcpu)
+/* Save context and disable FPU */
+void kvm_lose_fpu(struct kvm_vcpu *vcpu)
+int kvm_vcpu_ioctl_interrupt(struct kvm_vcpu *vcpu, struct kvm_interrupt *irq)
+long kvm_arch_vcpu_async_ioctl(struct file *filp,
+			       unsigned int ioctl, unsigned long arg)
+int kvm_arch_vcpu_precreate(struct kvm *kvm, unsigned int id)
+int kvm_arch_vcpu_create(struct kvm_vcpu *vcpu)
+void kvm_arch_vcpu_postcreate(struct kvm_vcpu *vcpu)
+void kvm_arch_vcpu_destroy(struct kvm_vcpu *vcpu)
+static int _kvm_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+void kvm_arch_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+static int _kvm_vcpu_put(struct kvm_vcpu *vcpu, int cpu)
+void kvm_arch_vcpu_put(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu)
+```
+
+### kvm/interrupt.c
+
+```c
+static int kvm_irq_deliver(struct kvm_vcpu *vcpu, unsigned int priority)
+static int kvm_irq_clear(struct kvm_vcpu *vcpu, unsigned int priority)
+void kvm_deliver_intr(struct kvm_vcpu *vcpu)
+int kvm_pending_timer(struct kvm_vcpu *vcpu)
+    
+/*
+ * Only support illegal instruction or illegal Address Error exception,
+ * Other exceptions are injected by hardware in kvm mode
+ */
+static void _kvm_deliver_exception(struct kvm_vcpu *vcpu,
+				unsigned int code, unsigned int subcode)
+    
+void kvm_deliver_exception(struct kvm_vcpu *vcpu)
+```
 
