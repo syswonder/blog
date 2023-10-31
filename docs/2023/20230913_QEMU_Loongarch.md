@@ -1131,7 +1131,7 @@ int kvm_arch_hardware_enable(void)
 }
 ```
 
-从https://lwn.net/Articles/938724/中也可以得到虚拟化一些信息，如涉及到kvm mmu的虚拟化、standard kvm_interrupt
+从 https://lwn.net/Articles/938724/ 中也可以得到虚拟化一些信息，如涉及到kvm mmu的虚拟化、standard kvm_interrupt
 
 ```c
 static int kvm_loongarch_env_init(void)
@@ -1182,7 +1182,7 @@ kvm_loongarch_init
 
 ### kvm/switch.S
 
-这一部分主要包含了重要的macro`kvm_switch_to_guest`，并且绑定了上文中的`kvm_enter_guest`的汇编代码入口
+这一部分主要包含了重要的macro`kvm_switch_to_guest`，并且汇编的最后绑定了上文中的`kvm_enter_guest`的汇编代码入口如下
 
 ```assembly
 SYM_FUNC_START(kvm_enter_guest)
@@ -1249,9 +1249,11 @@ void kvm_flush_tlb_gpa(struct kvm_vcpu *vcpu, unsigned long gpa)
 
 注意到里面提到了 GVA->GPA, GPA->HPA 的二级翻译
 
+```
 Guest Virtual Address
 Guest Physical Address
 Hypervisor Physical Address
+```
 
 猜测与ARM的stage2翻译类似
 
