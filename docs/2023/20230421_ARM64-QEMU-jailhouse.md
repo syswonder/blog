@@ -16,15 +16,43 @@ ls gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/
 
 安装完成，记住路径，例如在：/home/tools/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-，之后都会使用这个路径。
 
-## 二、编译安装QEMU 7.2
+## 二、编译安装QEMU 7.0
 
-1. wget [https://download.qemu.org/qemu-7.2.1.tar.xz](https://download.qemu.org/qemu-7.2.1.tar.xz)
-2. tar 解压
-3. mkdir build %% cd build
-4. ../qemu-7.2.0/configure --enable-kvm --enable-slirp --enable-debug --target-list=aarch64-softmmu,x86_64-softmmu
-5. make -j2
+```
+# 安装编译所需的依赖包
+sudo apt install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev \
+              gawk build-essential bison flex texinfo gperf libtool patchutils bc \
+              zlib1g-dev libexpat-dev pkg-config  libglib2.0-dev libpixman-1-dev libsdl2-dev \
+              git tmux python3 python3-pip ninja-build
+# 下载源码
+wget https://download.qemu.org/qemu-7.0.0.tar.xz 
+# 解压
+tar xvJf qemu-7.0.0.tar.xz   
+cd qemu-7.0.0
+#生成设置文件
+./configure --enable-kvm --enable-slirp --enable-debug --target-list=aarch64-softmmu,x86_64-softmmu  
+#编译
+make -j$(nproc)   
+```
 
-> 7.0.0版本的qemu也可以，再低可能就不行了
+之后编辑 `~/.bashrc` 文件，在文件的末尾加入几行：
+
+```
+# 请注意，qemu-7.0.0 的父目录可以随着你的实际安装位置灵活调整
+export PATH=$PATH:/path/to/qemu-7.0.0/build
+```
+
+随后即可在当前终端 `source ~/.bashrc` 更新系统路径，或者直接重启一个新的终端。此时可以确认qemu版本：
+
+```
+qemu-system-aarch64 --version   #查看版本
+```
+
+> 注意，上述依赖包可能不全，例如：
+>
+> - 出现 `ERROR: pkg-config binary 'pkg-config' not found` 时，可以安装 `pkg-config` 包；
+> - 出现 `ERROR: glib-2.48 gthread-2.0 is required to compile QEMU` 时，可以安装 `libglib2.0-dev` 包；
+> - 出现 `ERROR: pixman >= 0.21.8 not present` 时，可以安装 `libpixman-1-dev` 包。
 
 ## 三、编译Kernel 5.4
 
@@ -47,11 +75,19 @@ CONFIG_BLK_DEV_RAM=y
 make ARCH=arm64 CROSS_COMPILE=/root/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- Image -j$(nproc)
 ```
 
+> 如果编译linux时报错：
+>
+> ```
+> /usr/bin/ld: scripts/dtc/dtc-parser.tab.o:(.bss+0x20): multiple definition of `yylloc'; scripts/dtc/dtc-lexer.lex.o:(.bss+0x0): first defined here
+> ```
+>
+> 则修改linux文件夹下`scripts/dtc/dtc-lexer.lex.c`，在`YYLTYPE yylloc;`前增加`extern`。再次编译，发现会报错：openssl/bio.h: No such file or directory ，此时执行`sudo apt install libssl-dev`
+
 编译完毕，内核文件位于：arch/arm64/boot/Image。记住整个linux文件夹所在的路径，例如：home/korwylee/lgw/hypervisor/linux。
 
 ## 四、基于ubuntu 20.04 arm64 base构建文件系统
 
-busybox制作的文件系统过于简单（如没有apt工具），因此，我们需要使用更丰富的ubuntu文件系统来制作linux的根文件系统。
+busybox制作的文件系统过于简单（如没有apt工具），因此，我们需要使用更丰富的ubuntu文件系统来制作linux的根文件系统。注意，ubuntu22.04也可以。
 
 下载：[ubuntu-base-20.04.5-base-arm64.tar.gz](http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04.5-base-arm64.tar.gz)  
 
@@ -62,7 +98,7 @@ wget http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20
 
 mkdir rootfs
 # 创建一个ubuntu.img
-dd if=/dev/zero of=ubuntu-20.04-rootfs_ext4.img bs=1M count=8192 oflag=direct
+dd if=/dev/zero of=ubuntu-20.04-rootfs_ext4.img bs=1M count=4096 oflag=direct
 mkfs.ext4 ubuntu-20.04-rootfs_ext4.img
 # 将ubuntu.tar.gz放入已经挂载到rootfs上的ubuntu.img中
 sudo mount -t ext4 ubuntu-20.04-rootfs_ext4.img rootfs/
@@ -76,7 +112,8 @@ sudo mount -t sysfs /sys rootfs/sys
 sudo mount -o bind /dev rootfs/dev
 sudo mount -o bind /dev/pts rootfs/dev/pts
 
-sudo chroot rootfs
+# 执行该指令可能会报错，请参考下面的解决办法
+sudo chroot rootfs 
 
 apt-get update
 apt-get install git sudo vim bash-completion -y
@@ -105,6 +142,13 @@ sudo umount rootfs
 ```
 
 最后卸载挂载，完成根文件系统的制作。
+
+> 执行`sudo chroot .`时，如果报错`chroot: failed to run command ‘/bin/bash’: Exec format error`，可以执行指令：
+>
+> ```
+> sudo apt-get install qemu-user-static
+> sudo update-binfmts --enable qemu-aarch64
+> ```
 
 ## 五、编译jailhouse
 
@@ -157,8 +201,11 @@ qemu-system-aarch64 \
 
 ```shell
 cd ~/jailhouse
+sudo mkdir -p /lib/firmware
+sudo cp hypervisor/jailhouse.bin /lib/firmware/
 sudo insmod driver/jailhouse.ko
 sudo ./tools/jailhouse enable configs/arm64/qemu-arm64.cell
+# 关闭jailhouse则执行下面的命令
 sudo ./tools/jailhouse disable
 ```
 
@@ -170,6 +217,52 @@ sudo ./tools/jailhouse cell load gic-demo inmates/demos/arm64/gic-demo.bin
 sudo ./tools/jailhouse cell start gic-demo
 sudo ./tools/jailhouse cell destroy gic-demo
 ```
+
+常见问题：
+
+> 1. 如果执行jailhouse报错说glibc版本低，则在host上chroot到rootfs中换源，增加ubuntu 22.04的清华源。步骤如下：
+>
+> 执行命令
+>
+> ```
+> sudo vi /etc/apt/sources.list
+> ```
+>
+> 替换文件内容为：
+>
+> ```
+> # 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
+> deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal main restricted universe multiverse
+> # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal main restricted universe multiverse
+> deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-updates main restricted universe multiverse
+> # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-updates main restricted universe multiverse
+> deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-backports main restricted universe multiverse
+> # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-backports main restricted universe multiverse
+> 
+> # deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-security main restricted universe multiverse
+> # # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-security main restricted universe multiverse
+> 
+> deb http://ports.ubuntu.com/ubuntu-ports/ focal-security main restricted universe multiverse
+> # deb-src http://ports.ubuntu.com/ubuntu-ports/ focal-security main restricted universe multiverse
+> 
+> # 预发布软件源，不建议启用
+> # deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-proposed main restricted universe multiverse
+> # # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ focal-proposed main restricted universe multiverse
+> deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ jammy main
+> ```
+>
+> 替换后执行：
+>
+> ```
+> sudo apt update 
+> sudo apt install libc6
+> ```
+>
+> 2. 如果运行jailhouse时报ext4 error文件系统的错，则可以在host上执行：
+>
+> ```
+> e2fsck -f ubuntu-20.04-rootfs_ext4.img
+> ```
 
 ## 八、启动一个non-root-linux on qemu
 
@@ -224,7 +317,15 @@ vi rcS
 find . -print0 | cpio --null -ov --format=newc | gzip -9 > initramfs.cpio.gz
 ```
 
-之后将initramfs.cpio.gz通过挂载根文件系统，传入到guest linux中。然后启动QEMU，并enable jailhouse。之后执行：
+之后将initramfs.cpio.gz通过挂载根文件系统，传入到guest linux中。然后启动QEMU，并enable jailhouse。
+
+> 如果报错说找不到python，则执行以下命令:
+>
+> ```
+> sudo ln -s /usr/bin/python3 /usr/bin/python
+> ```
+
+之后执行：
 
 ```bash
 cd tools/
