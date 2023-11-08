@@ -105,7 +105,8 @@ sudo mount -t ext4 ubuntu-20.04-rootfs_ext4.img rootfs/
 sudo tar -xzf ubuntu-base-20.04.5-base-arm64.tar.gz -C rootfs/
 
 # 让rootfs绑定和获取物理机的一些信息和硬件
-sudo cp /usr/bin/qemu-system-aarch64 rootfs/usr/bin/
+# qemu-path为你的qemu路径
+sudo cp qemu-path/build/qemu-system-aarch64 rootfs/usr/bin/ 
 sudo cp /etc/resolv.conf rootfs/etc/resolv.conf
 sudo mount -t proc /proc rootfs/proc
 sudo mount -t sysfs /sys rootfs/sys
@@ -266,9 +267,11 @@ sudo ./tools/jailhouse cell destroy gic-demo
 
 ## 八、启动一个non-root-linux on qemu
 
-目前只实现了在qemu里，启动一个带有内存文件系统的non-root-linux，具体教程如下：
+non-root-linux启动时，需要挂载文件系统，下面的教程分为内存文件系统和磁盘文件系统。
 
-### 8.1编译 busybox 1.36.0 （文件系统）
+### 8.1 内存文件系统
+
+#### 8.1.1编译 busybox 1.36.0 （文件系统）
 
 ```bash
 wget https://busybox.net/downloads/busybox-1.36.0.tar.bz2
@@ -295,7 +298,7 @@ make -j$(nproc) && make install
 
 编译完毕后busybox生成在_install目录。
 
-### 8.2 为文件系统创建console
+#### 8.1.2 为文件系统创建console
 
 ```bash
 cd _install
@@ -338,6 +341,121 @@ sudo ./jailhouse cell linux ../configs/arm64/qemu-arm64-linux-demo.cell ../linux
 @staticmethod
 def get_uncompressed_kernel(kernel):
     return (kernel.read(), False)
+```
+
+### 8.2 磁盘文件系统
+
+制作新的ubuntu镜像：
+
+> 为了省事，这里只做了一个简单的镜像，更完整的镜像文件参考第四章。
+
+```bash
+dd if=/dev/zero of=second-ubuntu-20.04-rootfs_ext4.img bs=1M count=256 oflag=direct
+mkfs.ext4 second-ubuntu-20.04-rootfs_ext4.img
+sudo mount -t ext4 second-ubuntu-20.04-rootfs_ext4.img rootfs/
+sudo tar -xzf ubuntu-base-20.04.5-base-arm64.tar.gz -C rootfs/
+sudo cp qemu-path/build/qemu-system-aarch64 rootfs/usr/bin/
+sudo cp /etc/resolv.conf rootfs/etc/resolv.conf
+```
+
+要让non-root-linux启动一个磁盘文件系统，那么它应该能通过设备树在qemu模拟的virtio-blk设备中找到对应的磁盘。
+
+为了找到qemu模拟的virtio-blk设备，需要导出qemu模拟的设备树信息：
+
+```bash
+sudo qemu-system-aarch64 \
+    -machine virt,gic_version=3 \
+    -machine virtualization=true \
+    -cpu cortex-a57 \
+    -machine type=virt \
+    -nographic \
+    -smp 16 \
+    -m 1024 \
+    -kernel ./linux/arch/arm64/boot/Image \
+    -append "console=ttyAMA0 root=/dev/vda rw mem=768m" \
+    -drive if=none,file=second-ubuntu-20.04-rootfs_ext4.img,id=hd1,format=raw \
+    -device virtio-blk-device,drive=hd1 \
+    -drive if=none,file=ubuntu-20.04-rootfs_ext4.img,id=hd0,format=raw \
+    -device virtio-blk-device,drive=hd0 \
+    -netdev tap,id=net0,ifname=tap0,script=no,downscript=no \
+    -device virtio-net-device,netdev=net0,mac=52:55:00:d1:55:01 \
+    -machine dumpdtb=qemu-virt.dtb
+```
+
+其中machine dumpdtb就将qemu设备树导出到dtb文件中，之后需要将其转换为可读的dts文件，在shell中执行：
+
+```bash
+dtc -I dtb -O dts -o qemu-virt.dts qemu-virt.dtb
+```
+
+qemu指定的virtio设备在设备树中是倒着来的，由于我们指定second-ubuntu-20.04-rootfs_ext4.img为non-root-linux的磁盘，它是qemu启动参数中的第一个设备，故找到最后一个virtio-mmio区域：
+
+```bash
+virtio_mmio@a003e00 {
+    dma-coherent;
+    interrupts = <0x00 0x2f 0x01>;
+    reg = <0x00 0xa003e00 0x00 0x200>;
+    compatible = "virtio,mmio";
+};
+```
+
+这说明，该磁盘所在的mmio区域从0xa003e00开始，大小为0x200，用到了中断为SPI的第0x2f号中断，即32+47=79号中断。将其写入到inmate-qemu-arm64.dts，同时为non-root-linux的cell配置文件增加相应的mem region：
+
+```c
+		/*disk*/ {
+			.phys_start = 0x0a003e00,
+			.virt_start = 0x0a003e00,
+			.size = 0x0200,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32 | JAILHOUSE_MEM_IO_8 | JAILHOUSE_MEM_IO_16 | JAILHOUSE_MEM_IO_64,
+		},
+```
+
+由于non-root-linux在probe virtio-blk时，用到了79号中断，因此修改cell配置文件：
+
+```c
+	.irqchips = {
+		/* GIC */ {
+			.address = 0x08000000,
+			.pin_base = 32, // pin_base 表示从第几号中断开始，pin_bitmap的类型为u32[4]，
+			.pin_bitmap = { // 每一个元素表示32个中断，其中位设为1的中断，root cell会取消拥有该中断
+				(1 << (33 - 32)),
+				(1 << 15),  // 79号中断
+				0,
+				(1 << (140 - 128))
+			},
+		},
+	},
+```
+
+之后编译jailhouse，然后启动qemu：
+
+```bash
+sudo qemu-system-aarch64 \
+    -machine virt,gic_version=3 \
+    -machine virtualization=true \
+    -cpu cortex-a57 \
+    -machine type=virt \
+    -nographic \
+    -smp 16 \
+    -m 1024 \
+    -kernel ./linux/arch/arm64/boot/Image \
+    -append "console=ttyAMA0 root=/dev/vda rw mem=768m" \
+    -drive if=none,file=second-ubuntu-20.04-rootfs_ext4.img,id=hd1,format=raw \
+    -device virtio-blk-device,drive=hd1 \
+    -drive if=none,file=ubuntu-20.04-rootfs_ext4.img,id=hd0,format=raw \
+    -device virtio-blk-device,drive=hd0 \
+    -netdev tap,id=net0,ifname=tap0,script=no,downscript=no \
+    -device virtio-net-device,netdev=net0,mac=52:55:00:d1:55:01
+```
+
+之后启动non-root-linux:
+
+```bash
+sudo insmod driver/jailhouse.ko
+sudo ./tools/jailhouse enable configs/arm64/qemu-arm64.cell
+cd tools/
+sudo ./jailhouse cell linux ../configs/arm64/qemu-arm64-linux-demo.cell ../linux-Image -c "console=ttyAMA0,115200 root=/dev/vda rw" -d ../configs/arm64/dts/inmate-qemu-arm64.dtb
 ```
 
 ## 附录
