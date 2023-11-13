@@ -1,5 +1,6 @@
 - [QEMU Loongarch sysHyper移植](20230913_QEMU_Loongarch.md)
 - [在 ArceOS 上运行 Redis](20230730_Redis_On_ArceOS.md)
+- [RukOS的 9PFS 的使用与实现](20231113_how-9pfs-is-integrated-to-rukos.md)
 - [ARMv8 内存虚拟化](20230724_virtual_memory.md)
 - [使用qemu测试sysHyper步骤](20230723_Demonstration_in_QEMU.md)
 - [Jailhouse中的Hypercall整理](20230721_jailhouse_hypercall.md)
