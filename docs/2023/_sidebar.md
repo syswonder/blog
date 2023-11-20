@@ -1,3 +1,5 @@
+- [C程序的启动过程](20231109_cstart.md)
+- [Linux initrd机制](20231103_Linux-initrd.md)
 - [QEMU Loongarch sysHyper移植](20230913_QEMU_Loongarch.md)
 - [在 ArceOS 上运行 Redis](20230730_Redis_On_ArceOS.md)
 - [RukOS的 9PFS 的使用与实现](20231113_how-9pfs-is-integrated-to-rukos.md)

@@ -1,12 +1,32 @@
 # 矽望社区技术报告 - 2023
 
+## C程序的启动过程
+
+**时间：** 2023年11月9日
+
+**作者：** 刘昊文 吴政 陈正宁 朱若海
+
+**摘要：** 介绍了从系统到用户函数的c程序的启动过程，以及在启动时的栈的情况
+
+[正文](20231109_cstart.md)
+
+## Linux initrd 机制
+
+**时间：** 2023年11月3日
+
+**作者：** 熊思民
+
+**摘要：** 阐述了Linux initrd的机制，并记录了在Ubuntu虚拟机上构建initramfs的过程
+
+[正文](20231103_Linux-initrd.md)
+
 ## QEMU Loongarch sysHyper移植
 
-**时间：**2023年9月13日
+**时间：** 2023年9月13日
 
-**作者：**韩喻泷
+**作者：** 韩喻泷
 
-**摘要：**研究QEMU对Loongarch的支持情况，以及记录了Loongarch相关指令集/CPU等手册的学习笔记、将sysHyper移植loongarch的相关笔记
+**摘要：** 研究QEMU对Loongarch的支持情况，以及记录了Loongarch相关指令集/CPU等手册的学习笔记、将sysHyper移植loongarch的相关笔记
 
 [正文](20230913_QEMU_Loongarch.md)
 
