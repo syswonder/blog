@@ -5,4 +5,5 @@
 - [Linux中的Memory Hotplug机制](2023/20230721_Linux_Memory_Hotplug.md)
 - [在 ArceOS 上运行 Redis](2023/20230730_Redis_On_ArceOS.md)
 - [在 rukos 上支持 musl libc](2023/20231115_MUSL_on_Rukos.md)
+- [在 rukos 上运行nginx](2023/20231128_nginx_run.md)
 - [参考资料](2023/20230915_references.md)
