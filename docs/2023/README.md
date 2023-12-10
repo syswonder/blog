@@ -1,5 +1,15 @@
 # 矽望社区技术报告 - 2023
 
+## RukOS中的9pfs
+
+**时间：** 2023年12月6日
+
+**作者：** 吴政
+
+**摘要：** 主要介绍了RukOS的9pfs模块的使用方式，以及它的具体实现原理。
+
+[正文](20231113_how-9pfs-is-integrated-to-rukos.md)
+
 ## C程序的启动过程
 
 **时间：** 2023年11月9日
@@ -170,7 +180,6 @@
 
 [正文](20230601_How-to-run-ArceOS-on-raspi4.md)
 
-
 ## 如何让jailhouse运行在模拟ARM AArch64的QEMU上
 
 **时间：** 2023年4月21日
@@ -180,7 +189,6 @@
 **摘要：** 讲述如何从零编译QEMU、Linux内核、构建ubuntu安装镜像、编译安装jailhouse的全过程。
 
 [正文](20230421_ARM64-QEMU-jailhouse.md)
-
 
 ## ARM AArch64的中断虚拟化
 
@@ -192,7 +200,6 @@
 
 [正文](20230421_gicv.md)
 
-
 ## 使用gdb调试jailhouse步骤
 
 **时间：** 2023年4月14日
@@ -203,8 +210,7 @@
 
 [正文](20230414_gdb_debug_jailhouse.md)
 
-
-## ARM SMMU 
+## ARM SMMU
 
 **时间：** 2023年4月14日
 
