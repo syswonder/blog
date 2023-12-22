@@ -17,7 +17,7 @@ enkerewpo@hotmail.com
 
 https://www.linusakesson.net/programming/tty/index.php
 
-<img src="20231220_linux_console_tty.assets/case1.png" alt="Diagram" style="zoom:150%;" />
+![diagram](20231220_linux_console_tty.assets/case1.png)
 
 上面的图给出了tty在软件层方面的一种设计思路，实际上通过tty能够实现line editing, session management等丰富的功能。
 
@@ -147,7 +147,7 @@ struct console - 核心的console结构
 
 The console driver calls this routine during kernel initialization to register the console printing procedure with printk() and to print any messages that were printed by the kernel before the console driver was initialized. This can happen pretty early during the boot process (because of early_printk) - sometimes before setup_arch() completes - be careful of what kernel features are used - they may not be initialised yet. There are two types of consoles - bootconsoles (early_printk) and "real" consoles (everything which is not a bootconsole) which are handled differently. Any number of bootconsoles can be registered at any time. As soon as a "real" console is registered, all bootconsoles will be unregistered automatically. Once a "real" console is registered, any attempt to register a bootconsoles will be rejected.
 
-这个控制台驱动程序在内核初始化期间调用此例程，用于使用printk()注册控制台打印过程，并打印在控制台驱动程序初始化之前内核打印的任何消息。这可能发生在引导过程的相当早期阶段（因为有早期打印），有时甚至在setup_arch()完成之前，要小心使用哪些内核特性，它们可能尚未初始化。有两种类型的控制台 - 引导控制台（early_printk）和“真实”控制台（不是引导控制台的所有内容），它们被不同地处理。**可以随时注册任意数量的引导控制台（boot consoles）。一旦注册了“真实”控制台，所有引导控制台将自动取消注册。**一旦注册了“真实”控制台，任何尝试注册引导控制台的操作都将被拒绝。
+这个控制台驱动程序在内核初始化期间调用此例程，用于使用printk()注册控制台打印过程，并打印在控制台驱动程序初始化之前内核打印的任何消息。这可能发生在引导过程的相当早期阶段（因为有early_printk），有时甚至在setup_arch()完成之前，要小心使用了哪些内核特性，它们可能尚未初始化。有两种类型的控制台 - 引导控制台（early_printk）和“真实”控制台（不是引导控制台的所有内容），它们被不同地处理。**可以随时注册任意数量的引导控制台（boot consoles）。一旦注册了“真实”控制台，所有引导控制台将自动取消注册。**一旦注册了“真实”控制台，任何尝试注册引导控制台的操作都将被拒绝。
 
 ### include/linux/device.h
 
@@ -201,3 +201,96 @@ unflatten_device_tree()
 驱动代码调用register_console函数，实现console注册
 
 通过console_setup函数配置console
+
+之前在自制rootfs时，在dev目录下进行了mknode操作
+
+```bash
+mknod console c 5 1
+```
+
+其中c代表character device, 5是主设备号，1是第一个子设备，这样就创建了/dev/console设备
+
+# NXP板子研究笔记
+
+启动扳子，连接DEBUG到电脑，我这里默认连接到的串口tty为/dev/ttyACM0
+
+使用gtkterm打开NXP板子的串口终端
+
+![image-20231222123700580](20231220_linux_console_tty.assets/image-20231222123700580.png)
+
+![image-20231222123724024](20231220_linux_console_tty.assets/image-20231222123724024.png)
+
+默认启动的是自带的linux 5.4.70，通过查看启动拨码开关，默认是配置为eMMC启动。
+
+## NXP jailhouse
+
+https://github.com/nxp-imx/imx-jailhouse
+
+i.MX Jaihouse Hypervisor
+
+```bash
+cd imx-jailhouse
+cd ci
+wget http://www.kiszka.org/downloads/jailhouse-ci/kernel-build.tar.xz
+tar xJf kernel-build.tar.xz
+cd .. # enter root dir of imx-jailhouse
+```
+
+由于我们只需要aarch64的target，修改build-all-configs.sh
+
+```
+CONFIGS="amd-seattle"
+...
+make KDIR=ci/linux/build-$CONFIG ARCH=$ARCH \
+     CROSS_COMPILE=$CROSS_COMPILE clean 去掉clean
+->
+make KDIR=ci/linux/build-$CONFIG ARCH=$ARCH \
+	     CROSS_COMPILE=$CROSS_COMPILE
+```
+
+之后运行
+
+```
+./ci/build-all-configs.sh
+```
+
+可以发现编译得到了
+
+```bash
+imx-jailhouse/driver/jailhouse.ko # kernel module
+jailhouse.ko: ELF 64-bit LSB relocatable, ARM aarch64, version 1 (SYSV), BuildID[sha1]=459e049bd217f3160316f7d5c0ef3fdda618db38, not stripped
+
+imx-jailhouse/tools/jailhouse # 可执行文件
+jailhouse: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=196d6db5c30a4524323ca77e3584743161fa96e3, for GNU/Linux 3.7.0, with debug_info, not stripped
+
+imx-jailhouse/configs/arm64下生成的cell文件和dtb文件
+
+imx-jailhouse/tools/jailhouse-* # 工具脚本文件
+```
+
+写一个脚本把这些文件专门整理好：
+
+```bash
+rm -rf export
+mkdir export
+cp driver/jailhouse.ko export/jailhouse.ko
+cp tools/jailhouse export/jailhouse
+```
+
+试着把生成的文件在nxp板子上运行，出现glibc问题
+
+![image-20231222135007586](20231220_linux_console_tty.assets/image-20231222135007586.png)
+
+检查一下板子自带系统的glibc版本：
+
+![image-20231222135233111](20231220_linux_console_tty.assets/image-20231222135233111.png)
+
+果然版本太低了，试着编译一个glibc-2.34版本的放在板子上。
+
+![image-20231222141315649](20231220_linux_console_tty.assets/image-20231222141315649.png)
+
+然后configure的时候发现板子上缺少linux的headers
+
+https://github.com/OK8MQ-linux-sdk/OK8MQ-linux-sdk
+
+https://github.com/Comet959/-ok8mq-jailhouse-linux/releases/tag/toolchain

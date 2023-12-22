@@ -1,4 +1,4 @@
-# QEMU Loongarch sysHyper移植
+# 龙芯Loongarch架构研究笔记
 
 wheatfox 2023.9
 enkerewpo@hotmail.com
