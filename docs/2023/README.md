@@ -10,7 +10,7 @@
 
 [正文](20231220_linux_console_tty.md)
 
-## 在 rukos 上支持 musl libc
+## 在 rukos 上支持 nginx
 
 **时间：** 2023年11月28日
 
@@ -39,6 +39,36 @@
 **摘要：** 研究QEMU对Loongarch的支持情况，以及记录了Loongarch相关指令集/CPU等手册的学习笔记
 
 [正文](20230913_QEMU_Loongarch.md)
+
+## RukOS中的9pfs
+
+**时间：** 2023年12月6日
+
+**作者：** 吴政
+
+**摘要：** 主要介绍了RukOS的9pfs模块的使用方式，以及它的具体实现原理。
+
+[正文](20231113_how-9pfs-is-integrated-to-rukos.md)
+
+## C程序的启动过程
+
+**时间：** 2023年11月9日
+
+**作者：** 刘昊文 吴政 陈正宁 朱若海
+
+**摘要：** 介绍了从系统到用户函数的c程序的启动过程，以及在启动时的栈的情况
+
+[正文](20231109_cstart.md)
+
+## Linux initrd 机制
+
+**时间：** 2023年11月3日
+
+**作者：** 熊思民
+
+**摘要：** 阐述了Linux initrd的机制，并记录了在Ubuntu虚拟机上构建initramfs的过程
+
+[正文](20231103_Linux-initrd.md)
 
 ## ArceOS 运行 Redis
 
@@ -180,7 +210,6 @@
 
 [正文](20230601_How-to-run-ArceOS-on-raspi4.md)
 
-
 ## 如何让jailhouse运行在模拟ARM AArch64的QEMU上
 
 **时间：** 2023年4月21日
@@ -190,7 +219,6 @@
 **摘要：** 讲述如何从零编译QEMU、Linux内核、构建ubuntu安装镜像、编译安装jailhouse的全过程。
 
 [正文](20230421_ARM64-QEMU-jailhouse.md)
-
 
 ## ARM AArch64的中断虚拟化
 
@@ -202,7 +230,6 @@
 
 [正文](20230421_gicv.md)
 
-
 ## 使用gdb调试jailhouse步骤
 
 **时间：** 2023年4月14日
@@ -213,8 +240,7 @@
 
 [正文](20230414_gdb_debug_jailhouse.md)
 
-
-## ARM SMMU 
+## ARM SMMU
 
 **时间：** 2023年4月14日
 
