@@ -44,8 +44,6 @@ diskutil eject /dev/diskx
 4. 添加到SRC_URI
 5. 重新运行
 
----
-
 # 树莓派4B运行jailhouse
 
 https://github.com/siemens/jailhouse
@@ -126,3 +124,51 @@ https://github.com/siemens/jailhouse-images
 
 ![image-20231020132937063](20230606_Jailhouse-On-RPI4-With-Jailhouse_images.assets/image-20231020132937063.png)
 
+
+## 附【mac上的操作】
+
+git clone https://github.com/siemens/jailhouse-images.git
+
+ 修改如下文本：
+ - jailhouse-images/recipes-jailhouse/jailhouse/jailhouse.inc
+
+ - git://github.com/siemens/jailhouse;branch=next;protocol=https
+
+KAS_ALLOW_ROOT=yes ./kas-container menu
+
+选择合适的选项并保存开始编译
+
+image保存在
+- jailhouse-images/build/tmp/deploy/images/rpi4/demo-image-jailhouse-demo-rpi4.wic.img
+
+下载镜像，并写入sd卡
+`dd if=xxx.img of=/dev/rdisk4 bs=1m`
+
+启动树莓派
+---------
+ jailhouse-images配置分析
+
+-  详解dts文件在jailhouse中的使用🌟
+
+```bash
+## 原则：在Arm平台上，每一个Jail Linux(包括root/guest)都需要有一个相应的设备树支持其启动。
+# root cell使用的设备树，与硬件上直接启动Linux使用的设备树别无二致，存在于Linux源码中，在编译Jailhouse时使用KDIR指定
+# guest cell使用的设备树，在config/arm64/dts中可以看见，您可以根据不同的需要定制设备树文件（例如：设备直通、CPU指定），该设备树文件应该是Linux源码中设备树的“子”树。
+# 关于cell配置：对于guest中的设备配置，根据guest cell dts的配置，可以轻松的配置其地址位置。
+```
+
+## 在mac上的读写sd卡操作
+
+```bash
+diskutil list
+diskutil umountDisk /dev/diskx
+sudo dd if=/linux.dmg of=/dev/rdiskx bs=1m
+diskutil eject /dev/diskx
+```
+
+## 修改Jailhouse源码重新编译
+
+1. 克隆仓库
+2. 修改文件
+3. 生成patch: git diff > ../0001-xxx-xx.patch
+4. 添加到SRC_URI
