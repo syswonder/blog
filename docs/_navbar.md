@@ -1,3 +1,7 @@
 - [Home](/)
 - Archives
   - [2023](/2023/README.md)
+- 文档
+  - [RuxOS Book](https://ruxos.syswonder.org)
+  - [Hvisor Book](https://hvisor.syswonder.org)
+  - [技术报告](https://report.syswonder.org)

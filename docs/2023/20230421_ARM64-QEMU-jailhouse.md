@@ -169,10 +169,10 @@ make
 # for aarch64
 git clone https://github.com/siemens/jailhouse.git
 cd jailhouse 
-# sysHyper参考的是v0.10版本，因此如果希望对照sysHyper，请切换到v0.10分支
+# hvisor参考的是v0.10版本，因此如果希望对照hvisor，请切换到v0.10分支
 git checkout v0.10
-# 如果希望用编译出的jailhouse运行sysHyper，则需要执行下一条指令打patch；否则，请不要作此操作
-patch -f -p1 < sysHyper-testimg/jailhouse.patch #见后面的说明，其中有仓库地址
+# 如果希望用编译出的jailhouse运行hvisor，则需要执行下一条指令打patch；否则，请不要作此操作
+patch -f -p1 < hvisor/hvisor.patch #见后面的说明，其中有仓库地址
 # KDIR为之前编译的linux文件夹
 make ARCH=arm64 CROSS_COMPILE=/home/tools/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- KDIR=/home/korwylee/lgw/hypervisor/linux
 
@@ -181,7 +181,7 @@ sudo make ARCH=arm64 CROSS_COMPILE=/home/tools/gcc-arm-10.3-2021.07-x86_64-aarch
 
 说明：编译jailhouse一定要指定KDIR，说明sysroot目标，才可以编译成功，并且需要提前编译一个linux作为sysroot，否则默认从本机linux源码目录中去找相应的库代码。
 
-> sysHyper-testimg位于https://github.com/syswonder/sysHyper-testimg
+> hvisor位于https://github.com/syswonder/hvisor
 
 ## 六、启动QEMU
 
@@ -344,13 +344,7 @@ cd tools/
 sudo ./jailhouse cell linux ../configs/arm64/qemu-arm64-linux-demo.cell ../linux-Image -c "console=ttyAMA0,115200 root=/dev/ram0 rdinit=/linuxrc" -d ../configs/arm64/dts/inmate-qemu-arm64.dtb -i ../initramfs.cpio.gz
 ```
 
-其中linux-Image是之前编译的linux镜像。注意还需要修改tools/jailhouse-cell-linux中class ARM64中这个函数为：
-
-```python
-@staticmethod
-def get_uncompressed_kernel(kernel):
-    return (kernel.read(), False)
-```
+其中linux-Image是之前编译的linux镜像。
 
 ### 8.2 磁盘文件系统
 

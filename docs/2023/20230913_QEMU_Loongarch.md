@@ -1,4 +1,4 @@
-# QEMU Loongarch sysHyper移植
+# 龙芯Loongarch架构研究笔记
 
 wheatfox 2023.9
 enkerewpo@hotmail.com
@@ -7,7 +7,7 @@ enkerewpo@hotmail.com
 
 本机环境：
 
-![Untitled](QEMU%20Loongarch/Untitled.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled.png)
 
 参考仓库：
 
@@ -24,7 +24,7 @@ sudo gdebi libnettle7_3.5.1+really3.5.1-2ubuntu0.2_amd64.deb
 
 成功启动Mini Linux：
 
-![Untitled](QEMU%20Loongarch/Untitled%201.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%201.png)
 
 ```bash
 Run a loongarch virtual machine.
@@ -45,7 +45,7 @@ q <qemu> use this file as qemu
 
 使用图形启动：
 
-![Untitled](QEMU%20Loongarch/Untitled%202.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%202.png)
 
 ## 测试qemu-loongarch-runenv/devel分支
 
@@ -58,21 +58,21 @@ docker run -it qemu-la /bin/bash
 ./run.sh
 ```
 
-![Untitled](QEMU%20Loongarch/Untitled%203_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%203_1.png)
 
 其会依次进行cross compile工具包下载、qemu编译、tianocore(UEFI)编译、linux-v6.1.4内核编译（编译时均指定target arch为`loongarch64-unknown-linux-gnu`）。
 
 在运行`run.sh`发生`-append未找到错误`，在上一行末尾还需要再手动加一个`\`，如图：
 
-![Untitled](QEMU%20Loongarch/Untitled%204_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%204_1.png)
 
 之后就可以启动loongarch64-linux-v6.1.4：
 
-![Untitled](QEMU%20Loongarch/Untitled%205_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%205_1.png)
 
 打印一下CPU信息：
 
-![Untitled](QEMU%20Loongarch/Untitled%206_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%206_1.png)
 
 ## QEMU支持情况
 
@@ -165,7 +165,7 @@ io port at `0x1fe001e0`
 
 编译安装支持Loongarch64的LLVM16+Clang16（Ubuntu22只能apt安装到14）
 
-![Untitled](QEMU%20Loongarch/Untitled%203.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%203.png)
 
 [https://github.com/sunhaiyong1978/CLFS-for-LoongArch](https://github.com/sunhaiyong1978/CLFS-for-LoongArch)
 
@@ -173,13 +173,13 @@ io port at `0x1fe001e0`
 
 之后我下载了官方的cross compile工具包，编译简单的loongarch64程序成功，这里使用的qemu是我自己编译的版本（Github最新release版src），编译时只打开了`qemu-loongarch64`的target。
 
-![Untitled](QEMU%20Loongarch/Untitled%204.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%204.png)
 
-![Untitled](QEMU%20Loongarch/Untitled%205.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%205.png)
 
 查看生成的loongarch汇编：
 
-![Untitled](QEMU%20Loongarch/Untitled%206.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%206.png)
 
 ## 要点整理
 
@@ -272,7 +272,7 @@ io port at `0x1fe001e0`
     1. 包含两种TLB：STLB和MTLB，前者页大小一致（`CSR.STLBPS`的PS域配置），后者每一个页表项对应的页可以不一样大。
     2. STLB多路组相联、MTLB全相联。
        
-        ![Untitled](QEMU%20Loongarch/Untitled%207.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%207.png)
         
     3. 页表项奇偶共用，即不保存奇偶位置，由虚页号最低位判断。
     4. TLB相关例外：
@@ -294,9 +294,9 @@ io port at `0x1fe001e0`
         取指且V=1，特权合规，但NX=1
     5. TLB的初始化 - `invtlb r0.r0`
        
-        ![Untitled](QEMU%20Loongarch/Untitled%208.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%208.png)
         
-        ![Untitled](QEMU%20Loongarch/Untitled%209.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%209.png)
         
     
 9. **例外与中断**
@@ -310,16 +310,16 @@ io port at `0x1fe001e0`
         1. TLB重填例外入口来自`CSR.TLBRENTRY`
         2. 机器错误例外入口来自`CSR.MERRENTRY`
         3. 其他例外称为普通例外，入口地址为“入口页号|页内偏移“的计算方式（按位或），入口页号来自`CSR.EENTRY`
-        入口偏移=![CodeCogsEqn](QEMU%20Loongarch/CodeCogsEqn.gif)
+        入口偏移=![CodeCogsEqn](20230913_QEMU_Loongarch.assets/CodeCogsEqn.gif)
         4. 例外优先级：中断大于例外、取指阶段产生的优先级最高、译码次之、执行次之。
     
 10. **控制状态寄存器一览表**
 
-![Untitled](QEMU%20Loongarch/Untitled%2010.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2010.png)
 
-![Untitled](QEMU%20Loongarch/Untitled%2011.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2011.png)
 
-![Untitled](QEMU%20Loongarch/Untitled%2012.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2012.png)
 
 1. 虚拟化LVZ拓展部分暂未公开文档
 
@@ -356,7 +356,7 @@ io port at `0x1fe001e0`
 
 5. **IO中断**
 
-   ![Untitled](QEMU%20Loongarch/Untitled%2017_1.png)
+   ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2017_1.png)
 
    1. **传统IO中断**
    2. **拓展IO中断**
@@ -394,7 +394,7 @@ rustc -Z unstable-options --target=loongarch64-unknown-none-softfloat --print ta
 
 ## Jailhouse Hypervisor
 
-![Untitled](QEMU%20Loongarch/Untitled%2018_1.png)
+![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2018_1.png)
 
 ## sysHyper
 
@@ -559,13 +559,13 @@ Chapter D1 The AArch64 System Level Programmers’ Model
     3. `EL2` Hypervisor
     4. `EL3` Secure Monitor
 2. **Security State**
-    
+   
     1. `Secure State` - 此时PE可以访问安全和非安全的物理地址空间
     2. `Non-secure State` - PE只能访问非安全物理地址空间，不能访问Secure System Control相关资源
 3. 整体结构
     1. 如下图
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2019.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2019.png)
     
 4. **虚拟化**
     1. 硬件实现需要支持EL2
@@ -588,16 +588,16 @@ Chapter D1 The AArch64 System Level Programmers’ Model
     4. 启动虚拟中断：`HCR_EL2.{FMO,IMO,AMO}`的routing control bit → 1
     5. 虚拟中断：Non-secure EL0→EL1 / Non-secure EL1→EL1
 6. **Saved Program Status Registers(SPSRs)**
-    
+   
     1. 用于保存PE状态（当发生异常）
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2020.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2020.png)
         
     2. 例如target到EL2的exception，则PE state保存到`SPSR_EL2`，EL1和EL3同理
 7. **Exception Link Registers(ELRs)** 用于保存异常返回地址
 8. **ESR(Exception Syndrome Register)** 负责指示异常的信息
    
-    ![Untitled](QEMU%20Loongarch/Untitled%2021.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2021.png)
     
 9. System registers
 10. **System Calls**
@@ -612,7 +612,7 @@ Chapter D1 The AArch64 System Level Programmers’ Model
 
 Arm Power State Coordination Interface Platform Design Document
 
-![IMG_2712.png](QEMU%20Loongarch/IMG_2712.png)
+![IMG_2712.png](20230913_QEMU_Loongarch.assets/IMG_2712.png)
 
 [ARM系列 -- PSCI - 极术社区 - 连接开发者与智能计算生态](https://aijishu.com/a/1060000000297005)
 
@@ -646,14 +646,27 @@ Arm® System Control and Management Interface Platform Design Document
 
 [ARM系列 -- SCMI - 极术社区 - 连接开发者与智能计算生态](https://aijishu.com/a/1060000000300745?eqid=fd4b5abf000a80f50000000664816b13)
 
-![IMG_2713.png](QEMU%20Loongarch/IMG_2713.png)
+![IMG_2713.png](20230913_QEMU_Loongarch.assets/IMG_2713.png)
 
 [ARM SCP入门-AP与SCP通信-电子发烧友网](https://www.elecfans.com/d/2184468.html)
 
 1. 包含协议层和传输层
     1. Protocol
     2. Transport
-2. OS通常为agent，SCP为platform，**SCP(System Control Processor)**是一个协处理器，专门负责电源等系统管理。
+2. OS通常为agent，SCP为platform，**SCP(System Control Processor)** 是一个协处理器，专门负责电源等系统管理。
+3. 包含协议：
+    1. Base Protocol - 指示协议的基本信息，如实现了哪些协议，当前有哪些agents等
+    2. Power Domain Management Protocol - 管理电源域的电源状态（Power State）
+    3. System Power Management Protocol - 管理系统关闭、重置、暂停等。
+    4. Performance Domain Management Protocol - 管理性能域（Performance Domain）
+    5. Clock Management Protocol - 管理时钟相关
+    6. Sensor Management Protocol - 管理传感器
+    7. Voltage Domain Management Protocol - 管理电压域的电压值（Voltage Level）
+    8. Power Capping and Monitoring Protocol - 管理功耗限制
+        ![image-20231013094801275](20230913_QEMU_Loongarch.assets/image-20231013094801275.png)
+    9. Pin Control Protocol - 引脚管理
+        ![image-20231013094902982](20230913_QEMU_Loongarch.assets/image-20231013094902982.png)
+
 
 ## GICv3
 
@@ -663,36 +676,36 @@ GICv3 and GICv4 Software Overview
 
 1. **基本概念**
    
-    ![Untitled](QEMU%20Loongarch/Untitled%2022.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2022.png)
     
     1. **SPI** (Shared Peripheral Interrupt) - 一种全局外围中断，可以路由到指定PE，或到一组PEs
     2. **PPI** (Private Peripheral Interrupt) - 某个PE自身的外围中断，如Generic Timer
     3. **SGI** (Software Generated Interrupt) - 软件写SGI寄存器触发
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2023.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2023.png)
         
     4. **LPI** (Locality-specific Peripheral Interrupt) - *message-based*中断
        
-        ![Untitled](QEMU%20Loongarch/Untitled%2024.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2024.png)
         
-        ![Untitled](QEMU%20Loongarch/Untitled%2025.png)
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2025.png)
         
     5. 一个中断路由示例
     6. **Distributor** (`GICD_*`)
-        
+       
         1. SPI的中断优先级配置
         2. SPI开关配置
         3. 生成message-based SPIs
         4. 控制active和pending的SPIs
         5. …
     7. **Redistributors** (`GICR_*`)
-        
+       
         1. SGI和PPI的开关配置
         2. SGI和PPI优先级配置
         3. SGI和PPI分组
         4. …
     8. **CPU interfaces** (`ICC_*_ELn`)
-        
+       
         1. 打开中断处理的相关配置
         2. 接收中断
         3. 设置PE中断抢占策略
@@ -700,13 +713,691 @@ GICv3 and GICv4 Software Overview
         5. …
 2. **GICv3虚拟化相关**
    
-    ![Untitled](QEMU%20Loongarch/Untitled%2026.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2026.png)
     
-    ![Untitled](QEMU%20Loongarch/Untitled%2027.png)
+    ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2027.png)
     
     1. CPU Interface
         1. Physical CPU interface (`ICC_*_ELn`)
         2. Virtualization Control (`ICH_*_EL2`)
         3. Virtual CPU interface (`ICV_*_ELn`)
+	    ![image-20231013093823893](20230913_QEMU_Loongarch.assets/image-20231013093823893-1697161889927-30.png)
+    2. 通过配置 `HCR_EL2.IMO` 项，可以控制NS.EL1级别运行的程序访问` ICC_IAR1_EL1`时取得的是物理值还是虚拟值。
+        ![Untitled](20230913_QEMU_Loongarch.assets/Untitled%2028.png)
+
+# rust-shyper 学习记录
+
+由于rust-shyper相关文档过少，目前首先进行qemu平台的运行尝试
+
+## QEMU
+
+### 编译rust-shyper
+
+首先编译rust-shyper
+
+```bash
+make qemu
+```
+
+
+
+![image-20231025105853383](20230913_QEMU_Loongarch.assets/image-20231025105853383.png)
+
+通过阅读MAKEFILE，可以得知其需要一个rootfs img，即`vm0.img`，需要注意的是，rust-shyper中存在MVM（Managerment VM）的概念，这个MVM系统可以通过加载shyper内核模块，和shyper进行交互，方便地进行控制，其独占0号处理器，且虚拟机号为0
+
+https://blog.csdn.net/zhuwade/article/details/127173739
+
+https://wiki.beyondlogic.org/index.php?title=Cross_Compiling_BusyBox_for_ARM
+
+### 制作rootfs
+
+这里我采用busybox编译一个rootfs，首先去官网下载最新源码，我在menuconfig中打开了 `Build Options / Build static library (no shared libs)` 选项，之后进行编译和rootfs配置
+
+```bash
+make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- menuconfig
+make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- CONFIG_PREFIX=../build install -j8
+```
+
+![image-20231025113652619](20230913_QEMU_Loongarch.assets/image-20231025113652619.png)
+
+```bash
+cd ../build
+mkdir -p dev etc home lib mnt proc root sys tmp var
+vim etc/inittab
+::sysinit:/etc/init.d/rcS
+::respawn:-/bin/sh
+::askfirst:-/bin/sh
+::cttlaltdel:/bin/umount -a -r
+
+chmod 755 etc/inittab
+mkdir -p etc/init.d/
+vim etc/init.d/rcS
+/bin/mount -a
+
+mkdir -p /dev/pts
+mount -t devpts devpts /dev/pts
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+/sbin/mdev -s
+chmod 755 etc/init.d/rcS
+
+vim etc/fstab
+#device mount-point type option dump fsck
+proc  /proc proc  defaults 0 0
+temps /tmp  rpoc  defaults 0 0
+none  /tmp  ramfs defaults 0 0
+sysfs /sys  sysfs defaults 0 0
+mdev  /dev  ramfs defaults 0 0
+
+cd dev
+sudo mknod console c 5 1
+sudo mknod null c 1 3
+```
+
+之后创建一个ext4 img，并把上面配置好的busybox system root放进去，作为`vm0.img`
+
+```bash
+dd if=/dev/zero of=vm0.img bs=4k count=2048
+mkfs.ext4 vm0.img
+tune2fs -c0 -i0 vm0.img
+mkdir vm0
+sudo mount vm0.img vm0/
+sudo cp -a ./build/* ./vm0/
+sudo umount vm0
+```
+
+### rust-shyper, 启动
+
+复制img到rust-shyper根目录，运行
+
+```bash
+make run # qemu simulation
+```
+
+可以看到成功启动了rust-shyper和终端
+
+![image-20231025114440818](20230913_QEMU_Loongarch.assets/image-20231025114440818.png)
+
+![image-20231025114506658](20230913_QEMU_Loongarch.assets/image-20231025114506658.png)
+
+![image-20231025114913237](20230913_QEMU_Loongarch.assets/image-20231025114913237.png)
+
+但是当我尝试运行tools下的shyper工具，以及安装kernel mod时却无法安装，rust-shyper仓库中的预编译程序无法正常使用
+
+![image-20231026230152327](20230913_QEMU_Loongarch.assets/image-20231026230152327.png)
+
+## 树莓派4B
+
+编译面向树莓派4B的rust-shyper
+
+```bash
+make pi4
+```
+
+### U-Boot
+
+首先编译uboot
+
+```bash
+git clone https://github.com/u-boot/u-boot
+cd u-boot
+export CROSS_COMPILE=aarch64-linux-gnu-
+make distclean
+make rpi_4_defconfig
+make -j8
+```
+
+将编译生成的`uboot.bin`放入树莓派启动SD卡的boot分区
+
+```
+# Two partitions for SD card
+/boot  FAT32
+/      EXT4
+```
+
+插入SD卡（USB读卡器）到电脑
+
+```bash
+sudo dmesg | tail
+```
+
+![image-20231026132415935](20230913_QEMU_Loongarch.assets/image-20231026132415935.png)
+
+ 可以看到SD卡挂载到了`sdb`，接下来进行分区删除和新建，fdisk指令可参考https://hechao.li/2021/12/20/Boot-Raspberry-Pi-4-Using-uboot-and-Initramfs/
+
+```bash
+sudo fdisk /dev/sdb
+```
+
+我给`/boot`分区分了256MB，剩下的空间作为`/`
+
+![image-20231026133352208](20230913_QEMU_Loongarch.assets/image-20231026133352208.png)
+
+接下来对分区进行格式化
+
+```bash
+sudo mkfs.vfat -F 32 -n boot /dev/sdb1
+sudo mkfs.ext4 -L root /dev/sdb2
+```
+
+![image-20231026133535081](20230913_QEMU_Loongarch.assets/image-20231026133535081.png)
+
+挂载分区
+
+```bash
+sudo mkdir /mnt/boot /mnt/root
+sudo mount /dev/sdb1 /mnt/boot
+sudo mount /dev/sdb2 /mnt/root
+```
+
+```bash
+cd /mnt/boot
+sudo wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bcm2711-rpi-4-b.dtb -o /mnt/bcm2711-rpi-4-b.dtb
+sudo wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf -o /mnt/start4.elf
+sudo wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bootcode.bin -o /mnt/bootcode.bin
+sudo touch config.txt # modified later
+# copy u-boot.bin into /boot as well
+```
+
+https://www.raspberrypi.com/documentation/computers/config_txt.html
+
+树莓派使用`/boot/config.txt`文件来代替传统的BIOS启动配置，修改`/boot/config.txt`如下
+
+```
+arm_64bit=1
+
+[all]
+kernel=u-boot.bin
+enable_uart=1
+core_freq=500
+```
+
+https://zhuanlan.zhihu.com/p/92689086
+
+把之前制作的busybox rootfs同理，复制到`/mnt/root`中
+
+```bash
+sudo cp -a /home/wheatfox/Documents/Code/rootfs/build/* /mnt/root # replace the first path to your busybox build dir
+```
+
+全都做好了之后，卸载SD卡，上板启动
+
+```bash
+sudo umount /mnt/boot
+sudo umount /mnt/root
+```
+
+成功启动uboot
+
+![image-20231026140739080](20230913_QEMU_Loongarch.assets/image-20231026140739080.png)
+
+> **动态启动内核**
+>
+> 启动树莓派进入uboot命令行，这时我们还没有加载任何“实际的OS内核”，又因为每次修改内核后重新拔出SD卡写入再插回去太繁琐，而uboot可以通过网络动态加载位于开发机的最新kernel，提高效率。
+
+https://stdrc.cc/post/2021/02/23/u-boot-qemu-virt/
+https://stackoverflow.com/questions/39767332/embedded-linux-arm-booting-address/39779338#39779338
+
+```bash
+sudo apt install u-boot-tools
+# mkimage -A arm64 -T kernel -C none -a 0x40000000 -e 0x40000000 -d rust_shyper Image
+
+cat << EOF > boot_cmd.txt
+fatload mmc 0:1 \${kernel_addr_r} Image # load rust-shyper image
+setenv bootargs "console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rw rootwait init=/bin/sh"
+booti \${kernel_addr_r} - \${fdt_addr}
+EOF
+
+mkimage -A arm64 -O -T script -C none -d boot_cmd.txt boot.scr
+sudo cp boot.scr /mnt/boot/
+```
+
+暂未成功通过uboot启动rust-shyper，研究中
+
+### baremetal
+
+接下来尝试不使用uboot，直接在树莓派上启动rust-shyper
+
+#### 树莓派4B启动流程
+
+1. **First Stage Bootloader** (ROM)
+   只读，用于挂载SD卡的FAT32分区
+2. **Second Stage Bootloader** (`bootcode.bin`)
+   该阶段会从SD上检索GPU固件，并将固件写入GPU并启动
+3. **GPU Firmware** (`start.elf`)
+   GPU启动后，搜索附加配置文件`config.txt` `fixup.dat`，并配置CPU，之后将用户代码加载至内存
+4. **User Code** (`kernel8.img` or custom program)
+   即`config.txt`中kernel一项所配置的程序，若不写则使用板子型号对应的默认值
+
+> https://forums.raspberrypi.com/viewtopic.php?t=328000
+> There are currently four default kernel load and start addresses:
+>
+> - `0x8000` for 32-bit kernels ("arm_64bit=1" in config.txt not set)
+> - `0x80000` for older 64-bit kernels ("arm_64bit=1" set, flat image)
+> - `0x200000` for newer 64-bit kernels ("arm_64bit=1" set, gzip'ed Linux ARM64 image)
+> - `0x0` if "kernel_old=1" set
+
+### QEMU-raspi4b
+
+除此之外，我还试着使用民间的支持树莓派4b的QEMU版本启动rust-shyper-pi4，也没有任何串口输出，根据以上信息，暂时不清楚rust-shyper对树莓派4B是否已经实现了完整支持，关于这一点有待继续研究。
+
+# Loongarch Linux KVM
+
+## 尝试编译运行
+
+虽然目前龙芯LVZ拓展暂时没有公开手册，但龙芯于10月提交了linux kvm部分的源码，其中涉及到体积结构虚拟化的部分，通过阅读源码，可以了解一部分LVZ的设计
+
+https://lwn.net/Articles/938724/ - Add KVM LoongArch support
+
+首先下载loongarch-linux-kvm源码 https://github.com/loongson/linux-loongarch-kvm 注意切换到kvm-loongarch分支
+
+![image-20231030215112977](20230913_QEMU_Loongarch.assets/image-20231030215112977.png)
+
+然后确保系统内能够找到loongarch-gcc交叉编译工具集 `loongarch64-unknown-linux-gnu-*`
+
+（下载链接：https://github.com/loongson/build-tools/releases/download/2022.09.06/loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz）
+
+```bash
+wget https://github.com/loongson/build-tools/releases/download/2022.09.06/loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz
+sudo tar -vxf loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz  -C /opt
+export PATH=/opt/cross-tools/bin:$PATH
+export LD_LIBRARY_PATH=/opt/cross-tools/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/cross-tools/loongarch64-unknown-linux-gnu/lib/:$LD_LIBRARY_PATH
+```
+
+编译linux
+
+```bash
+git checkout kvm-loongarch
+make ARCH=loongarch CROSS_COMPILE=loongarch64-unknown-linux-gnu- loongson3_defconfig
+make ARCH=loongarch CROSS_COMPILE=loongarch64-unknown-linux-gnu-
+```
+
+![image-20231030215751641](20230913_QEMU_Loongarch.assets/image-20231030215751641.png)
+
+遗憾的是，目前最新的代码似乎还不能正常编译（head=commit-8a9d24f2b0b270c50906564f8ba3dc9d413dc519,https://github.com/loongson/linux-loongarch-kvm/commit/8a9d24f2b0b270c50906564f8ba3dc9d413dc519）
+
+![image-20231030221224379](20230913_QEMU_Loongarch.assets/image-20231030221224379.png)
+
+如果需要在QEMU中运行支持linux kvm的龙芯架构版本，需要编译使用龙芯自己的QEMU fork（https://github.com/loongson/qemu），以支持虚拟化
+
+```bash
+git checkout kvm-loongarch
+./configure --target-list="loongarch64-softmmu"  --enable-kvm
+make
+```
+
+对应版本的qemu也出现了编译错误：
+
+![image-20231030221418704](20230913_QEMU_Loongarch.assets/image-20231030221418704.png)
+
+## 阅读loongarch kvm源码
+
+换一个思路，直接阅读kvm部分的源码，从中找到LVZ相关的设计
+
+```
+./arch/loongarch/kvm/*
+./arch/loongarch/include/asm/*
+```
+
+### kvm/main.c
+
+```C
+unsigned long vpid_mask;
+struct kvm_world_switch *kvm_loongarch_ops;
+static struct kvm_context __percpu *vmcs;
+```
+
+`kvm_world_switch`
+`kvm_context`
+
+```c
+struct kvm_context {
+	unsigned long vpid_cache;
+	struct kvm_vcpu *last_vcpu;
+};
+
+struct kvm_world_switch {
+	int (*exc_entry)(void);
+	int (*enter_guest)(struct kvm_run *run, struct kvm_vcpu *vcpu);
+	unsigned long page_order;
+};
+```
+
+可以看到`kvm_context`中有一个`kvm_vcpu`
+
+![image-20231030223255869](20230913_QEMU_Loongarch.assets/image-20231030223255869.png)
+
+```c
+/*
+ * The default value of gcsr_flag[CSR] is 0, and we use this
+ * function to set the flag to 1 (SW_GCSR) or 2 (HW_GCSR) if the
+ * gcsr is software or hardware. It will be used by get/set_gcsr,
+ * if gcsr_flag is HW we should use gcsrrd/gcsrwr to access it,
+ * else use software csr to emulate it.
+ */
+static int gcsr_flag[CSR_MAX_NUMS];
+```
+
+`gcsr_flag[CSR]`数组涉及到两种赋值——软件模拟/硬件
+
+```c
+static inline void set_gcsr_sw_flag(int csr) // 设置对应的CSR为软件模拟模式
+static inline void set_gcsr_hw_flag(int csr) // 设置对应的CSR为硬件模式
+```
+
+`static void kvm_init_gcsr_flag(void)`函数进行了GCSR的初始化
+
+关键部分，启动硬件虚拟化的函数：
+
+```c
+int kvm_arch_hardware_enable(void)
+{
+	unsigned long env, gcfg = 0;
+
+	env = read_csr_gcfg();
+
+	/* First init gcfg, gstat, gintc, gtlbc. All guest use the same config */
+	write_csr_gcfg(0);
+	write_csr_gstat(0);
+	write_csr_gintc(0);
+	clear_csr_gtlbc(CSR_GTLBC_USETGID | CSR_GTLBC_TOTI);
+
+	/*
+	 * Enable virtualization features granting guest direct control of
+	 * certain features:
+	 * GCI=2:       Trap on init or unimplement cache instruction.
+	 * TORU=0:      Trap on Root Unimplement.
+	 * CACTRL=1:    Root control cache.
+	 * TOP=0:       Trap on Previlege.
+	 * TOE=0:       Trap on Exception.
+	 * TIT=0:       Trap on Timer.
+	 */
+	if (env & CSR_GCFG_GCIP_ALL)
+		gcfg |= CSR_GCFG_GCI_SECURE;
+	if (env & CSR_GCFG_MATC_ROOT)
+		gcfg |= CSR_GCFG_MATC_ROOT;
+
+	gcfg |= CSR_GCFG_TIT;
+	write_csr_gcfg(gcfg);
+
+	kvm_flush_tlb_all();
+
+	/* Enable using TGID  */
+	set_csr_gtlbc(CSR_GTLBC_USETGID);
+	kvm_debug("GCFG:%lx GSTAT:%lx GINTC:%lx GTLBC:%lx",
+		  read_csr_gcfg(), read_csr_gstat(), read_csr_gintc(), read_csr_gtlbc());
+
+	return 0;
+}
+```
+
+从 https://lwn.net/Articles/938724/ 中也可以得到虚拟化一些信息，如涉及到kvm mmu的虚拟化、standard kvm_interrupt
+
+```c
+static int kvm_loongarch_env_init(void)
     
-    ![Untitled](QEMU%20Loongarch/Untitled%2028.png)
+/*
+ * PGD register is shared between root kernel and kvm hypervisor.
+ * So world switch entry should be in DMW area rather than TLB area
+ * to avoid page fault reenter.
+ *
+ * In future if hardware pagetable walking is supported, we won't
+ * need to copy world switch code to DMW area.
+ */
+order = get_order(kvm_exception_size + kvm_enter_guest_size);
+addr = (void *)__get_free_pages(GFP_KERNEL, order);
+if (!addr) {
+    free_percpu(vmcs);
+    vmcs = NULL;
+    kfree(kvm_loongarch_ops);
+    kvm_loongarch_ops = NULL;
+    return -ENOMEM;
+}
+```
+
+PTE - Page Table Entry
+PGD - Page Global Directory
+
+> Linux系统中每个进程对应用户空间的pgd是不一样的，但是linux内核的pgd是一样的。当创建一个新的进程时，都要为新进程创建一个新的页面目录PGD，并从内核的页面目录`swapper_pg_dir`中复制内核区间页面目录项至新建进程页面目录PGD的相应位置，具体过程如下：`do_fork() --> copy_mm() --> mm_init() --> pgd_alloc() --> set_pgd_fast() --> get_pgd_slow() --> memcpy(&PGD + USER_PTRS_PER_PGD, swapper_pg_dir +USER_PTRS_PER_PGD, (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t))`
+>
+> 这样一来，每个进程的页面目录就分成了两部分，第一部分为“用户空间”，用来映射其整个进程空间（`0x0000 0000`－`0xBFFF FFFF`）即3G字节的虚拟地址；第二部分为“系统空间”，用来映射（`0xC000 0000`－`0xFFFF FFFF`）1G字节的虚拟地址。可以看出Linux系统中每个进程的页面目录的第二部分是相同的，所以从进程的角度来看，每个进程有4G字节的虚拟空间，较低的3G字节是自己的用户空间，最高的1G字节则为与所有进程以及内核共享的系统空间。每个进程有它自己的PGD( Page Global Directory)，它是一个物理页，并包含一个`pgd_t`数组。 关键字：
+>
+> - PTE:  页表项（page table entry）
+> - PGD (Page Global Directory)
+> - PUD (Page Upper Directory)
+> - PMD (Page Middle Directory)
+> - PT (Page Table)
+>
+> PGD中包含若干PUD的地址，PUD中包含若干PMD的地址，PMD中又包含若干PT的地址。每一个页表项指向一个页框，页框就是真正的物理内存页。
+
+函数调用顺序
+
+```c
+// module_init(kvm_loongarch_init);
+kvm_loongarch_init
+-> kvm_loongarch_env_init
+    -> kvm_init_gcsr_flag
+-> kvm_init // 不在loongarch/kvm目录下
+```
+
+### kvm/switch.S
+
+这一部分主要包含了重要的macro`kvm_switch_to_guest`，并且汇编的最后绑定了上文中的`kvm_enter_guest`的汇编代码入口如下
+
+```assembly
+SYM_FUNC_START(kvm_enter_guest)
+	/* Allocate space in stack bottom */
+	addi.d	a2, sp, -PT_SIZE
+	/* Save host GPRs */
+	kvm_save_host_gpr a2
+
+	/* Save host CRMD, PRMD to stack */
+	csrrd	a3, LOONGARCH_CSR_CRMD
+	st.d	a3, a2, PT_CRMD
+	csrrd	a3, LOONGARCH_CSR_PRMD
+	st.d	a3, a2, PT_PRMD
+
+	addi.d	a2, a1, KVM_VCPU_ARCH
+	st.d	sp, a2, KVM_ARCH_HSP
+	st.d	tp, a2, KVM_ARCH_HTP
+	/* Save per cpu register */
+	st.d	u0, a2, KVM_ARCH_HPERCPU
+
+	/* Save kvm_vcpu to kscratch */
+	csrwr	a1, KVM_VCPU_KS
+	kvm_switch_to_guest
+SYM_INNER_LABEL(kvm_enter_guest_end, SYM_L_LOCAL)
+SYM_FUNC_END(kvm_enter_guest)
+```
+
+### kvm/tlb.c
+
+```c
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (C) 2020-2023 Loongson Technology Corporation Limited
+ */
+
+#include <linux/kvm_host.h>
+#include <asm/tlb.h>
+#include <asm/kvm_csr.h>
+
+/*
+ * kvm_flush_tlb_all() - Flush all root TLB entries for guests.
+ *
+ * Invalidate all entries including GVA-->GPA and GPA-->HPA mappings.
+ */
+void kvm_flush_tlb_all(void)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	invtlb_all(INVTLB_ALLGID, 0, 0);
+	local_irq_restore(flags);
+}
+
+void kvm_flush_tlb_gpa(struct kvm_vcpu *vcpu, unsigned long gpa)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	gpa &= (PAGE_MASK << 1);
+	invtlb(INVTLB_GID_ADDR, read_csr_gstat() & CSR_GSTAT_GID, gpa);
+	local_irq_restore(flags);
+}
+```
+
+注意到里面提到了 GVA->GPA, GPA->HPA 的二级翻译
+
+```
+Guest Virtual Address
+Guest Physical Address
+Hypervisor Physical Address
+```
+
+猜测与ARM的stage2翻译类似
+
+### kvm/vcpu.c
+
+`kvm_one_reg`- https://docs.huihoo.com/doxygen/linux/kernel/3.7/structkvm__one__reg.html
+
+```c
+struct kvm_one_reg {
+    __u64 id;
+    __u64 addr;
+};
+```
+
+`int kvm_vcpu_ioctl_interrupt(struct kvm_vcpu *vcpu, struct kvm_interrupt *irq)`
+
+`kvm_interrupt` - https://docs.huihoo.com/doxygen/linux/kernel/3.7/structkvm__interrupt.html
+
+```c
+/* for KVM_INTERRUPT */
+struct kvm_interrupt {
+    /* in */
+    __u32 irq;
+};
+```
+
+```c
+/*
+ * kvm_check_requests - check and handle pending vCPU requests
+ *
+ * Return: RESUME_GUEST if we should enter the guest
+ *         RESUME_HOST  if we should exit to userspace
+ */
+static int kvm_check_requests(struct kvm_vcpu *vcpu)
+    
+/*
+ * Check and handle pending signal and vCPU requests etc
+ * Run with irq enabled and preempt enabled
+ *
+ * Return: RESUME_GUEST if we should enter the guest
+ *         RESUME_HOST  if we should exit to userspace
+ *         < 0 if we should exit to userspace, where the return value
+ *         indicates an error
+ */
+static int kvm_enter_guest_check(struct kvm_vcpu *vcpu)
+    
+/*
+ * Called with irq enabled
+ *
+ * Return: RESUME_GUEST if we should enter the guest, and irq disabled
+ *         Others if we should exit to userspace
+ */
+static int kvm_pre_enter_guest(struct kvm_vcpu *vcpu)
+
+/*
+ * Return 1 for resume guest and "<= 0" for resume host.
+ */
+static int kvm_handle_exit(struct kvm_run *run, struct kvm_vcpu *vcpu)
+    
+int kvm_arch_vcpu_runnable(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_should_kick(struct kvm_vcpu *vcpu)
+bool kvm_arch_vcpu_in_kernel(struct kvm_vcpu *vcpu)
+vm_fault_t kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf)
+int kvm_arch_vcpu_ioctl_translate(struct kvm_vcpu *vcpu,
+				  struct kvm_translation *tr)
+int kvm_cpu_has_pending_timer(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_dump_regs(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_ioctl_get_mpstate(struct kvm_vcpu *vcpu,
+				struct kvm_mp_state *mp_state)
+int kvm_arch_vcpu_ioctl_set_mpstate(struct kvm_vcpu *vcpu,
+				struct kvm_mp_state *mp_state)
+int kvm_arch_vcpu_ioctl_set_guest_debug(struct kvm_vcpu *vcpu,
+					struct kvm_guest_debug *dbg)
+```
+
+``` c
+/**
+ * kvm_migrate_count() - Migrate timer.
+ * @vcpu:       Virtual CPU.
+ *
+ * Migrate hrtimer to the current CPU by cancelling and restarting it
+ * if the hrtimer is active.
+ *
+ * Must be called when the vCPU is migrated to a different CPU, so that
+ * the timer can interrupt the guest at the new CPU, and the timer irq can
+ * be delivered to the vCPU.
+ */
+static void kvm_migrate_count(struct kvm_vcpu *vcpu)
+{
+	if (hrtimer_cancel(&vcpu->arch.swtimer))
+		hrtimer_restart(&vcpu->arch.swtimer);
+}
+
+static int _kvm_getcsr(struct kvm_vcpu *vcpu, unsigned int id, u64 *val)
+static int _kvm_setcsr(struct kvm_vcpu *vcpu, unsigned int id, u64 val)
+static int kvm_get_one_reg(struct kvm_vcpu *vcpu,
+		const struct kvm_one_reg *reg, u64 *v)
+static int kvm_get_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+static int kvm_set_one_reg(struct kvm_vcpu *vcpu,
+			const struct kvm_one_reg *reg, u64 v)
+static int kvm_set_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+int kvm_arch_vcpu_ioctl_get_sregs(struct kvm_vcpu *vcpu, struct kvm_sregs *sregs)
+int kvm_arch_vcpu_ioctl_set_sregs(struct kvm_vcpu *vcpu, struct kvm_sregs *sregs)
+int kvm_arch_vcpu_ioctl_get_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
+int kvm_arch_vcpu_ioctl_set_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
+static int kvm_vcpu_ioctl_enable_cap(struct kvm_vcpu *vcpu,
+				     struct kvm_enable_cap *cap)
+long kvm_arch_vcpu_ioctl(struct file *filp,
+			 unsigned int ioctl, unsigned long arg)
+int kvm_arch_vcpu_ioctl_get_fpu(struct kvm_vcpu *vcpu, struct kvm_fpu *fpu)
+int kvm_arch_vcpu_ioctl_set_fpu(struct kvm_vcpu *vcpu, struct kvm_fpu *fpu)
+/* Enable FPU and restore context */
+void kvm_own_fpu(struct kvm_vcpu *vcpu)
+/* Save context and disable FPU */
+void kvm_lose_fpu(struct kvm_vcpu *vcpu)
+int kvm_vcpu_ioctl_interrupt(struct kvm_vcpu *vcpu, struct kvm_interrupt *irq)
+long kvm_arch_vcpu_async_ioctl(struct file *filp,
+			       unsigned int ioctl, unsigned long arg)
+int kvm_arch_vcpu_precreate(struct kvm *kvm, unsigned int id)
+int kvm_arch_vcpu_create(struct kvm_vcpu *vcpu)
+void kvm_arch_vcpu_postcreate(struct kvm_vcpu *vcpu)
+void kvm_arch_vcpu_destroy(struct kvm_vcpu *vcpu)
+static int _kvm_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+void kvm_arch_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+static int _kvm_vcpu_put(struct kvm_vcpu *vcpu, int cpu)
+void kvm_arch_vcpu_put(struct kvm_vcpu *vcpu)
+int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu)
+```
+
+### kvm/interrupt.c
+
+```c
+static int kvm_irq_deliver(struct kvm_vcpu *vcpu, unsigned int priority)
+static int kvm_irq_clear(struct kvm_vcpu *vcpu, unsigned int priority)
+void kvm_deliver_intr(struct kvm_vcpu *vcpu)
+int kvm_pending_timer(struct kvm_vcpu *vcpu)
+    
+/*
+ * Only support illegal instruction or illegal Address Error exception,
+ * Other exceptions are injected by hardware in kvm mode
+ */
+static void _kvm_deliver_exception(struct kvm_vcpu *vcpu,
+				unsigned int code, unsigned int subcode)
+    
+void kvm_deliver_exception(struct kvm_vcpu *vcpu)
+```
+
