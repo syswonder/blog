@@ -1,3 +1,4 @@
+- [Jailhouse PCI与ivshmem机制](20231228_jailhouse-pci-ivshmem.md)
 - [Linux console,tty,serial学习笔记](20231220_linux_console_tty.md)
 - [龙芯Loongarch架构研究笔记](20230913_QEMU_Loongarch.md)
 - [在 rukos 上支持 nginx](20231128_nginx_run.md)

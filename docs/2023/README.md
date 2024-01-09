@@ -1,5 +1,15 @@
 # 矽望社区技术报告 - 2023
 
+## Jailhouse PCI 与 ivshmem 机制
+
+**时间：** 2023年11月28日
+
+**作者：** 陈林锟
+
+**摘要：** 介绍了Jailhouse PCI与ivshmem机制，分析了jailhouse中guest的PCI设备driver如何与hypervisor交互，以及虚拟机之间如何通过ivshmem通信
+
+[正文](20231109_cstart.md)
+
 ## Linux console,tty,serial学习笔记
 
 **时间：** 2023年12月21日
