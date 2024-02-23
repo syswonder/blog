@@ -86,7 +86,7 @@ OK8MP-C-root.dts
         status = "disabled";
 };
 
-&{/reserved-memory} {
+&{/reserved-memory} { // 预留的jailhouse内存区域
         jh_reserved: jh@fdc00000 {
                 no-map;
                 reg = <0 0xfdc00000 0x0 0x400000>;
@@ -127,11 +127,11 @@ OK8MP-C-root.dts
         };
 };
 
-&usdhc3 { // emmc: mmc2，即从emmc启动的Linux
+&usdhc3 { // emmc: mmc2，即从emmc启动的Linux，因为这个emmc是nonroot，所以root不要占用，因此要禁用掉
         status = "disabled";
 };
 
-&uart4 {
+&uart4 { // 这个也禁用掉，用于nonroot启动。
         /delete-property/ dmas;
         /delete-property/ dma-names;
         pinctrl-names = "default";
@@ -139,7 +139,7 @@ OK8MP-C-root.dts
         status = "disabled";
 };
 
-&uart2 { // uart1=ttymxc0 uart4=ttymxc3 default for ttymxc1
+&uart2 { // uart1=ttymxc0 uart4=ttymxc3 default for ttymxc1。
         /* uart4 is used by the 2nd OS, so configure pin and clk */
         pinctrl-0 = <&pinctrl_uart2>, <&pinctrl_uart4>;
         assigned-clocks = <&clk IMX8MP_CLK_UART4>;
