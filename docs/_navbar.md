@@ -1,5 +1,6 @@
 - [Home](/)
 - Archives
+  - [2024](/2024/README.md)
   - [2023](/2023/README.md)
 - 文档
   - [RuxOS Book](https://ruxos.syswonder.org)
