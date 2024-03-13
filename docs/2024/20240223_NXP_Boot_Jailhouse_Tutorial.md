@@ -1,7 +1,8 @@
 # NXP启动Jailhouse
 时间：2024/2/25
+更新时间：2024/3/13
 
-作者：杨竣轶
+作者：杨竣轶，陈星宇
 
 整体思路：
 
@@ -14,9 +15,11 @@
 
 ```shell
 wget https://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.5-base-arm64.tar.gz
-tar xjvf ubuntu-base-18.04.5-base-arm64.tar.gz
+tar zxvf ubuntu-base-18.04.5-base-arm64.tar.gz
 
 cd ubuntu-base-18.04.5-base-arm64
+
+# chroot in x86
 sudo apt-get install qemu
 sudo cp /usr/bin/qemu-aarch64-static usr/bin/
 
@@ -28,30 +31,44 @@ sudo mv etc/resolv.conf etc/resolv.conf.saved
 sudo cp /etc/resolv.conf etc
 
 sudo LC_ALL=C chroot . /bin/bash
+
+# chroot in arm
+sudo arch-chroot .
+
 sudo apt-get update 
-sudo apt-get install <PKG_NAME> # 安装需要的包，如vim, build-essential.
+# 安装需要的包，如vim, build-essential, python3, python3-dev, gcc, g++, git, make, kmod.
+sudo apt-get install <PKG_NAME> 
 
 exit
 
+# 如果用arch-chroot不需要手动umount
 sudo umount ./sys
 sudo umount ./proc
 sudo umount ./dev
 
 mv etc/resolv.conf.saved etc/resolv.conf
 
-## 另外，将Linux和jailhouse复制到SD卡中。
+## 另外，将Linux和jailhouse复制到SD卡中，这里改成本机路径。
+sudo cp -r LINUX_DEMO ubuntu-base-18.04.5-base-arm64/home #源码路径见linux内核编译部分
+sudo cp -r Jailhouse_DEMO ubuntu-base-18.04.5-base-arm64/home
 # 然后将ubuntu-base-18.04.5-base-arm64目录拷进SD卡中作为rootfs。
+# 建议先完成“二、编译”后再进行拷贝，也可进入系统后再进行编译
+sudo fdisk -l # 确定sd卡设备名称
+sudo mount /dev/sdb1 /mnt 
+sudo cp -r ubuntu-base-18.04.5-base-arm64 /mnt
 ```
 
-## 二、启动一个默认的NXP Linux
+## 二、编译NXP Linux 内核
 
-请参考NXP手册，编译烧写默认的Linux系统。
+源码可以从厂商提供的资料中获取（源码位置：/OKMX8MP-C_Linux5.4.70+Qt5.15.0_用户资料_R5（更新日期：20231012）/Linux/源码/OK8MP-linux-sdk/OK8MP-linux-kernel）
 
-## 三、修改root设备树
+该步骤编译可以在chroot环境中进行，也可以先采用现成的Image和dtb先启动板子后再进行编译(官方文件里提供了一份Image和OK8MP-C.dtb)
+
+### 添加root设备树
+
+设备树存储位置为arch/arm64/boot/dts/freescale，添加新设备树OK8MP-C-root.dts，主要修改为禁用usdhc3（emmc）和uart4，并将usdhc3和usdhc2进行引脚共享，以便于启动non-root-linux
 
 内容：
-
-OK8MP-C-root.dts
 
 ```C
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
@@ -156,30 +173,29 @@ OK8MP-C-root.dts
 };
 ```
 
-## 四、启动Linux
-
-uboot指令如下:
-
-`setenv mmcroot /dev/mmcblk1p1 rootwait rw; setenv fdt_file OK8MP-C-root.dtb; run mmcargs; ext4load mmc 1:1 ${loadaddr} home/comet/OK8MP_linux_kernel/arch/arm64/boot/Image; ext4load mmc 1:1 ${fdt_addr} home/comet/OK8MP_linux_kernel/arch/arm64/boot/dts/freescale/OK8MP-C-root.dtb; booti ${loadaddr} - ${fdt_addr}`
-
-解释：
-
-mmcblk1p1: SD卡ext4文件系统分区。
-
-home/comet/OK8MP_linux_kernel/arch/arm64/boot/Image：Image路径
-
-home/comet/OK8MP_linux_kernel/arch/arm64/boot/dts/freescale/OK8MP-C-root.dtb：dtb路径
-
-## 五、编译安装kernel、jailhouse
+### 内核编译
 
 ```shell
-make && make install 
-cd extra/jailhouse && make && make install 
+# 首先参考前面chroot并进入源码目录
+make OK8MP-C_defconfig # 配置默认config
+make -j$(nproc) ARCH=arm64 #编译大约15分钟左右
 ```
 
-## 六、准备non root Linux文件
+如果gcc版本较高可能会出现yylloc的问题，可以降低版本也可以在scripts/dtc下面将dtc-lexer.lex.c_shipped里的yylloc前加上extern
 
-imx8mp.cell
+jailhouse如果和内核存在定义冲突的问题以内核为准，修改jailhouse即可
+
+### 编译jailhouse
+
+jailhouse版本采用v0.12然后手动添加dts和配置文件
+```shell
+git checkout v0.12
+```
+.c 文件添加位置 configs/arm64
+
+.dts 文件添加位置 configs/arm64/dts
+
+imx8mp.c
 
 ```C
 /*
@@ -376,7 +392,6 @@ struct {
 ```
 
 
-
 imx8mp-linux-demo.c
 
 ```C
@@ -548,8 +563,6 @@ struct {
         },
 };
 ```
-
-
 
 non-root imx8mp-evk-inmate.dts
 
@@ -723,19 +736,58 @@ non-root imx8mp-evk-inmate.dts
 };
 ```
 
+编译jailhouse命令如下，KDIR是指定jailhouse运行环境内核，因为部分dts文件需要配合内核中的文件进行，如果将所有dts挪到内核编译可以不指定KDIR
 
+```shell
+make -j($nproc) ARCH=arm64 KDIR=/home/ubuntu-base-18.04.5-base-arm64
+```
 
-## 七、启动nonroot
+## 三、启动Linux
+
+实际上启动只需要一个Image和一个dtb即可，也可以使用已经编译好的文件直接启动
+
+把sd卡插入，拨码开关选择TF模式，连接串口后在启动时按住空格进入uboot模式，选择1进入uboot shell
+
+uboot指令如下:
+
+`setenv mmcroot /dev/mmcblk1p1 rootwait rw; setenv fdt_file OK8MP-C-root.dtb; run mmcargs; ext4load mmc 1:1 ${loadaddr} home/OK8MP-linux-kernel/arch/arm64/boot/Image; ext4load mmc 1:1 ${fdt_addr} home/OK8MP-linux-kernel/arch/arm64/boot/dts/freescale/OK8MP-C-root.dtb; booti ${loadaddr} - ${fdt_addr}`
+
+解释：
+
+指令中的以下部分均按照本机实际修改地址，如果不确定文件位置可以用ext4ls mmc 1:1 /等指令查看具体位置。出现问题最好把指令拆开一句句试验。
+
+mmcblk1p1: SD卡ext4文件系统分区
+
+OK8MP-C-root.dtb：所采用的dtb
+
+home/OK8MP_linux_kernel/arch/arm64/boot/Image：Image路径
+
+home/OK8MP_linux_kernel/arch/arm64/boot/dts/freescale/OK8MP-C-root.dtb：dtb路径
+
+成功启动后进入命令行，此时插入网线即可联网，可配置环境，安装软件，编译代码等，如果没有网络，因为我们提前编译好了内容也可以正常进行后续操作。
+
+## 四、根据需要安装内核与jailhouse（可跳过）
+
+```shell
+su #进入系统后会发现环境有问题，因为之前到软件都是安装到root用户下的，需要先切到root
+cd /home/ubuntu-base-18.04.5-base-arm64
+make && make install 
+cd /home/jailhouse && make && make install 
+# 因为jailhouse安装需要重新编译，如果编译环境有问题可以只复制bin文件到firmware即可，如下
+sudo cp /home/jailhouse/hypervisor/jailhouse.bin /lib/firmware
+```
+
+## 五、启动nonroot
 
 连接硬件：打开两个串口窗口。
 `cat non.sh`
 
 ```C
 #!/bin/bash
-insmod /home/comet/OK8MP_linux_kernel/extra/jailhouse/driver/jailhouse.ko
-jailhouse disable
-jailhouse enable /home/comet/OK8MP_linux_kernel/extra/jailhouse/configs/arm64/imx8mp.cell
-export PATH=$PATH:/home/comet/OK8MP_linux_kernel/extra/jailhouse/tools/
-jailhouse cell linux /home/comet/OK8MP_linux_kernel/extra/jailhouse/configs/arm64/imx8mp-linux-demo.cell /home/comet/OK8MP_linux_kernel/arch/arm64/boot/Image -d /home/comet/OK8MP_linux_kernel/arch/arm64/boot/dts/freescale/imx8mp-evk-inmate.dtb -c "clk_ignore_unused console=ttymxc3,115200 earlycon=ec_imx6q,0x30890000,115200  root=/dev/mmcblk2p2 rootwait rw"
+insmod /home/jailhouse/driver/jailhouse.ko
+jailhouse disabled
+jailhouse enable /home/jailhouse/configs/arm64/imx8mp.cell
+export PATH=$PATH:/home/jailhouse/tools/
+jailhouse cell linux /home/jailhouse/configs/arm64/imx8mp-linux-demo.cell /home/OK8MP_linux_kernel/arch/arm64/boot/Image -d /home/OK8MP_linux_kernel/arch/arm64/boot/dts/freescale/imx8mp-evk-inmate.dtb -c "clk_ignore_unused console=ttymxc3,115200 earlycon=ec_imx6q,0x30890000,115200  root=/dev/mmcblk2p2 rootwait rw"
 ```
 
