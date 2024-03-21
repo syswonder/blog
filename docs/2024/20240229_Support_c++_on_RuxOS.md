@@ -50,7 +50,7 @@ __attribute__((weak)) void *__dso_handle;
 }
 ```
 
-在riscv64架构下还可能出现atomics相关的符号未定义，此时还需要链接`x86_64-linux-musl/lib/libatomic.a`静态库。
+在riscv64架构下还可能出现atomics相关的符号未定义，此时还需要链接`riscv64-linux-musl/lib/libatomic.a`静态库。
 
 ## 局限性
 
