@@ -17,6 +17,8 @@
 
 若链接时还出现符号`__clrsbsi2`未定义，此时还需要链接`libgcc.a`中的`_clrsbsi2.o`目标文件，可以用如下命令将该目标文件从`libgcc.a`中提取出来：
 
+在riscv64架构下还可能出现atomics相关的符号未定义，此时还需要链接`x86_64-linux-musl/lib/libatomic.a`静态库。
+
 ```bash
 x86_64-linux-musl-ar x /opt/x86_64-linux-musl-cross/x86_64-linux-musl/lib/libgcc.a _clrsbsi2.o
 ```
