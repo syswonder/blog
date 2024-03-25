@@ -3,15 +3,34 @@
 
 作者：徐金阳
 
-摘要：介绍了在RuxOS上解决链接时c++标准库符号找不到的方法，从而可以在RuxOS上编译运行c++应用程序。
+摘要：介绍了在RuxOS上解决编译时c++头文件找不到，以及链接时c++标准库符号找不到的方法，从而可以在RuxOS上编译运行c++应用程序。
 
 ## 问题描述
 
-在RuxOS上编译应用程序时，以x86_64架构下的[wamr](https://github.com/syswonder/rux-wamr)为例，编译通过，生成`wamr.o`目标文件，但在链接生成`wamr_x86_64_qemu-q35.elf`时显示`undefined reference`，其中未定义的符号都是`std`、`new`、`delete`等c++相关的函数。
+### 编译时头文件找不到
+
+在RuxOS上编译应用程序时，以x86_64架构下的[wamr](https://github.com/syswonder/rux-wamr)为例，编译时出现头文件c++找不到的问题。
+
+### 链接时标准库符号找不到
+
+通过下文所述方法编译通过后，生成`wamr.o`目标文件，但在链接生成`wamr_x86_64_qemu-q35.elf`时显示`undefined reference`，其中未定义的符号都是`std`、`new`、`delete`等c++相关的函数。
 
 ## 解决方法
 
-找到使用的x86_64-linux-musl-gcc编译器的根目录，例如`/opt/x86_64-linux-musl-cross/`，找到其中的`x86_64-linux-musl/lib/libstdc++.a`，将其加入到链接应用程序的命令中。即直接将该静态库链接到应用程序目标文件`wamr.o`，再与RuxOS的符号和musl libc的符号链接生成`.elf`文件。
+### 头文件路径
+
+找到使用的x86_64-linux-musl-gcc编译器的根目录，例如`/opt/x86_64-linux-musl-cross/`，将以下两个路径加入由编译参数-I指定的include目录中：
+
+* `/opt/x86_64-linux-musl-cross/x86_64-linux-musl/include/c++/11.2.1/`
+* `/opt/x86_64-linux-musl-cross/x86_64-linux-musl/include/c++/11.2.1/x86_64-linux-musl/`
+
+若还有其他头文件找不到，则再找到这些头文件的路径加入include目录中即可。
+
+`stdatomic.h`和`linux/futex.h`是c的头文件，若提示找不到这两个头文件，可尝试去掉源码中包含这两个头文件的#include语句，或将它们所在目录加入include目录中，但最好加在最后，使得其他头文件还是优先使用ruxmusl的头文件。
+
+### 链接标准库
+
+编译通过后，链接时出现标准库符号找不到的问题。找到使用的x86_64-linux-musl-gcc编译器的根目录，例如`/opt/x86_64-linux-musl-cross/`，找到其中的`x86_64-linux-musl/lib/libstdc++.a`，将其加入到链接应用程序的命令中。即直接将该静态库链接到应用程序目标文件`wamr.o`，再与RuxOS的符号和ruxmusl libc的符号链接生成`.elf`文件。
 
 若链接时还有`Unwind`相关的符号显示`undefined reference`，这是c++中异常处理相关的符号。可将`lib/gcc/x86_64-linux-musl/11.2.1/`（版本号`11.2.1`可能不同）目录下的`libgcc_eh.a`链接进来。
 
@@ -31,9 +50,11 @@ __attribute__((weak)) void *__dso_handle;
 }
 ```
 
+在riscv64架构下还可能出现atomics相关的符号未定义，此时还需要链接`x86_64-linux-musl/lib/libatomic.a`静态库。
+
 ## 局限性
 
-只能静态链接`libstdc++.a`。
+有时需要用到本地编译器的头文件`stdatomic.h`等；只能静态链接`libstdc++.a`。
 
 ## 支持的c++版本
 
@@ -67,8 +88,17 @@ x86_64-linux-musl-g++ -std=c++23 -E - < /dev/null
 
 ## 示例
 
-见`apps/c/cpp`目录下的c++应用程序，运行如下命令即可编译运行：
+见`apps/c/cpp`目录下的c++测试程序，运行如下命令即可编译运行：
 
 ```bash
-make A=apps/c/cpp ARCH=aarch64 LOG=info SMP=4 run MUSL=y
+make A=apps/c/cpp ARCH=x86_64 LOG=info run MUSL=y BLK=y bench=mutators
 ```
+
+`bench=`参数可指定为以下中的一个以测试不同的项目：
+
+* size_metric
+* algorithm
+* stringstream
+* mutators
+* accessors
+* string
