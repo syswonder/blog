@@ -29,3 +29,13 @@
 摘要：介绍了RISC-V架构中断控制器APLIC，主要包含直接传递中断方式（即非MSI）的部分。
 
 [正文](20240311_APLIC.md)
+
+## 在hvisor上使用Virtio磁盘和网络设备
+
+时间：2024/4/15
+
+作者：李国玮
+
+摘要：介绍如何在hvisor上使用Virtio-blk和Virtio-net设备。
+
+[正文](20240415_Virtio_devices_tutorial.md)
