@@ -38,8 +38,19 @@
 	// Listen for changes in hash in the URL. If an MD file is found to have changed,
 	// refresh the page to solve the problem of using a single digital comment issue for the entire website.
 	window.onhashchange = function (event) {
-		if (event.newURL !== event.oldURL) {
-			location.reload()
+		// 解析URL中的哈希部分
+		var oldHash = new URL(event.oldURL).hash;
+		var newHash = new URL(event.newURL).hash;
+
+		// 提取id参数及其前的路径
+		var oldIdIndex = oldHash.indexOf('?id=');
+		var newIdIndex = newHash.indexOf('?id=');
+
+		var oldBasePath = oldIdIndex > -1 ? oldHash.substring(0, oldIdIndex) : oldHash;
+		var newBasePath = newIdIndex > -1 ? newHash.substring(0, newIdIndex) : newHash;
+
+		if (oldBasePath !== newBasePath) {
+			location.reload();
 		}
 	}
 	var gitalk = new Gitalk({
