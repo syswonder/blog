@@ -8,7 +8,7 @@
 
 摘要：介绍了hvisor的初始化过程。
 
-[正文](docs\2024\20240522_hvisor_initialization.md)
+[正文](20240522_hvisor_initialization.md)
 
 ## 在hvisor上使用Virtio磁盘和网络设备
 
