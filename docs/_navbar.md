@@ -5,4 +5,4 @@
 - 文档
   - [RuxOS Book](https://ruxos.syswonder.org)
   - [Hvisor Book](https://hvisor.syswonder.org)
-  - [技术报告](https://report.syswonder.org)
+  - [技术博客](https://blog.syswonder.org)
