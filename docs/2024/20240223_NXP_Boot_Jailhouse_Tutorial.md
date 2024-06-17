@@ -790,4 +790,3 @@ jailhouse enable /home/jailhouse/configs/arm64/imx8mp.cell
 export PATH=$PATH:/home/jailhouse/tools/
 jailhouse cell linux /home/jailhouse/configs/arm64/imx8mp-linux-demo.cell /home/OK8MP_linux_kernel/arch/arm64/boot/Image -d /home/OK8MP_linux_kernel/arch/arm64/boot/dts/freescale/imx8mp-evk-inmate.dtb -c "clk_ignore_unused console=ttymxc3,115200 earlycon=ec_imx6q,0x30890000,115200  root=/dev/mmcblk2p2 rootwait rw"
 ```
-
