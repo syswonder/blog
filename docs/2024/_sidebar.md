@@ -1,3 +1,4 @@
+- [使用zcu102FPGA启动Rocketchip并启动Riscv Linux](20240706_FPGA_Supported_Rocketchip.md)
 - [在QEMU上运行riscv hvisor](20240613_Run_riscv_hvisor.md)
 - [hvisor的初始化过程](20240522_hvisor_initialization.md)
 - [在hvisor上使用Virtio设备](20240415_Virtio_devices_tutorial.md)

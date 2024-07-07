@@ -1,3 +1,4 @@
+- [使用zcu102FPGA启动Rocketchip并启动Riscv Linux](2024/20240706_FPGA_Supported_Rocketchip.md)
 - [在hvisor上使用Virtio设备](2024/20240415_Virtio_devices_tutorial.md)
 - [RISC-V APLIC 介绍](2024/20240311_APLIC.md)
 - [在RuxOS上支持c++](2024/20240229_Support_c++_on_RuxOS.md)
