@@ -1,5 +1,15 @@
 # 矽望社区技术博客文章节选
 
+## ZCU102 FPGA launch RocketChip with H-extension and Boot Riscv64 Linux.
+
+**时间：** 2024年7月8日
+
+**作者：** 杨竣轶
+
+摘要：一份在ZCU102上启动RocketChip + H-extension + Riscv64 Linux的操作手册。
+
+[正文](2024/20240706_FPGA_Supported_Rocketchip.md)
+
 ## 在hvisor上使用Virtio磁盘和网络设备
 
 时间：2024年4月15日
