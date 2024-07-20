@@ -30,6 +30,16 @@
 
 [正文](20240415_Virtio_devices_tutorial.md)
 
+## 在hvisor(loongarch)里启动linux vm
+
+时间：2024年4月3日
+
+作者：韩喻泷
+
+摘要：介绍在龙芯3A5000硬件上通过FDT设备树启动虚拟机Linux的若干问题
+
+[正文](20240403_loongarch_linux.md)
+
 ## RISC-V APLIC 线中断总结
 
 **时间：** 2024年3月11日
