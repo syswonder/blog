@@ -122,4 +122,19 @@ exec /bin/sh
 find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../rootfs.cpio.gz
 ```
 
+### 2. Make a riscv kernel image within initrd.
 
+```
+make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- defconfig
+# .config
+## CONFIG_BLK_DEV_INITRD=y
+## CONFIG_INITRAMFS_SOURCE="/home/jerry/work/image/rootfs.cpio.gz" # You should change this path to your own initrn path.
+## CONFIG_BLK_DEV_LOOP=y
+## CONFIG_BLK_DEV_LOOP_MIN_COUNT=8
+## CONFIG_BLK_DEV_RAM=y
+## CONFIG_BLK_DEV_RAM_COUNT=16
+## CONFIG_BLK_DEV_RAM_SIZE=4096
+
+make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- -j16
+ls -lh arch/riscv/boot/Image
+```
