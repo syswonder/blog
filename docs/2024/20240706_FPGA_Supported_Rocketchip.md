@@ -80,3 +80,46 @@ class UintrConfig extends Config(
 
 ```
 
+
+
+## This is the suppliment for debug the above error.
+
+### 1. Make a clean initrd
+
+```shell
+cd busybox
+make defconfig
+make menuconfig # (enable Busybox Settings ---> Build Options ---> Build BusyBox as a static binary (no shared libs) ---> yes)
+# Init Utilities  --->
+#        [*] init
+#
+# Networking Utilities  --->
+#        [ ] inetd
+#
+# Shells  --->
+#        [*] ash
+#
+make
+make install
+
+mkdir $HOME/initrd
+cd $HOME/initrd
+mkdir -p dev bin sbin etc proc sys usr/bin usr/sbin
+cp -a $BUSYBOX_BUILD/_install/* .
+rm linuxrc
+sudo mknod -m 644 dev/console c 5 1
+sudo mknod -m 644 dev/loop0 b 7 0
+
+# init sh
+`
+#!/bin/sh
+mount -t proc none /proc
+mount -t sysfs none /sys
+echo -e "Hello World\n"
+exec /bin/sh
+`
+
+find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../rootfs.cpio.gz
+```
+
+
