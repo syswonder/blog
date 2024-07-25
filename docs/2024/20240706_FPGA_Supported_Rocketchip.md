@@ -29,7 +29,7 @@ sudo screen /dev/ttyUSB2 115200 # Riscv Core Uart
 
 # On /dev/ttyUSB0
 cd uintr-rocket-chip
-./load-and-reset.sh
+./load-and-reset.sh # Label: #1
 
 # Focus on ttyUSB2, then you will see the Riscv Linux Boot Msg.
 
@@ -479,3 +479,12 @@ ls -lh arch/riscv/boot/Image
 ```shell
 dtc -I dts -O dtb -o ./rocketchip.dtb ./rocketchip.dts
 ```
+
+### 4. Make a firmware for riscv soft core.
+
+```shell
+make -C /path/to/opensbi clean &&  make FW_PAYLOAD=y PLATFORM=zcu102 CROSS_COMPILE=riscv64-unknown-linux-gnu- FW_PAYLOAD_PATH=/path/to/Image FW_FDT_PATH=/path/to/rocketchip.dtb -j8
+```
+
+You can copy this **fw_payload.bin** to replace the firmware and jump to the **Label: #1**, then you can rerun the test.
+
