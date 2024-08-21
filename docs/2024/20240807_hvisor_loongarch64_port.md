@@ -973,3 +973,582 @@ void kvm_restore_timer(struct kvm_vcpu *vcpu)
 目前可以在不修改任何linux源码并且运行idle指令的情况下正确处理时钟和中断，shell也可以正常用了：
 
 ![Untitled](imgs/20240807_hvisor_loongarch64_port/Untitled%205.png)
+
+## 2024.8.13 记录
+
+最近在移植hvisor-tool，在适配了zone config新功能后，目前`hvisor zone list`功能正常
+
+接下来尝试`hvisor zone start guest1.json`
+
+遇到了第一个问题是hvisor cmdtool调用`mmap`时，陷入内核syscall然后最终由hvisor.ko的代码接管`/dev/hvisor`的mmap操作，然后把镜像复制到指定位置。
+
+但是遇到了of_reserved_mem_lookup()返回0导致的PIL（Linux内部的页加载异常，通常内核虚拟地址是0xffff，但是hvisor驱动访问的是0x20，导致页表翻译报错，反汇编gdb后发现是of_reserved_mem_lookup()函数返回NULL导致的）。
+
+看了一下linux 6.9.8的代码：
+
+```c
+#ifdef CONFIG_OF_RESERVED_MEM
+
+#define RESERVEDMEM_OF_DECLARE(name, compat, init)			\
+	_OF_DECLARE(reservedmem, name, compat, init, reservedmem_of_init_fn)
+
+int of_reserved_mem_device_init_by_idx(struct device *dev,
+				       struct device_node *np, int idx);
+int of_reserved_mem_device_init_by_name(struct device *dev,
+					struct device_node *np,
+					const char *name);
+void of_reserved_mem_device_release(struct device *dev);
+
+struct reserved_mem *of_reserved_mem_lookup(struct device_node *np);
+#else
+
+#define RESERVEDMEM_OF_DECLARE(name, compat, init)			\
+	_OF_DECLARE_STUB(reservedmem, name, compat, init, reservedmem_of_init_fn)
+
+static inline int of_reserved_mem_device_init_by_idx(struct device *dev,
+					struct device_node *np, int idx)
+{
+	return -ENOSYS;
+}
+
+static inline int of_reserved_mem_device_init_by_name(struct device *dev,
+						      struct device_node *np,
+						      const char *name)
+{
+	return -ENOSYS;
+}
+
+static inline void of_reserved_mem_device_release(struct device *pdev) { }
+
+static inline struct reserved_mem *of_reserved_mem_lookup(struct device_node *np)
+{
+	return NULL;
+}
+#endif
+
+// 实现
+
+struct reserved_mem *of_reserved_mem_lookup(struct device_node *np)
+{
+	const char *name;
+	int i;
+
+	if (!np->full_name)
+		return NULL;
+
+	name = kbasename(np->full_name);
+	for (i = 0; i < reserved_mem_count; i++)
+		if (!strcmp(reserved_mem[i].name, name))
+			return &reserved_mem[i];
+
+	return NULL;
+}
+EXPORT_SYMBOL_GPL(of_reserved_mem_lookup);
+```
+
+log:
+
+```
+Welcome to hvisor(loongarch) root linux! Buildroot/wheatfox 2024
+[root@dedsec /]# ./in
+sh: ./in: No such file or directory
+[root@dedsec /]# ./install.sh 
+[   12.220738] hvisor: loading out-of-tree module taints kernel.
+[   12.225346] hvisor init done!!!
+successfully installed hvisor, goodbye
+[root@dedsec /]# ./run_guest1.sh 
+[   14.420596] hvisor_map: filp = 0000000038b1abaa
+[   14.421055] hvisor_map: vma->vm_pgoff = 90001
+[   14.421173] hvisor_map: size = 2000
+zone_start: json[   14.422205] reserved memory count: 1
+[   14.422388] child node name: nonroot
+[   14.422512] child node full_name: nonroot@c0000000
+[   14.422670] OF: reserved mem: of_reserved_mem_lookup: name nonroot@c0000000
+_config_path /to[   14.422856] OF: reserved mem: : reserved_mem[0].name ����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������
+[   14.453588] failed to get reserved memory struct, rmem = 0000000000000000
+[   14.455850] The physical address to be mapped is not within the reserved memory
+ol/guest1.json
+zone_id(from json) = 5
+memory_region 0: type 0, physical_start c0000000, virtual_start 90000000, size 800000
+memory_region 1: type 1, physical_start 1fe00000, virtual_start 1fe00000, size 1000
+load_image_to_memory: page_size 1000, map_size 2000
+load_image_to_memory: virt_addr 0xffffffffffffffff
+Error mapping memory: Bad address
+[root@dedsec /]# QEMU: Terminated
+```
+
+出现了许多乱码，然后函数最终返回的是`NULL`，即`rmem = 0000000000000000`，这个问题还需要继续调查一下。
+
+## 2024.8.19 记录
+
+调查一下of驱动和reserved_mem数组相关的逻辑，如果在后面读reserved_mem[0].name出现问题的话，先试着找一下reserved_mem[0]是什么时候被创建的，然后debug看一下有没有异常的地方。
+
+drivers/of/of_reserved_mem.c
+
+```c
+#define MAX_RESERVED_REGIONS	64
+static struct reserved_mem reserved_mem[MAX_RESERVED_REGIONS];
+static int reserved_mem_count;
+```
+
+include/linux/of_reserved_mem.h
+
+```c
+struct reserved_mem {
+	const char			*name;
+	unsigned long			fdt_node;
+	unsigned long			phandle;
+	const struct reserved_mem_ops	*ops;
+	phys_addr_t			base;
+	phys_addr_t			size;
+	void				*priv;
+};
+```
+
+找到添加新reserved mem node的函数：
+
+```c
+/*
+ * fdt_reserved_mem_save_node() - save fdt node for second pass initialization
+ */
+static void __init fdt_reserved_mem_save_node(unsigned long node, const char *uname,
+					      phys_addr_t base, phys_addr_t size)
+{
+	struct reserved_mem *rmem = &reserved_mem[reserved_mem_count];
+
+	if (reserved_mem_count == ARRAY_SIZE(reserved_mem)) {
+		pr_err("not enough space for all defined regions.\n");
+		return;
+	}
+
+	rmem->fdt_node = node;
+	rmem->name = uname;
+	rmem->base = base;
+	rmem->size = size;
+
+	reserved_mem_count++; // append一个新node到reserved_mem数组末尾
+	return;
+}
+```
+
+在这个函数里加一个pr_info，然后查看log：
+
+```
+[    0.000000] Linux version 6.9.8 (wheatfox@dedsec) (loongarch64-unknown-linux-gnu-gcc (GCC) 13.0.1 20230316 (experimental), GNU ld (GNU Binutils) 2.40.50.20230316) #99 SMP PREEMPT_DYNAMIC Mon Aug 19 11:56:31 CST 2024
+[    0.000000] 64-bit Loongson Processor probed (LA464 Core)
+[    0.000000] CPU0 revision is: 0014c010 (Loongson-64bit)
+[    0.000000] FPU0 revision is: 00000001
+[    0.000000] ACPI: Early table checksum verification disabled
+[    0.000000] earlycon: ns16550a0 at MMIO 0x000000001fe001e0 (options '115200n8')
+[    0.000000] printk: legacy bootconsole [ns16550a0] enabled
+[    0.000000] OF: reserved mem: Reserved memory: failed to reserve memory for node 'nonroot@c0000000': base 0x00000000c0000000, size 8 MiB
+[    0.000000] OF: reserved mem: reserved memory: saving node nonroot@c0000000, base 0x00000000c0000000, size 8 MiB
+[    0.000000] OF: reserved mem: 0x00000000c0000000..0x00000000c07fffff (8192 KiB) nomap non-reusable nonroot@c0000000
+[    0.000000] Faking a node at [mem 0x0000000000200000-0x00000000c07fffff]
+[    0.000000] Node0's addrspace_offset is 0x0
+```
+
+发现有一个failed to reserve memory for node，报错函数是__reserved_mem_reserve_reg
+
+```c
+/*
+ * __reserved_mem_reserve_reg() - reserve all memory described in 'reg' property
+ */
+static int __init __reserved_mem_reserve_reg(unsigned long node,
+					     const char *uname)
+{
+	int t_len = (dt_root_addr_cells + dt_root_size_cells) * sizeof(__be32);
+	phys_addr_t base, size;
+	int len;
+	const __be32 *prop;
+	int first = 1;
+	bool nomap;
+
+	prop = of_get_flat_dt_prop(node, "reg", &len);
+	if (!prop)
+		return -ENOENT;
+
+	if (len && len % t_len != 0) {
+		pr_err("Reserved memory: invalid reg property in '%s', skipping node.\n",
+		       uname);
+		return -EINVAL;
+	}
+
+	nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;
+
+	while (len >= t_len) {
+		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
+		size = dt_mem_next_cell(dt_root_size_cells, &prop);
+
+		if (size &&
+		    early_init_dt_reserve_memory(base, size, nomap) == 0)
+			pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %lu MiB\n",
+				uname, &base, (unsigned long)(size / SZ_1M));
+		else
+			pr_err("Reserved memory: failed to reserve memory for node '%s': base %pa, size %lu MiB\n",
+			       uname, &base, (unsigned long)(size / SZ_1M));
+
+		len -= t_len;
+		if (first) {
+			fdt_reserved_mem_save_node(node, uname, base, size);
+			first = 0;
+		}
+	}
+	return 0;
+}
+```
+
+可以看到 `if (size && early_init_dt_reserve_memory(base, size, nomap) == 0)`的判断失败了，所以进入了failed to reserved memory。
+
+```c
+static int __init 	(phys_addr_t base,
+					       phys_addr_t size, bool nomap)
+{
+	if (nomap) {
+		/*
+		 * If the memory is already reserved (by another region), we
+		 * should not allow it to be marked nomap, but don't worry
+		 * if the region isn't memory as it won't be mapped.
+		 */
+		if (memblock_overlaps_region(&memblock.memory, base, size) &&
+		    memblock_is_region_reserved(base, size))
+			return -EBUSY;
+
+		return memblock_mark_nomap(base, size);
+	}
+	return memblock_reserve(base, size);
+}
+
+/**
+ * memblock_mark_nomap - Mark a memory region with flag MEMBLOCK_NOMAP.
+ * @base: the base phys addr of the region
+ * @size: the size of the region
+ *
+ * The memory regions marked with %MEMBLOCK_NOMAP will not be added to the
+ * direct mapping of the physical memory. These regions will still be
+ * covered by the memory map. The struct page representing NOMAP memory
+ * frames in the memory map will be PageReserved()
+ *
+ * Note: if the memory being marked %MEMBLOCK_NOMAP was allocated from
+ * memblock, the caller must inform kmemleak to ignore that memory
+ *
+ * Return: 0 on success, -errno on failure.
+ */
+int __init_memblock memblock_mark_nomap(phys_addr_t base, phys_addr_t size)
+{
+	return memblock_setclr_flag(&memblock.memory, base, size, 1, MEMBLOCK_NOMAP);
+}
+
+/**
+ * memblock_setclr_flag - set or clear flag for a memory region
+ * @type: memblock type to set/clear flag for
+ * @base: base address of the region
+ * @size: size of the region
+ * @set: set or clear the flag
+ * @flag: the flag to update
+ *
+ * This function isolates region [@base, @base + @size), and sets/clears flag
+ *
+ * Return: 0 on success, -errno on failure.
+ */
+static int __init_memblock memblock_setclr_flag(struct memblock_type *type,
+				phys_addr_t base, phys_addr_t size, int set, int flag)
+{
+	int i, ret, start_rgn, end_rgn;
+
+	ret = memblock_isolate_range(type, base, size, &start_rgn, &end_rgn);
+	if (ret)
+		return ret;
+
+	for (i = start_rgn; i < end_rgn; i++) {
+		struct memblock_region *r = &type->regions[i];
+
+		if (set)
+			r->flags |= flag;
+		else
+			r->flags &= ~flag;
+	}
+
+	memblock_merge_regions(type, start_rgn, end_rgn);
+	return 0;
+}
+```
+
+通过尝试修改设备树+cat /proc/iomem，我发现linux会自动在内核能看到的内存空间末尾部分划分几块reserved memory，我在dts中non root区域外额外加一个地址更高的区域，就解决了failed map的问题，但是这样依然不能解决nonroot名称匹配时乱码的问题。
+
+```
+[    0.000000] Linux version 6.9.8 (wheatfox@dedsec) (loongarch64-unknown-linux-gnu-gcc (GCC) 13.0.1 20230316 (experimental), GNU ld (GNU Binutils) 2.40.50.20230316) #128 SMP PREEMPT_DYNAMIC Mon Aug 19 14:13:07 CST 2024
+[    0.000000] 64-bit Loongson Processor probed (LA464 Core)
+[    0.000000] CPU0 revision is: 0014c010 (Loongson-64bit)
+[    0.000000] FPU0 revision is: 00000001
+[    0.000000] ACPI: Early table checksum verification disabled
+[    0.000000] earlycon: ns16550a0 at MMIO 0x000000001fe001e0 (options '115200n8')
+[    0.000000] printk: legacy bootconsole [ns16550a0] enabled
+[    0.000000] OF: reserved mem: early_init_dt_reserve_memory: base 0xc0000000, size 0x9000000, nomap 1
+[    0.000000] checking for overlap of 0xc0000000 size 0x9000000 type memory
+[    0.000000] overlap found with region base 0xc0000000 size 0x9000000
+[    0.000000] checking for overlap of 0xc0000000 size 0x9000000 type reserved
+[    0.000000] OF: reserved mem: early_init_dt_reserve_memory: calling memblock_mark_nomap
+[    0.000000] memblock_setclr_flag: set flag 4 for [0x00000000c0000000-0xffffffffffffffff]
+[    0.000000] memblock_setclr_flag: ret = 0
+[    0.000000] OF: reserved mem: fdt_reserved_mem: rmem at 0x9000000004a081b8
+[    0.000000] OF: reserved mem: fdt_reserved_mem: rmem->name = nonroot0xc0000000, at 0x90000000037ba4d0
+[    0.000000] OF: reserved mem: 0x00000000c0000000..0x00000000c8ffffff (147456 KiB) nomap non-reusable nonroot0xc0000000
+[    0.000000] Faking a node at [mem 0x0000000000200000-0x00000000efffffff]
+[    0.000000] Node0's addrspace_offset is 0x0
+
+
+[root@dedsec /]# cat /proc/iomem 
+00200000-0effffff : System RAM
+  00200000-002c0fff : Reserved
+  002c3000-002c3fff : Reserved
+  002c4000-003c3fff : Reserved
+  00400000-00492fff : Reserved
+  02c80000-0374ffff : Kernel code
+  03750000-0494a1ff : Kernel data
+  0494a200-04a09657 : Kernel bss
+  04a09658-08a0ffff : Reserved
+1fe001e0-1fe001ef : serial
+90000000-9fffffff : System RAM
+c0000000-c8ffffff : Reserved -> nonroot 那块区域
+e0000000-efffffff : System RAM
+  ed800000-ef7fffff : Reserved
+  effeb000-effecfff : Reserved -> 内核在整个内存末尾自动添加的几个reserved区域，这也是之前nonroot由于区域重叠而失败的原因，不过即使失败了也不影响
+  effed000-efff6fff : Reserved
+  efff7000-efffcfff : Reserved
+  efffd000-efffffff : Reserved
+```
+
+## 2024.8.20 记录
+
+在临时跳过name检查后，hypercall+ipi唤醒对应cpu启动nonroot都没有问题了，可以正常启动我用C写的一个简单的guest os 1。
+
+目前剩下的问题就是of的reserved_mem[0].name对应的地址（char*）：
+
+1. 什么时候被修改了
+2. 被谁修改了
+
+经过debug，一开始初始化reserved_mem[0]的name时，其指针在后面也没有变化（也就是其实reserved_mem整个结构体都是没有变的，这个可以从其他size属性正常看出来，但是name指向的地址变成了随机数据）
+
+学习一下GDB调试qemu linux，**一定要注意编译内核时关掉CONFIG_RANDOMIZE_BASE（或启动时添加nokaslr参数），否则gdb的hbreak不能成功在断点停住！**
+
+linux编译的时候要加上DEBUG信息：CONFIG_DEBUG_INFO=y
+
+hbreak 硬件辅助断点
+
+x/32xu 打印32个字节（下面的32均为可选数量，可不写默认为1）
+
+x/32xw 以4字节（word）单位显示，每个单位以十六进制表示
+
+x/32i 解释内存为指令并反汇编（32条）
+
+x/s 0x9000000000d3a770 字符串
+
+watch *(char *)0x9000000000d3a770
+
+print reserved_mem 结构体打印
+
+print reserved_mem[0].name 可以自动打印这个char* ，即字符串
+
+watch *reserved_mem[0].name
+
+由于gdb添加这个watch时会稳定卡死，所以只能通过检查函数调用流程，通过类似二分的方法找到内核在哪里修改了这个地址。
+
+```
+arch/loongarch/kernel/setup.c : platform_init -> early_init_fdt_scan_reserved_mem
+-> fdt_scan_reserved_mem
+-> __reserved_mem_reserve_reg
+-> fdt_reserved_mem_save_node // 添加新reserved mem node的函数，也是之前那个添加debug信息的函数
+```
+
+经过hbreak，整个start_kernel函数内部运行时，reserved_mem[0].name都是对的：
+
+```
+(gdb) hbreak rest_init
+Hardware assisted breakpoint 8 at 0x9000000000cbe12c: file init/main.c, line 698.
+(gdb) continue 
+Continuing.
+
+Breakpoint 8, rest_init () at init/main.c:698
+698		rcu_scheduler_starting();
+(gdb) print reserved_mem[0].name
+$13 = 0x9000000000d3a770 "nonroot0xc0000000"
+(gdb) 
+```
+
+最终发现，name字符串在kernel_init线程的两个函数直接出现了问题：
+
+```c
+free_initmem(); // -> reserved_mem[0].name 仍然是对的
+mark_readonly(); // -> 乱码了，如下：
+
+Breakpoint 3, free_initmem () at arch/loongarch/mm/init.c:89
+89		free_initmem_default(POISON_FREE_INITMEM);
+(gdb) print reserved_mem[0].name
+$4 = 0x9000000000d3a770 "nonroot0xc0000000"
+
+Breakpoint 4, mark_readonly () at init/main.c:1426
+1426			pr_warn("This architecture does not have kernel memory protection.\n");
+(gdb) print reserved_mem[0].name
+$5 = 0x9000000000d3a770 '\314' <repeats 199 times>, <incomplete sequence \314>...
+(gdb) 
+```
+
+由于断点都是在函数入口打的，所以说明是free_initmem把这块内存修改了。有意思的是，这个函数是体系结构实现的：
+
+```c
+// arch/loongarch/mm/init.c
+void __ref free_initmem(void)
+{
+	free_initmem_default(POISON_FREE_INITMEM);
+}
+
+// include/linux/mm.h
+/*
+ * Default method to free all the __init memory into the buddy system.
+ * The freed pages will be poisoned with pattern "poison" if it's within
+ * range [0, UCHAR_MAX].
+ * Return pages freed into the buddy system.
+ */
+static inline unsigned long free_initmem_default(int poison)
+{
+	extern char __init_begin[], __init_end[];
+
+	return free_reserved_area(&__init_begin, &__init_end,
+				  poison, "unused kernel image (initmem)");
+}
+```
+
+这样就解释地通了，loongarch架构下实现的free_initmem将name所在区域清理了……（__init），即内存中毒（memory poisoning）机制。
+
+查一下of这些函数传入的uname char*的来源
+
+__reserved_mem_reserve_reg: uname = fdt_get_name
+
+```c
+// scripts/dtc/libfdt/fdt_ro.c
+const char *fdt_get_name(const void *fdt, int nodeoffset, int *len)
+{
+	const struct fdt_node_header *nh = fdt_offset_ptr_(fdt, nodeoffset);
+	const char *nameptr;
+	int err;
+
+	if (((err = fdt_ro_probe_(fdt)) < 0)
+	    || ((err = fdt_check_node_offset_(fdt, nodeoffset)) < 0))
+			goto fail;
+
+	nameptr = nh->name;
+
+	if (!can_assume(LATEST) && fdt_version(fdt) < 0x10) {
+		/*
+		 * For old FDT versions, match the naming conventions of V16:
+		 * give only the leaf name (after all /). The actual tree
+		 * contents are loosely checked.
+		 */
+		const char *leaf;
+		leaf = strrchr(nameptr, '/');
+		if (leaf == NULL) {
+			err = -FDT_ERR_BADSTRUCTURE;
+			goto fail;
+		}
+		nameptr = leaf+1;
+	}
+
+	if (len)
+		*len = strlen(nameptr);
+
+	return nameptr;
+
+ fail:
+	if (len)
+		*len = err;
+	return NULL;
+}
+
+// scripts/dtc/libfdt/libfdt_internel.h
+static inline const void *fdt_offset_ptr_(const void *fdt, int offset)
+{
+	return (const char *)fdt + fdt_off_dt_struct(fdt) + offset;
+}
+```
+
+这样就明白了，uname实际上是一路从fdt在内存里的原始数据传过来的，指针也是指向fdt里实际的那个字符串，当内存中毒清理后，fdt就被清理掉了，自然uname也拿不到正确的数据了，也就是说：
+
+**理论上linux内核不希望在运行free_initmem后，继续使用of驱动（设备树驱动），因为此时fdt已经被清理了？**
+
+```
+/* init and exit section handling */
+#define INIT_DATA							\
+	KEEP(*(SORT(___kentry+*)))					\
+	*(.init.data .init.data.*)					\
+	MEM_DISCARD(init.data*)						\
+	KERNEL_CTORS()							\
+	MCOUNT_REC()							\
+	*(.init.rodata .init.rodata.*)					\
+	FTRACE_EVENTS()							\
+	TRACE_SYSCALLS()						\
+	KPROBE_BLACKLIST()						\
+	ERROR_INJECT_WHITELIST()					\
+	MEM_DISCARD(init.rodata)					\
+	CLK_OF_TABLES()							\
+	RESERVEDMEM_OF_TABLES()						\
+	TIMER_OF_TABLES()						\
+	CPU_METHOD_OF_TABLES()						\
+	CPUIDLE_METHOD_OF_TABLES()					\
+	KERNEL_DTB()							\ <- 内核内嵌的dtb位于init data
+	IRQCHIP_OF_MATCH_TABLE()					\
+	ACPI_PROBE_TABLE(irqchip)					\
+	ACPI_PROBE_TABLE(timer)						\
+	THERMAL_TABLE(governor)						\
+	EARLYCON_TABLE()						\
+	LSM_TABLE()							\
+	EARLY_LSM_TABLE()						\
+	KUNIT_INIT_TABLE()
+```
+
+至于为什么aarch64/riscv没问题——如果用uboot的话，fdt是固件管理的，linux并不会清理这块区域，然而如果编译时配置了内嵌DTB（loongarch等），则位于init区域的fdt会被linux内涵在free_initmem中清理掉从而导致of驱动的各种问题。
+
+把问题整理一下发给linux loongarch maintainer
+
+https://www.kernel.org/doc/linux/MAINTAINERS
+
+https://github.com/torvalds/linux/commit/b56f67a6c748bb009f313f91651c8020d2338d63
+
+```
+LoongArch: Fix built-in DTB detection
+fdt_check_header(__dtb_start) will always success because kernel
+provides a dummy dtb, and by coincidence __dtb_start clashed with
+entry of this dummy dtb. The consequence is fdt passed from firmware
+will never be taken.
+
+Fix by trying to utilise __dtb_start only when CONFIG_BUILTIN_DTB is
+enabled.
+
+Cc: stable@vger.kernel.org
+Fixes: 7b937cc ("of: Create of_root if no dtb provided by firmware")
+Signed-off-by: Jiaxun Yang <jiaxun.yang@flygoat.com>
+Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
+```
+
+chenhuacai@loongson.cn邮箱无效，于是发给jiaxun.yang@flygoat.com：
+
+![image-20240820162246075](20240807_hvisor_loongarch64_port.assets/image-20240820162246075.png)
+
+目前guest os 1可以成功启动，接下来试一下启动nonroot linux。
+
+Jiaxun Yang很快给了回信：
+![image-20240820203627118](20240807_hvisor_loongarch64_port.assets/image-20240820203627118.png)
+
+他认为问题可能不是因为内存中设备树被损坏导致的问题，并且提到unflatten_and_copy_device_tree()函数实际上进行过设备树复制。我调查了一下，loongarch的platform_init先扫描了reserved_memory然后才进行的FDT复制，所以对init.data里的原始FDT的清理确实会影响后续内核模块的读取。
+
+![](20240807_hvisor_loongarch64_port.assets/reserved.drawio.png)
+
+## 2024.8.21记录
+
+https://lore.kernel.org/loongarch/ loongarch linux mail list
+
+在内核maillist开了一个topic：Issues with OpenFirmware Driver Functions Due to Embedded DTB Feature in Linux on LoongArch
+
+https://lore.kernel.org/loongarch/ME4P282MB1397447C3C094554C7AF2E37B58E2@ME4P282MB1397.AUSP282.PROD.OUTLOOK.COM/T/#u
+
+![image-20240821115009629](20240807_hvisor_loongarch64_port.assets/image-20240821115009629.png)
