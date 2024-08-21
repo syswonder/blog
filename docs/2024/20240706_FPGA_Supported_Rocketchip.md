@@ -348,7 +348,7 @@ ls -lh arch/riscv/boot/Image
                         compatible = "riscv,uintc0";
                         interrupt-controller;
                         interrupts-extended = <&L2 0 &L5 0 &L3 0 &L20 0>;
-                        reg = <0x0 0x3000000 0x0 0x400>;
+                        reg = <0x0 0x3000000 0x0 0x1000>;
                         reg-names = "control";
                 };
                 L17: serial@60000000 {
