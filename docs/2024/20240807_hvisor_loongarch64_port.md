@@ -1532,16 +1532,16 @@ Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
 
 chenhuacai@loongson.cn邮箱无效，于是发给jiaxun.yang@flygoat.com：
 
-![image-20240820162246075](20240807_hvisor_loongarch64_port.assets/image-20240820162246075.png)
+![image-20240820162246075](imgs/20240807_hvisor_loongarch64_port/image-20240820162246075.png)
 
 目前guest os 1可以成功启动，接下来试一下启动nonroot linux。
 
 Jiaxun Yang很快给了回信：
-![image-20240820203627118](20240807_hvisor_loongarch64_port.assets/image-20240820203627118.png)
+![image-20240820203627118](imgs/20240807_hvisor_loongarch64_port/image-20240820203627118.png)
 
 他认为问题可能不是因为内存中设备树被损坏导致的问题，并且提到unflatten_and_copy_device_tree()函数实际上进行过设备树复制。我调查了一下，loongarch的platform_init先扫描了reserved_memory然后才进行的FDT复制，所以对init.data里的原始FDT的清理确实会影响后续内核模块的读取。
 
-![](20240807_hvisor_loongarch64_port.assets/reserved.drawio.png)
+![](imgs/20240807_hvisor_loongarch64_port/reserved.drawio.png)
 
 ## 2024.8.21记录
 
@@ -1551,4 +1551,4 @@ https://lore.kernel.org/loongarch/ loongarch linux mail list
 
 https://lore.kernel.org/loongarch/ME4P282MB1397447C3C094554C7AF2E37B58E2@ME4P282MB1397.AUSP282.PROD.OUTLOOK.COM/T/#u
 
-![image-20240821115009629](20240807_hvisor_loongarch64_port.assets/image-20240821115009629.png)
+![image-20240821115009629](imgs/20240807_hvisor_loongarch64_port/image-20240821115009629.png)
