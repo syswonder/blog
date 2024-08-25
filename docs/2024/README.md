@@ -1,5 +1,15 @@
 # 矽望社区技术报告 - 2024
 
+## 移植hvisor到LoongArch64架构
+
+时间：2024年8月7日
+
+作者：韩喻泷
+
+摘要：介绍在hvisor移植到LoongArch64架构时的记录和问题解决
+
+[正文](20240807_hvisor_loongarch64_port.md)
+
 ## 在QEMU上运行riscv hvisor
 
 时间：2024年6月13日
