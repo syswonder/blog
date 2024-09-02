@@ -1552,3 +1552,48 @@ https://lore.kernel.org/loongarch/ loongarch linux mail list
 https://lore.kernel.org/loongarch/ME4P282MB1397447C3C094554C7AF2E37B58E2@ME4P282MB1397.AUSP282.PROD.OUTLOOK.COM/T/#u
 
 ![image-20240821115009629](imgs/20240807_hvisor_loongarch64_port/image-20240821115009629.png)
+
+## 2024.9.1 记录
+
+研究一下virtio，以及目前hvisor和virtio相关的设计，并且调查一下LoongArch下的virtio目前做到了哪种程度。
+
+### 李国玮同学写的笔记
+
+《Virtio基础知识》https://kouweilee.github.io/virtio/2023/12/01/Virtio-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86.html
+
+《Linux virtio driver与device间的通信》https://kouweilee.github.io/linux/2024/01/08/LInux-virtio-driver%E4%B8%8Edevice%E9%97%B4%E7%9A%84%E9%80%9A%E4%BF%A1.html
+
+《virtiofs》
+https://kouweilee.github.io/%E8%99%9A%E6%8B%9F%E5%8C%96/2024/01/19/%E8%99%9A%E6%8B%9F%E5%8C%96-virtiofs.html
+
+《qemu virtio blk设备分析》
+https://kouweilee.github.io/%E8%99%9A%E6%8B%9F%E5%8C%96/2024/01/24/Virtio-qemu-virtio-blk%E8%AE%BE%E5%A4%87%E5%88%86%E6%9E%90.html
+
+《在hvisor上使用Virtio-blk和net设备》
+https://blog.syswonder.org/#/2024/20240415_Virtio_devices_tutorial
+
+### 其他资料
+
+《Virtio 原理与实现》https://zhuanlan.zhihu.com/p/639301753?utm_psn=1704906158266068992
+
+官方规范手册 https://docs.oasis-open.org/virtio/virtio/v1.1/csprd01/virtio-v1.1-csprd01.pdf
+
+## virtio
+
+> virtio 驱与 virtio 设备交互通信的完整流程，大体上分为如下几个步骤：
+> （1）初始化 virtqueue，驱动与设备基于 virtqueue 进行通信；
+> （2）Virtio 驱动将 I/O 请求组织为描述符链并记录到 virtqueue；
+> （3）驱动通知设备处理请求；
+> （4）设备从 virtqueue 获取请求并处理，完成之后向 guest 注入中断通知驱动；
+> （5）驱动回收 I/O 请求，更新 virtqueue，获取 I/O 请求的状态；
+
+Descriptor Table：包含一系列Descriptor描述符，每个描述符包括指向的数据地址（GPA）、数据长度、描述符flags属性、next指向当前描述符链的下一个描述符。描述符链包括：header（IO命令等）、data（可能有多个，用来指向对应的数据）、以及IO执行的当前状态。
+
+Available Ring：可用环中[last_avail_idx,idx-1]表示virtio驱动发出的但仍未被处理的IO请求
+
+Used Ring：已用环中ba[last_avail_idx,idx-1]表示virtio设备已经处理过的IO请求，等待virtio驱动回收
+
+### LoongArch virtio
+
+
+
