@@ -1572,11 +1572,15 @@ https://kouweilee.github.io/%E8%99%9A%E6%8B%9F%E5%8C%96/2024/01/24/Virtio-qemu-v
 《在hvisor上使用Virtio-blk和net设备》
 https://blog.syswonder.org/#/2024/20240415_Virtio_devices_tutorial
 
+《Virtio》https://hvisor.syswonder.org/chap04/subchap03/VirtIO/VirtIO-Define.html
+
 ### 其他资料
 
 《Virtio 原理与实现》https://zhuanlan.zhihu.com/p/639301753?utm_psn=1704906158266068992
 
 官方规范手册 https://docs.oasis-open.org/virtio/virtio/v1.1/csprd01/virtio-v1.1-csprd01.pdf
+
+Virtio-Console https://projectacrn.github.io/latest/developer-guides/hld/virtio-console.html
 
 ## virtio
 
@@ -1589,11 +1593,118 @@ https://blog.syswonder.org/#/2024/20240415_Virtio_devices_tutorial
 
 Descriptor Table：包含一系列Descriptor描述符，每个描述符包括指向的数据地址（GPA）、数据长度、描述符flags属性、next指向当前描述符链的下一个描述符。描述符链包括：header（IO命令等）、data（可能有多个，用来指向对应的数据）、以及IO执行的当前状态。
 
-Available Ring：可用环中[last_avail_idx,idx-1]表示virtio驱动发出的但仍未被处理的IO请求
+Available Ring：可用环中 $[\text{last\_avail\_idx},\text{idx}-1]$ 表示virtio驱动发出的但仍未被处理的IO请求
 
-Used Ring：已用环中ba[last_avail_idx,idx-1]表示virtio设备已经处理过的IO请求，等待virtio驱动回收
+Used Ring：已用环中 $[\text{last\_avail\_idx},\text{idx}-1]$ 表示virtio设备已经处理过的IO请求，等待virtio驱动回收
 
 ### LoongArch virtio
 
+目前loongarch官方和民间没有任何关于virtio相关的文档，只能看源码进行研究。
 
+> 龙芯之前给QEMU提供的代码里涉及到对各种virtio设备的支持，可以去研究一下最新版QEMU的源码看一下龙芯是怎么做支持的
+
+首先发现在defconfig中可以选择打开CONFIG_BLK_MQ_VIRTIO、CONFIG_VIRTIO_BLK、CONFIG_VIRTIO_CONSOLE、CONFIG_VIRTIO等配置
+
+#### CONFIG_VIRTIO
+
+此选项由实现了 virtio 总线的任何驱动程序选择，例如 VIRTIO_PCI、VIRTIO_MMIO、RPMSG 或 S390_GUEST。
+
+#### CONFIG_VIRTIO_CONSOLE
+
+用于hypervisor的 Virtio Console。同时也可以作为在Guest和Host之间进行数据传输的通用串行设备。当找到相应的端口时，在 `/dev/vportNpn` 处将创建字符设备，其中 $N$ 是设备编号，$n$ 是该设备内的端口编号。如果由主机指定，一个名为 name 的 sysfs 属性将被填充为这个端口的名称，udev 脚本可以使用该名称为设备创建符号链接。
+
+### virtio in hvisor
+
+src/device/virtio_trampoline.rs
+
+中断注入表VIRTIO_IRQS
+
+> 中断注入表是一个基于B树的键值对集合，键为CPU编号，值为一个数组，数组的第0个元素表示该数组的有效长度，后续的各个元素表示要注入到本CPU的中断。为了防止多个CPU同时操作中断注入表，CPU需要首先获取全局互斥锁才能访问中断注入表。通过中断注入表，CPU可以根据自身CPU编号得知需要为自己注入哪些中断。之后Hypervisor会向这些需要注入中断的CPU发送IPI核间中断，收到核间中断的CPU就会遍历中断注入表，向自身注入中断。
+
+```rust
+/// Save the irqs the virtio-device wants to inject. The format is <cpu_id, List<irq_id>>, and the first elem of List<irq_id> is the valid len of it.
+pub static VIRTIO_IRQS: Mutex<BTreeMap<usize, [u64; MAX_DEVS + 1]>> = Mutex::new(BTreeMap::new());
+```
+
+
+
+### virtio_bridge in hvisor-tool
+
+driver/hvisor.c hvisor_init_virtio
+
+tools/virtio.c
+
+tools/virtio_blk.c
+
+tools/virtio_console.c
+
+```
+init_console_dev
+virtio_console_init
+virtio_console_event_handler
+virtio_console_rxq_notify_handler
+virtio_console_txq_notify_handler
+virtio_console_close
+virtq_tx_handle_one_request
+```
+
+tools/virtio_net.c
+
+```c
+// 通信跳板结构体:
+struct virtio_bridge {
+    __u32 req_front;
+    __u32 req_rear;
+    __u32 res_front;
+    __u32 res_rear;
+    // 请求提交队列
+    struct device_req req_list[MAX_REQ]; 
+    // res_list、cfg_flags、cfg_values共同组成请求结果队列
+    struct device_res res_list[MAX_REQ];
+    __u64 cfg_flags[MAX_CPUS]; 
+    __u64 cfg_values[MAX_CPUS];
+    __u64 mmio_addrs[MAX_DEVS];
+    __u8 mmio_avail;
+    __u8 need_wakeup;
+};
+// 驱动发往设备的交互请求
+struct device_req {
+    __u64 src_cpu;
+    __u64 address; // zone's ipa
+    __u64 size;
+    __u64 value;
+    __u32 src_zone;
+    __u8 is_write;
+    __u8 need_interrupt;
+    __u16 padding;
+};
+// 设备要注入的中断信息
+struct device_res {
+    __u32 target_zone;
+    __u32 irq_id;
+};
+```
+
+> 请求提交队列，用于驱动向设备传递控制面的交互请求。当驱动读写Virtio设备的MMIO内存区域时，由于预先Hypervisor不为这段内存区域进行第二阶段地址映射，因此执行驱动程序的CPU会收到缺页异常，陷入Hypervisor。Hypervisor会将当前CPU编号、缺页异常的地址、地址宽度、要写入的值（如果是读则忽略）、虚拟机ID、是否为写操作等信息组合成名为device_req的结构体，并将其加入到请求提交队列req_list，这时监视请求提交队列的Virtio守护进程就会取出该请求进行处理。
+
+> 当Virtio守护进程完成请求的处理后，会将与结果相关的信息放入请求结果队列，并通知驱动程序。
+
+hvisor-tool和hvisor交互的请求结果队列组成：
+$$
+\text{hvisor require result queue}=\text{res\_list}+\text{cfg\_flags}+\text{cfg\_values}
+$$
+
+#### 数据面结果子队列
+
+> 数据面结果队列，由res_list结构体表示，用于存放注入中断的信息。当驱动程序写设备内存区域的Queue Notify寄存器时，表示可用环有新的数据，需要设备进行IO操作。由于IO操作耗时过长，Linux为了避免不必要的阻塞，提高CPU利用率，要求Hypervisor将IO请求提交给设备后，CPU需要立刻从Hypervisor返回到虚拟机，执行其他任务。这要求设备在完成IO操作后通过中断通知虚拟机。因此Virtio进程完成IO操作并更新已用环后，会将设备的中断号irq_id和设备所属的虚拟机ID组合成device_res结构体，加入到数据面结果子队列res_list中，并通过ioctl和hvc陷入到Hypervisor。数据面结果队列res_list类似于请求提交队列，是一个环形队列，通过队头索引res_front和队尾索引res_rear可确定队列长度。Hypervisor会从res_list中取出所有元素，并将其加入到中断注入表VIRTIO_IRQS。
+
+#### 控制面结果子队列
+
+> 控制面结果队列，由cfg_values和cfg_flags两个数组共同表示，数组索引为CPU编号，即每个CPU都唯一对应两个数组的同一个位置。cfg_values用于存放控制面接口交互的结果，cfg_flags用于指示设备是否完成控制面交互请求。
+
+#### hvisor-tool virtio daemon唤醒机制
+
+> 当驱动访问设备的MMIO区域时，会陷入EL2，进入mmio_virtio_handler函数。该函数会根据通信跳板中的need_wakeup标志位判断是否需要唤醒Virtio守护进程。如果标志位为1, 则向Root Linux的第0号CPU发送event id为IPI_EVENT_WAKEUP _VIRTIO_DEVICE的SGI中断，0号CPU收到SGI中断后，会陷入EL2，并向自身注入Root Linux设备树中hvisor_device节点的中断号。当0号CPU返回虚拟机时，会收到注入到自身的中断，进入内核服务模块提前注册的中断处理函数。该函数会通过send_sig_info函数向Virtio守护进程发送SIGHVI信号。Virtio守护进程事先阻塞在sig_wait函数，收到SIGHVI信号后，便会轮询请求提交队列，并设置need_wakeup标志位为0。
+
+### virtio-console的输入输出如何实现？
 
