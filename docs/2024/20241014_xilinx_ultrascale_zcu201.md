@@ -84,9 +84,14 @@ File - Export - Export Hardware
 
 ![image-20241030101643335](20241014_xilinx_ultrascale_zcu201.assets/image-20241030101643335.png)
 
-第一次创建出现报错： cmake: error while loading shared libraries: libssl.so.10: cannot open shared object file: No such file or directory
+第一次创建出现报错：
 
+```bash
+cmake: error while loading shared libraries: libssl.so.10: cannot open shared object file: No such file or directory
 cmake: error while loading shared libraries: libcrypto.so.10: cannot open shared object file: No such file or directory
+```
+
+检查一下lib：
 
 ```bash
 ➜  ~ whereis libssl.so
@@ -113,12 +118,12 @@ libmbedcrypto.so.2.28.3
 libmbedcrypto.so.7
 ```
 
-vitis的cmake要的libssl的版本位1.0.0，从源码编译一个安装
+vitis的cmake要的libssl的版本为1.0.0，只能从源码编译一个手动安装一下
 
 https://openssl-library.org/source/old/1.0.0/index.html
 
 ```bash
-./config shared zlib-dynamic
+./config shared zlib-dynamic && make -j12
 ➜  openssl-1.0.0 sudo cp libcrypto.so.1.0.0 /usr/lib/x86_64-linux-gnu/
 ➜  openssl-1.0.0 sudo cp libssl.so.1.0.0 /usr/lib/x86_64-linux-gnu 
 ➜  x86_64-linux-gnu sudo ln -s libssl.so.1.0.0 libssl.so.10
@@ -150,7 +155,7 @@ sudo apt install rlwrap
 
 然后就没问题了。
 
-> rlwrap是gnu readline工具中的一个（https://linux.die.net/man/1/rlwrap），其能够提供对任何command或程序的用户输入历史记录保存（上下箭头切换）、自定义补全等。xilinx使用rlwrap允许自己的xsdb debug程序
+> rlwrap是gnu readline工具中的一个（https://linux.die.net/man/1/rlwrap），其能够提供对任何command或程序的用户输入历史记录保存（上下箭头切换）、自定义补全等。xilinx使用rlwrap运行自己的xsdb debug程序
 
 ### 什么是petalinux
 
