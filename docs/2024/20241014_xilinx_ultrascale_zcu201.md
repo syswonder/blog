@@ -68,7 +68,7 @@ UART2  PL-UART (HD Bank 49)
 
 UART3  U41 System Controller UART
 
-### PS system programming
+### Hello World in Vivado and Vitis 2024
 
 在完成block design之后，首先需要导出这个硬件描述，才能让vitis拿到自己的PS系统所面向的硬件结构
 
@@ -149,3 +149,40 @@ sudo apt install rlwrap
 ```
 
 然后就没问题了。
+
+> rlwrap是gnu readline工具中的一个（https://linux.die.net/man/1/rlwrap），其能够提供对任何command或程序的用户输入历史记录保存（上下箭头切换）、自定义补全等。xilinx使用rlwrap允许自己的xsdb debug程序
+
+### 什么是petalinux
+
+petalinux是amd提供的一个嵌入式linux的**SDK**，包括：
+
+1. yocto extensible SDK
+2. XSCT工具链（Xilinx Software Commandline Tools）
+3. petalinux CLI tools
+
+https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18841937/Zynq+UltraScale+MPSoC+Ubuntu+part+2+-+Building+and+Running+the+Ubuntu+Desktop+From+Sources 这里有一份为zcu102编译好的ubuntu desktop镜像，不过之后可能要自己修改linux，所以还是需要学一下petalinux工具链
+
+### 安装petalinux SDK
+
+文档 https://docs.amd.com/r/en-US/ug1144-petalinux-tools-reference-guide/Overview
+
+下载地址 https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/embedded-design-tools.html
+
+安装完成后的基本命令表：
+
+|                            设计流程步骤 | 工具/工作流程                                    |
+| --------------------------------------: | :----------------------------------------------- |
+|          硬件平台创建（仅用于定制硬件） | AMD Vivado™ 设计工具                             |
+|                     创建 PetaLinux 项目 | `petalinux-create project`                       |
+| 初始化 PetaLinux 项目（仅用于定制硬件） | `petalinux-config --get-hw-description`          |
+|                          配置系统级选项 | `petalinux-config`                               |
+|                            创建用户组件 | `petalinux-create apps petalinux-create modules` |
+|                             配置 U-Boot | `petalinux-config -c u-boot`                     |
+|                         配置 Linux 内核 | `petalinux-config -c kernel`                     |
+|                          配置根文件系统 | `petalinux-config -c rootfs`                     |
+|                                构建系统 | `petalinux-build`                                |
+|                          打包以部署系统 | `petalinux-package`                              |
+|                        启动系统进行测试 | `petalinux-boot`                                 |
+|                              升级工作区 | `petalinux-upgrade`                              |
+|                 使用 Yocto 开发工具命令 | `petalinux-devtool`                              |
+|                            使用调试工具 | `petalinux-util`                                 |
