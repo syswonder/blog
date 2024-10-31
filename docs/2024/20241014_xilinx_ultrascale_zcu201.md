@@ -191,3 +191,14 @@ https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18841937/Zynq+UltraScale+M
 |                              升级工作区 | `petalinux-upgrade`                              |
 |                 使用 Yocto 开发工具命令 | `petalinux-devtool`                              |
 |                            使用调试工具 | `petalinux-util`                                 |
+
+从linux源码开始构建boot image
+
+https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18842481/Build+kernel#Buildkernel-Genericinstructionsforbuildingthekernel
+
+```bash
+make ARCH=arm64 xilinx_zynqmp_defconfig # for zynq MPSoc Ultrascale+
+make ARCH=arm64 menuconfig
+make ARCH=arm64
+```
+
