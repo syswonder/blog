@@ -3061,5 +3061,26 @@ bus@10000000 {
 
 其中1和3是device（backend）发出的，driver进行接收。
 
+## 2024.11.3记录
+
+拿到了新3A5000主机，固件是2310版本，不出意外UEFI出现了问题：
+
+![image-20241104114304693](20240807_hvisor_loongarch64_port.assets/image-20241104114304693.png)
+
+是一个页表dirty异常，地址是UART0的区域，之前的代码默认沿用了UEFI固件的部分页表，所以直接访问0x1fe001e0区域（实际上是物理地址）是没问题的，如果dirty异常则说明之前写这个区域被CPU在页表置dirty但软件没有清理dirty bit。由于这部分UEFI页表的详细信息hvisor无法拿到，目前想到的解决办法是换为DMW访问。
+
+## 2024.11.5记录
+
+uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区域即可，然后遇到了第二个问题，root linux启动到一半就崩溃了：
+
+![image-20241105152202547](20240807_hvisor_loongarch64_port.assets/image-20241105152202547.png)
+
+之后尝试打开一个全量的kernel debug log调试一下
+
+这周还需要补一个hvisor在loongarch的快速上手，之前在做hvisor-loongarh64 port时把uefi和rust的部分进行了分离，但是除了hvisor本身，uefi、linux、rootfs这部分实际上编译的过程相当复杂，并且由于loongarch这里所有dtb和rootfs都是编译时层层打包好的，所以目前需要做的一个事情是重构hvisor_uefi_packer，添加Kconfig系统：
+
+1. 支持配置hvisor代码目录
+2. 支持选择内嵌启动的vmlinux.bin的文件位置，由于vmlinux（root linux，并且内嵌了root dtb和rootlinux rootfs，其中rootlinux rootfs中存放non root vmlinux（包含nonroot dtb和nonroot rootfs））这部分过于复杂，涉及到我自己的多个仓库，并且rootfs部分由于相关原因不方便开源，所以我将直接提供一个最终的root linux vmlinux.bin文件
+
 
 
