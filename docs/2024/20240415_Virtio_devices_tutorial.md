@@ -5,10 +5,6 @@
 
 摘要：介绍如何在hvisor上使用Virtio-blk和Virtio-net设备
 
-## 前置要求
-
-现成的磁盘镜像可以在[这里](https://bhpan.buaa.edu.cn/link/AA1E20F132ED40417F92CE6D9CB1FDDF25)获取，密码为HVSR。
-
 ### 磁盘镜像的要求
 
 root Linux的磁盘镜像至少需要安装以下几个包：
@@ -38,16 +34,7 @@ make ARCH=arm64 CROSS_COMPILE=/root/gcc-arm-10.3-2021.07-x86_64-aarch64-none-lin
 
 ## 使用Virtio-blk设备
 
-目前支持在non root Linux中使用Virtio-blk设备作为根文件系统。例如，在root Linux的命令行依次执行：
-
-```
-insmod main.ko
-nohup ./hvisor virtio start \
-        --device blk,addr=0xa003c00,len=0x200,irq=78,zone_id=1,img=rootfs2.ext4 &
-./hvisor zone start --kernel Image,addr=0x70000000 --dtb linux2.dtb,addr=0x91000000 --id 1
-```
-
-便可启动non root Linux，根文件系统对应的镜像文件为`rootfs2.ext4`
+目前支持在non root Linux中使用Virtio-blk设备作为根文件系统。请仔细查看hvisor-tool的README。
 
 ## 使用Virtio-net设备
 
@@ -73,16 +60,7 @@ ip link set dev tap0 up
 
 ### 启动non-root-linux
 
-执行以下命令以启动Non root Linux：
-
-```shell
-insmod main.ko
-rm nohup.out
-nohup ./hvisor virtio start \
-        --device blk,addr=0xa003c00,len=0x200,irq=78,zone_id=1,img=rootfs2.ext4 \
-       --device net,addr=0xa003600,len=0x200,irq=75,zone_id=1,tap=tap0  &
-./hvisor zone start --kernel Image,addr=0x70000000 --dtb linux2.dtb,addr=0x91000000 --id 1
-```
+请仔细查看hvisor-tool的README，以启动Non root Linux和Virtio守护进程。
 
 在non root linux的命令行执行，以启动网卡：
 
