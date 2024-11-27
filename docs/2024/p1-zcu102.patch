@@ -1,0 +1,59 @@
+diff --git a/litex_boards/platforms/xilinx_zcu102.py b/litex_boards/platforms/xilinx_zcu102.py
+old mode 100644
+new mode 100755
+index 16ccfc3..28b2a21
+--- a/litex_boards/platforms/xilinx_zcu102.py
++++ b/litex_boards/platforms/xilinx_zcu102.py
+@@ -183,8 +183,8 @@ _io = [
+ # Connectors ---------------------------------------------------------------------------------------
+ 
+ _connectors = [
+-    ("j55", "A20 B20 A22 A21 B21 C21 C22 D21"),
+-    ("j87", "D20 E20 D22 E22 F20 G20 J20 J19"),
++    ("j55", "A20 B20 A22 A21 B21 C21 C22 D21"), # PMOD0
++    ("j87", "D20 E20 D22 E22 F20 G20 J20 J19"), # PMOD1
+     ("FMC_HPC0", {
+         "CLK0_M2C_N"      : "AA6",
+         "CLK0_M2C_P"      : "AA7",
+@@ -399,6 +399,31 @@ _connectors = [
+     }),
+ ]
+ 
++# PMODS
++def sdcard_pmod_io(pmod):
++    return [
++        # SDCard PMOD:
++        # - https://store.digilentinc.com/pmod-microsd-microsd-card-slot/
++        # - https://github.com/antmicro/arty-expansion-board
++        ("spisdcard", 0,
++            Subsignal("clk",  Pins(f"{pmod}:3")),
++            Subsignal("mosi", Pins(f"{pmod}:1"), Misc("PULLUP True")),
++            Subsignal("cs_n", Pins(f"{pmod}:0"), Misc("PULLUP True")),
++            Subsignal("miso", Pins(f"{pmod}:2"), Misc("PULLUP True")),
++            Misc("SLEW=FAST"),
++            IOStandard("LVCMOS18"),
++        ),
++        ("sdcard", 0,
++            Subsignal("data", Pins(f"{pmod}:2 {pmod}:4 {pmod}:5 {pmod}:0"), Misc("PULLUP True")),
++            Subsignal("cmd",  Pins(f"{pmod}:1"), Misc("PULLUP True")),
++          Subsignal("clk",  Pins(f"{pmod}:3")),
++            Subsignal("cd",   Pins(f"{pmod}:6")),
++            Misc("SLEW=FAST"),
++            IOStandard("LVCMOS18"),
++        ),
++]
++_sdcard_pmod_io = sdcard_pmod_io("j55") # SDCARD PMOD on JD.
++
+ # Platform -----------------------------------------------------------------------------------------
+ 
+ class Platform(XilinxUSPPlatform):
+@@ -406,7 +431,8 @@ class Platform(XilinxUSPPlatform):
+     default_clk_period = 1e9/125e6
+ 
+     def __init__(self, toolchain="vivado"):
+-        XilinxUSPPlatform.__init__(self, "xczu9eg-ffvb1156-2-i", _io, _connectors, toolchain=toolchain)
++        #XilinxUSPPlatform.__init__(self, "xczu9eg-ffvb1156-2-i", _io, _connectors, toolchain=toolchain)
++        XilinxUSPPlatform.__init__(self, "xczu9eg-ffvb1156-2-e", _io, _connectors, toolchain=toolchain)
+ 
+     def create_programmer(self):
+         return VivadoProgrammer()
