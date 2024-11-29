@@ -125,6 +125,7 @@ find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../rootfs.cpio.gz
 ### 2. Make a riscv kernel image within initrd.
 
 ```shell
+git clone https://github.com/BOSC-Hvisor/linux.git # this kernel with kvm and tools.
 make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- defconfig
 # .config
 ## CONFIG_BLK_DEV_INITRD=y
@@ -137,6 +138,7 @@ make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- defconfig
 
 make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- -j16
 ls -lh arch/riscv/boot/Image
+ls -lh arch/riscv/kvm/kvm.ko
 ```
 
 
@@ -183,7 +185,7 @@ ls -lh arch/riscv/boot/Image
                         mmu-type = "riscv,sv39";
                         next-level-cache = <&L14>;
                         reg = <0x0>;
-                        riscv,isa = "rv64imafdc";
+                        riscv,isa = "rv64imafdch";
                         riscv,pmpgranularity = <4>;
                         riscv,pmpregions = <8>;
                         status = "okay";
@@ -213,7 +215,7 @@ ls -lh arch/riscv/boot/Image
                         mmu-type = "riscv,sv39";
                         next-level-cache = <&L14>;
                         reg = <0x1>;
-                        riscv,isa = "rv64imafdc";
+                        riscv,isa = "rv64imafdch";
                         riscv,pmpgranularity = <4>;
                         riscv,pmpregions = <8>;
                         status = "okay";
@@ -243,7 +245,7 @@ ls -lh arch/riscv/boot/Image
                         mmu-type = "riscv,sv39";
                         next-level-cache = <&L14>;
                         reg = <0x2>;
-                        riscv,isa = "rv64imafdc";
+                        riscv,isa = "rv64imafdch";
                         riscv,pmpgranularity = <4>;
                         riscv,pmpregions = <8>;
                         status = "okay";
@@ -273,7 +275,7 @@ ls -lh arch/riscv/boot/Image
                         mmu-type = "riscv,sv39";
                         next-level-cache = <&L14>;
                         reg = <0x3>;
-                        riscv,isa = "rv64imafdc";
+                        riscv,isa = "rv64imafdch";
                         riscv,pmpgranularity = <4>;
                         riscv,pmpregions = <8>;
                         status = "okay";
@@ -480,7 +482,23 @@ ls -lh arch/riscv/boot/Image
 dtc -I dts -O dtb -o ./rocketchip.dtb ./rocketchip.dts
 ```
 
-### 4. Make a firmware for riscv soft core.
+
+### 4. Build KVMTOOL
+
+```shell
+git clone https://git.kernel.org/pub/scm/linux/kernel/git/will/kvmtool.git
+export ARCH=riscv
+export CROSS_COMPILE=riscv64-unknown-linux-gnu-
+cd kvmtool
+make lkvm-static
+${CROSS_COMPILE}strip lkvm-static
+cd ..
+```
+
+The above commands will create `kvmtool/lkvm-static` which will be our user-space tool for KVM RISC-V.
+
+
+### 5. Make a firmware for riscv soft core.
 
 ```shell
 make -C /path/to/opensbi clean &&  make FW_PAYLOAD=y PLATFORM=zcu102 CROSS_COMPILE=riscv64-unknown-linux-gnu- FW_PAYLOAD_PATH=/path/to/Image FW_FDT_PATH=/path/to/rocketchip.dtb -j8
