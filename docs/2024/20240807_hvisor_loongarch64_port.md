@@ -2506,7 +2506,7 @@ loop1          ram13          tty26          tty6           ttypd
 
 可以看到port0的virtio-console的dev文件是有的，vport0n0是“port”设备，而port设备挂载的hvc console（/dev/hvc0）才是类似tty这样的终端设备
 
-![image-20241015171848117](20240807_hvisor_loongarch64_port.assets/image-20241015171848117.png)
+![image-20241015171848117](imgs/20240807_hvisor_loongarch64_port/image-20241015171848117.png)
 
 backend收到了从driver发来的tx数据，但是看起来都是无效字符。接下来研究一下linux内的virtio-console源码，debug一下发送给virtio-console的数据在一开始是否是正确的。
 
@@ -2975,7 +2975,7 @@ static void handle_cpu_irq(struct pt_regs *regs)
 }
 ```
 
-<img src="20240807_hvisor_loongarch64_port.assets/loongarch_irq.png" alt="LoongArch-Irq" style="zoom:67%;" />
+<img src="imgs/20240807_hvisor_loongarch64_port/loongarch_irq.png" alt="LoongArch-Irq" style="zoom:67%;" />
 
 IS是ESTATE寄存器的12:0位，virtio中断注入的话考虑HWI[7:0]和SWI[1:0]。可以看到handle_cpu_irq函数从IS中低位依次取出为1的bit作为hwirq（ffs找到低位第一个bit的“位置/下标”，例如bit1=1则应返回2,表示第2个位置为1），然后函数清除了这一位，并将下标-1发送给generic_handle_domain_irq（ffs的结果-1才能映射为从0开始的“下标”）。
 
@@ -3065,7 +3065,7 @@ bus@10000000 {
 
 拿到了新3A5000主机，固件是2310版本，不出意外UEFI出现了问题：
 
-![image-20241104114304693](20240807_hvisor_loongarch64_port.assets/image-20241104114304693.png)
+![image-20241104114304693](imgs/20240807_hvisor_loongarch64_port/image-20241104114304693.png)
 
 是一个页表dirty异常，地址是UART0的区域，之前的代码默认沿用了UEFI固件的部分页表，所以直接访问0x1fe001e0区域（实际上是物理地址）是没问题的，如果dirty异常则说明之前写这个区域被CPU在页表置dirty但软件没有清理dirty bit。由于这部分UEFI页表的详细信息hvisor无法拿到，目前想到的解决办法是换为DMW访问。
 
@@ -3073,7 +3073,7 @@ bus@10000000 {
 
 uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区域即可，然后遇到了第二个问题，root linux启动到一半就崩溃了：
 
-![image-20241105152202547](20240807_hvisor_loongarch64_port.assets/image-20241105152202547.png)
+![image-20241105152202547](imgs/20240807_hvisor_loongarch64_port/image-20241105152202547.png)
 
 之后尝试打开一个全量的kernel debug log调试一下
 
@@ -3088,8 +3088,8 @@ uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区
 
 如下图中可以看到 CPU 3 的 IPI event 的待处理队列在不断变长，而每次 trap handler 只处理一个 event（trap 次数因为未知原因少于 send event 次数，推测可能是硬件无法处理过于频繁的 IPI 通信，之前也通过手动添加延时的 hacking 延长了 IPI 之间的间隔解决了输入的问题，但是一是这样导致输入速度过慢，并且延时的做法不能解决输出卡死的问题），这将最终导致输入和输入卡死，或者输入多个字符后才能得到最新的输出）：
 
-![](20240807_hvisor_loongarch64_port.assets/Screenshot from 2025-02-11 11-03-29.png)
+![](imgs/20240807_hvisor_loongarch64_port/v1.png)
 
 目前的解决方案是在 loongarch target 下，hvisor 的 send event 强制要求对方 CPU 处理完自己的上一个 IPI 请求，当前 CPU 才能发送新的 IPI 过去（blocking），解决了这个问题：
 
-![](20240807_hvisor_loongarch64_port.assets/Screenshot from 2025-02-11 11-19-52.png)
+![](imgs/20240807_hvisor_loongarch64_port/v2.png)

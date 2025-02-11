@@ -6,11 +6,11 @@ wheatfox
 
 在vivado里试着创建一个ZCU102的example project，架构如下：
 
-![image-20241030093201475](20241014_xilinx_ultrascale_zcu201.assets/image-20241030093201475.png)
+![image-20241030093201475](imgs/20241014_xilinx_ultrascale_zcu201/image-20241030093201475.png)
 
-![image-20241030093308543](20241014_xilinx_ultrascale_zcu201.assets/image-20241030093308543.png)
+![image-20241030093308543](imgs/20241014_xilinx_ultrascale_zcu201/image-20241030093308543.png)
 
-其中ZYNQ即SoC上的ARM硬核，其通过AXI互联和GPIO/FPGA BRAM相连，默认的模板引出了GPIO[7:0]的8个LED位。ZYNQ架构的block design如下：![image-20241030094017074](20241014_xilinx_ultrascale_zcu201.assets/image-20241030094017074.png)
+其中ZYNQ即SoC上的ARM硬核，其通过AXI互联和GPIO/FPGA BRAM相连，默认的模板引出了GPIO[7:0]的8个LED位。ZYNQ架构的block design如下：![image-20241030094017074](imgs/20241014_xilinx_ultrascale_zcu201/image-20241030094017074.png)
 
 PL -> DTS overlay on hot-reload
 
@@ -84,11 +84,11 @@ File - Export - Export Hardware
 
 打开vitis IDE，打开一个workspace，之后创建一个新的platform component，创建时选择刚刚的xsa文件：
 
-![image-20241030101446510](20241014_xilinx_ultrascale_zcu201.assets/image-20241030101446510.png)
+![image-20241030101446510](imgs/20241014_xilinx_ultrascale_zcu201/image-20241030101446510.png)
 
 之后vitis会自动开始生成我们xsa的设备树，然后进入OS和CPU选择，OS可以选择standalone、freerots、linux，CPU这里选A53的application cpu。
 
-![image-20241030101643335](20241014_xilinx_ultrascale_zcu201.assets/image-20241030101643335.png)
+![image-20241030101643335](imgs/20241014_xilinx_ultrascale_zcu201/image-20241030101643335.png)
 
 第一次创建出现报错：
 
@@ -141,13 +141,13 @@ sudo ldconfig
 
 添加一个hello world工程，左下角build后就可以在build目录得到elf文件：
 
-![image-20241030103749791](20241014_xilinx_ultrascale_zcu201.assets/image-20241030103749791.png)
+![image-20241030103749791](imgs/20241014_xilinx_ultrascale_zcu201/image-20241030103749791.png)
 
 https://xilinx.github.io/Embedded-Design-Tutorials/docs/2023.1/build/html/docs/Introduction/ZynqMPSoC-EDT/4-build-sw-for-ps-subsystems.html
 
 在vitis魔改的vscode IDE中启动调试，通过termius开一个ttyUSB0的115200串口，然后可以看到PS系统的APU成功发送了hello world：
 
-![image-20241030104907727](20241014_xilinx_ultrascale_zcu201.assets/image-20241030104907727.png)
+![image-20241030104907727](imgs/20241014_xilinx_ultrascale_zcu201/image-20241030104907727.png)
 
 但是每次debug启动时都会有xsdb脚本报错segmentation fault然后卡很久，从apt安装一个rlwrap然后把xilinx自带的那个没法运行的换掉：
 
@@ -381,7 +381,7 @@ wheatfox@dedsec-amd0:~/Documents/Code/petalinux_projects/wheatfox_hw0$
 
 成功启动linux：
 
-![image-20241104203205266](20241014_xilinx_ultrascale_zcu201.assets/image-20241104203205266.png)
+![image-20241104203205266](imgs/20241014_xilinx_ultrascale_zcu201/image-20241104203205266.png)
 
 ```
 ********************************************************************************************
