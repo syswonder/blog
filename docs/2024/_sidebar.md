@@ -7,3 +7,6 @@
 - [在NXP OK8MP启动Jailhouse](20240223_NXP_Boot_Jailhouse_Tutorial.md)
 - [在hvisor(loongarch)里启动linux vm](20240403_loongarch_linux.md)
 - [移植hvisor到LoongArch64架构](20240807_hvisor_loongarch64_port.md)
+- [在NXP上将GPU直通给Zone0和Zone1](20241004_GPU_ON_NXP.md)
+- [ITS的原理及虚拟化实现](20241008_ITS_tutorial.md)
+- [Linux CCF分析](20241226_linux_ccf.md)
