@@ -1,5 +1,35 @@
 # 矽望社区技术博客文章节选
 
+## Linux CCF（Clock Common Framework）分析
+
+**时间：** 2024年12月26日
+
+**作者：** 李国玮
+
+摘要：介绍Arm Linux如何对时钟进行管理，以及nxp一些实例分析。
+
+[正文](2024/20241226_linux_ccf.md)
+
+## 在NXP上将GPU直通给Zone0和Zone1
+
+**时间：** 2024年10月4日
+
+**作者：** 李国玮
+
+摘要：介绍如何在NXP上，在hvisor虚拟化环境中将GPU直通给Zone 0和Zone1
+
+[正文](2024/20241004_GPU_ON_NXP.md)
+
+## 移植hvisor到LoongArch64架构
+
+**时间：** 2024年8月7日
+
+**作者：** 韩喻泷
+
+摘要：介绍了在LoongArch64架构上移植hvisor的过程、遇到的问题以及解决方案。
+
+[正文](2024/20240807_hvisor_loongarch64_port.md)
+
 ## ZCU102 FPGA launch RocketChip with H-extension and Boot Riscv64 Linux.
 
 **时间：** 2024年7月8日

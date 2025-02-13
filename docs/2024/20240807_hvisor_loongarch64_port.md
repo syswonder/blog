@@ -3098,9 +3098,9 @@ uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区
 
 ## 2025.2.11记录
 
-修好了 nonroot 的 screen 经常在输入或输出时随机卡死的问题，问题原因是 3A5000 主板的 IPI 处理，有时候 CPU0 依次发送了两个 IPI event，但是只有一个触发了对应 CPU 的 trap handler，这就导致频繁的出现 IRQ injection 之后没有清除或者没有即时 IRQ injection的情况，从而导致每次输入的字符因为没有正常触发 nonroot 的驱动从而进行及时的 echo 或者程序输出。由于 virtio console 中 nonroot 向 root 的 pts 输出时仍然需要进行一些 IRQ injection，所以之前在输出时也会出现卡死的问题。
+修好了 nonroot 的 screen 经常在输入或输出时随机卡死的问题，有时候 CPU0 依次发送了两个 IPI event，但是只有一个触发了对应 CPU 的 trap handler，这就导致频繁的出现 IRQ injection 之后没有清除或者没有即时 IRQ injection的情况，从而导致每次输入的字符因为没有正常触发 nonroot 的驱动从而进行及时的 echo 或者程序输出。由于 virtio console 中 nonroot 向 root 的 pts 输出时仍然需要进行一些 IRQ injection，所以之前在输出时也会出现卡死的问题。
 
-出现这种情况的原因是 loongarch 架构在进入异常处理时，CPU 默认会将中断位关闭，具体流程可以参见 loongarch 手册第一卷的相关说明：<https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#general-hardware-exception-handling-of-general-exceptions>
+经过 deubg 和分析，发现出现这种情况的原因是 loongarch 架构在进入异常处理时，CPU 默认会将中断位关闭，具体流程可以参见 loongarch 手册第一卷的相关说明：<https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#general-hardware-exception-handling-of-general-exceptions>
 
 > When a general exception is triggered, the processor does the following: Store PLV and IE in CSR.CRMD to PPLV and PIE in CSR.PRMD, **then set PLV in CSR.CRMD to 0 and IE to 0**; For implementations that support the Watch function, also store WE in CSR.CRMD to PWE in CSR.PRMD and then set WE in CSR.CRMD to 0; Record PC that triggered the exception by CSR.ERA; Jump to the exception entry to fetch instructions. When the software executes the ERTN instruction returning from general exceptions, the processor does the following: Restore PPLV and PIE in CSR.PRMD to PLV and IE in CSR.CRMD; For implementations that support the Watch function, also restore PWE in CSR.PRMD to WE in CSR.CRMD; Jump to the address recorded by CSR.ERA to fetch instructions. For the above hardware implementation, the software needs to save PPLV and PIE in CSR.PRMD if the interrupt needs to be enabled during the exception handling, and restore the saved contents to CSR.PRMD before the exception returns.
 
