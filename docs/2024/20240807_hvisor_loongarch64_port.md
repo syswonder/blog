@@ -1789,7 +1789,9 @@ hvisor-tool update
 
 中断注入zone0 virtio daemon
 
-<img src="imgs/20240807_hvisor_loongarch64_port/virtio.drawio.png" alt="virtio.drawio" style="zoom: 33%;" />
+<!-- <img src="imgs/20240807_hvisor_loongarch64_port/virtio.drawio.png" alt="virtio.drawio" style="zoom: 33%;" /> -->
+
+[![virtio.drawio](imgs/20240807_hvisor_loongarch64_port/virtio.drawio.png)](imgs/20240807_hvisor_loongarch64_port/virtio.drawio.png)
 
 ## 2024.9.24 记录
 
@@ -2975,7 +2977,9 @@ static void handle_cpu_irq(struct pt_regs *regs)
 }
 ```
 
-<img src="imgs/20240807_hvisor_loongarch64_port/loongarch_irq.png" alt="LoongArch-Irq" style="zoom:67%;" />
+<!-- <img src="imgs/20240807_hvisor_loongarch64_port/loongarch_irq.png" alt="LoongArch-Irq" style="zoom:67%;" /> -->
+
+[LoongArch-Irq](imgs/20240807_hvisor_loongarch64_port/loongarch_irq.png)
 
 IS是ESTATE寄存器的12:0位，virtio中断注入的话考虑HWI[7:0]和SWI[1:0]。可以看到handle_cpu_irq函数从IS中低位依次取出为1的bit作为hwirq（ffs找到低位第一个bit的“位置/下标”，例如bit1=1则应返回2,表示第2个位置为1），然后函数清除了这一位，并将下标-1发送给generic_handle_domain_irq（ffs的结果-1才能映射为从0开始的“下标”）。
 
@@ -3081,6 +3085,16 @@ uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区
 
 1. 支持配置hvisor代码目录
 2. 支持选择内嵌启动的vmlinux.bin的文件位置，由于vmlinux（root linux，并且内嵌了root dtb和rootlinux rootfs，其中rootlinux rootfs中存放non root vmlinux（包含nonroot dtb和nonroot rootfs））这部分过于复杂，涉及到我自己的多个仓库，并且rootfs部分由于相关原因不方便开源，所以我将直接提供一个最终的root linux vmlinux.bin文件
+
+## 2024.12 - 2025.1 记录
+
+<https://www.oscommunity.cn/2024/11/28/20241107-syswonder-report/>
+
+<https://www.oscommunity.cn/2024/11/28/20241114-syswonder-report/>
+
+<https://www.oscommunity.cn/2024/11/28/20241128-syswonder-report/>
+
+修复了 liointc、hvc 等相关的诸多问题，root linux 和 nonroot linux 均可启动，但从 root linux 的 screen 向 nonroot 进行输入输出时有随机卡死的情况。
 
 ## 2025.2.11记录
 
