@@ -1552,3 +1552,1562 @@ https://lore.kernel.org/loongarch/ loongarch linux mail list
 https://lore.kernel.org/loongarch/ME4P282MB1397447C3C094554C7AF2E37B58E2@ME4P282MB1397.AUSP282.PROD.OUTLOOK.COM/T/#u
 
 ![image-20240821115009629](imgs/20240807_hvisor_loongarch64_port/image-20240821115009629.png)
+
+## 2024.9.1 记录
+
+研究一下virtio，以及目前hvisor和virtio相关的设计，并且调查一下LoongArch下的virtio目前做到了哪种程度。
+
+### 李国玮同学写的笔记
+
+《Virtio基础知识》https://kouweilee.github.io/virtio/2023/12/01/Virtio-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86.html
+
+《Linux virtio driver与device间的通信》https://kouweilee.github.io/linux/2024/01/08/LInux-virtio-driver%E4%B8%8Edevice%E9%97%B4%E7%9A%84%E9%80%9A%E4%BF%A1.html
+
+《virtiofs》
+https://kouweilee.github.io/%E8%99%9A%E6%8B%9F%E5%8C%96/2024/01/19/%E8%99%9A%E6%8B%9F%E5%8C%96-virtiofs.html
+
+《qemu virtio blk设备分析》
+https://kouweilee.github.io/%E8%99%9A%E6%8B%9F%E5%8C%96/2024/01/24/Virtio-qemu-virtio-blk%E8%AE%BE%E5%A4%87%E5%88%86%E6%9E%90.html
+
+《在hvisor上使用Virtio-blk和net设备》
+https://blog.syswonder.org/#/2024/20240415_Virtio_devices_tutorial
+
+《Virtio》https://hvisor.syswonder.org/chap04/subchap03/VirtIO/VirtIO-Define.html
+
+### 其他资料
+
+《Virtio 原理与实现》https://zhuanlan.zhihu.com/p/639301753?utm_psn=1704906158266068992
+
+官方规范手册 https://docs.oasis-open.org/virtio/virtio/v1.1/csprd01/virtio-v1.1-csprd01.pdf
+
+Virtio-Console https://projectacrn.github.io/latest/developer-guides/hld/virtio-console.html
+
+## virtio
+
+> virtio 驱与 virtio 设备交互通信的完整流程，大体上分为如下几个步骤：
+> （1）初始化 virtqueue，驱动与设备基于 virtqueue 进行通信；
+> （2）Virtio 驱动将 I/O 请求组织为描述符链并记录到 virtqueue；
+> （3）驱动通知设备处理请求；
+> （4）设备从 virtqueue 获取请求并处理，完成之后向 guest 注入中断通知驱动；
+> （5）驱动回收 I/O 请求，更新 virtqueue，获取 I/O 请求的状态；
+
+Descriptor Table：包含一系列Descriptor描述符，每个描述符包括指向的数据地址（GPA）、数据长度、描述符flags属性、next指向当前描述符链的下一个描述符。描述符链包括：header（IO命令等）、data（可能有多个，用来指向对应的数据）、以及IO执行的当前状态。
+
+Available Ring：可用环中 $[\text{last\_avail\_idx},\text{idx}-1]$ 表示virtio驱动发出的但仍未被处理的IO请求
+
+Used Ring：已用环中 $[\text{last\_avail\_idx},\text{idx}-1]$ 表示virtio设备已经处理过的IO请求，等待virtio驱动回收
+
+### LoongArch virtio
+
+目前loongarch官方和民间没有任何关于virtio相关的文档，只能看源码进行研究。
+
+> 龙芯之前给QEMU提供的代码里涉及到对各种virtio设备的支持，可以去研究一下最新版QEMU的源码看一下龙芯是怎么做支持的
+
+首先发现在defconfig中可以选择打开CONFIG_BLK_MQ_VIRTIO、CONFIG_VIRTIO_BLK、CONFIG_VIRTIO_CONSOLE、CONFIG_VIRTIO等配置
+
+#### CONFIG_VIRTIO
+
+此选项由实现了 virtio 总线的任何驱动程序选择，例如 VIRTIO_PCI、VIRTIO_MMIO、RPMSG 或 S390_GUEST。
+
+#### CONFIG_VIRTIO_CONSOLE
+
+用于hypervisor的 Virtio Console。同时也可以作为在Guest和Host之间进行数据传输的通用串行设备。当找到相应的端口时，在 `/dev/vportNpn` 处将创建字符设备，其中 $N$ 是设备编号，$n$ 是该设备内的端口编号。如果由主机指定，一个名为 name 的 sysfs 属性将被填充为这个端口的名称，udev 脚本可以使用该名称为设备创建符号链接。
+
+### virtio in hvisor
+
+src/device/virtio_trampoline.rs
+
+中断注入表VIRTIO_IRQS
+
+> 中断注入表是一个基于B树的键值对集合，键为CPU编号，值为一个数组，数组的第0个元素表示该数组的有效长度，后续的各个元素表示要注入到本CPU的中断。为了防止多个CPU同时操作中断注入表，CPU需要首先获取全局互斥锁才能访问中断注入表。通过中断注入表，CPU可以根据自身CPU编号得知需要为自己注入哪些中断。之后Hypervisor会向这些需要注入中断的CPU发送IPI核间中断，收到核间中断的CPU就会遍历中断注入表，向自身注入中断。
+
+```rust
+/// Save the irqs the virtio-device wants to inject. The format is <cpu_id, List<irq_id>>, and the first elem of List<irq_id> is the valid len of it.
+pub static VIRTIO_IRQS: Mutex<BTreeMap<usize, [u64; MAX_DEVS + 1]>> = Mutex::new(BTreeMap::new());
+```
+
+### virtio_bridge in hvisor-tool
+
+driver/hvisor.c hvisor_init_virtio
+
+tools/virtio.c
+
+tools/virtio_blk.c
+
+tools/virtio_console.c
+
+```
+init_console_dev
+virtio_console_init
+virtio_console_event_handler
+virtio_console_rxq_notify_handler
+virtio_console_txq_notify_handler
+virtio_console_close
+virtq_tx_handle_one_request
+```
+
+tools/virtio_net.c
+
+```c
+// 通信跳板结构体:
+struct virtio_bridge {
+    __u32 req_front;
+    __u32 req_rear;
+    __u32 res_front;
+    __u32 res_rear;
+    // 请求提交队列
+    struct device_req req_list[MAX_REQ]; 
+    // res_list、cfg_flags、cfg_values共同组成请求结果队列
+    struct device_res res_list[MAX_REQ];
+    __u64 cfg_flags[MAX_CPUS]; 
+    __u64 cfg_values[MAX_CPUS];
+    __u64 mmio_addrs[MAX_DEVS];
+    __u8 mmio_avail;
+    __u8 need_wakeup;
+};
+// 驱动发往设备的交互请求
+struct device_req {
+    __u64 src_cpu;
+    __u64 address; // zone's ipa
+    __u64 size;
+    __u64 value;
+    __u32 src_zone;
+    __u8 is_write;
+    __u8 need_interrupt;
+    __u16 padding;
+};
+// 设备要注入的中断信息
+struct device_res {
+    __u32 target_zone;
+    __u32 irq_id;
+};
+```
+
+> 请求提交队列，用于驱动向设备传递控制面的交互请求。当驱动读写Virtio设备的MMIO内存区域时，由于预先Hypervisor不为这段内存区域进行第二阶段地址映射，因此执行驱动程序的CPU会收到缺页异常，陷入Hypervisor。Hypervisor会将当前CPU编号、缺页异常的地址、地址宽度、要写入的值（如果是读则忽略）、虚拟机ID、是否为写操作等信息组合成名为device_req的结构体，并将其加入到请求提交队列req_list，这时监视请求提交队列的Virtio守护进程就会取出该请求进行处理。
+
+> 当Virtio守护进程完成请求的处理后，会将与结果相关的信息放入请求结果队列，并通知驱动程序。
+
+hvisor-tool和hvisor交互的请求结果队列组成：
+$$
+\text{hvisor require result queue}=\text{res\_list}+\text{cfg\_flags}+\text{cfg\_values}
+$$
+
+#### 数据面结果子队列
+
+> 数据面结果队列，由res_list结构体表示，用于存放注入中断的信息。当驱动程序写设备内存区域的Queue Notify寄存器时，表示可用环有新的数据，需要设备进行IO操作。由于IO操作耗时过长，Linux为了避免不必要的阻塞，提高CPU利用率，要求Hypervisor将IO请求提交给设备后，CPU需要立刻从Hypervisor返回到虚拟机，执行其他任务。这要求设备在完成IO操作后通过中断通知虚拟机。因此Virtio进程完成IO操作并更新已用环后，会将设备的中断号irq_id和设备所属的虚拟机ID组合成device_res结构体，加入到数据面结果子队列res_list中，并通过ioctl和hvc陷入到Hypervisor。数据面结果队列res_list类似于请求提交队列，是一个环形队列，通过队头索引res_front和队尾索引res_rear可确定队列长度。Hypervisor会从res_list中取出所有元素，并将其加入到中断注入表VIRTIO_IRQS。
+
+#### 控制面结果子队列
+
+> 控制面结果队列，由cfg_values和cfg_flags两个数组共同表示，数组索引为CPU编号，即每个CPU都唯一对应两个数组的同一个位置。cfg_values用于存放控制面接口交互的结果，cfg_flags用于指示设备是否完成控制面交互请求。
+
+#### hvisor-tool virtio daemon唤醒机制
+
+> 当驱动访问设备的MMIO区域时，会陷入EL2，进入mmio_virtio_handler函数。该函数会根据通信跳板中的need_wakeup标志位判断是否需要唤醒Virtio守护进程。如果标志位为1, 则向Root Linux的第0号CPU发送event id为IPI_EVENT_WAKEUP _VIRTIO_DEVICE的SGI中断，0号CPU收到SGI中断后，会陷入EL2，并向自身注入Root Linux设备树中hvisor_device节点的中断号。当0号CPU返回虚拟机时，会收到注入到自身的中断，进入内核服务模块提前注册的中断处理函数。该函数会通过send_sig_info函数向Virtio守护进程发送SIGHVI信号。Virtio守护进程事先阻塞在sig_wait函数，收到SIGHVI信号后，便会轮询请求提交队列，并设置need_wakeup标志位为0。
+
+## 2024.9.18记录
+
+在nonroot设备树中分配一块virtio mmio区域用于virtio-console使用
+
+```c
+drivers/virtio/virtio-mmio.c:
+/*
+* 2. Device Tree node, eg.:
+*
+*		virtio_block@1e000 {
+*			compatible = "virtio,mmio";
+*			reg = <0x1e000 0x100>;
+*			interrupts = <42>;
+*		}
+*
+* 3. Kernel module (or command line) parameter. Can be used more than once -
+*    one device will be created for each one. Syntax:
+*
+*		[virtio_mmio.]device=<size>@<baseaddr>:<irq>[:<id>]
+*    where:
+*		<size>     := size (can use standard suffixes like K, M or G)
+*		<baseaddr> := physical base address
+*		<irq>      := interrupt number (as passed to request_irq())
+*		<id>       := (optional) platform device id
+*    eg.:
+*		virtio_mmio.device=0x100@0x100b0000:48 \
+*				virtio_mmio.device=1K@0x1001e000:74
+*/
+```
+
+drivers/char/virtio_console.c
+
+在编译内核的时候打开了相关的virtio选项，在启动时实际上自动加载了virtio-console等驱动：
+
+```
+[    1.899940] printk: legacy console [ttyS0] enabled
+[    1.899940] printk: legacy console [ttyS0] enabled
+[    1.900555] printk: legacy bootconsole [ns16550a0] disabled
+[    1.900555] printk: legacy bootconsole [ns16550a0] disabled
+[    1.923675] [WHEATFOX] virtio_console_init
+[    1.923969] [WHEATFOX] __register_virtio_driver, driver->driver.name: virtio_console
+[    1.924316] [WHEATFOX] __register_virtio_driver, driver->driver.name: virtio_rproc_serial
+[    1.945653] brd: module loaded
+[    1.955736] loop: module loaded
+[    1.955989] [WHEATFOX] __register_virtio_driver, driver->driver.name: virtio_blk
+[    1.957599] megaraid cmm: 2.20.2.7 (Release Date: Sun Jul 16 00:01:03 EST 2006)
+[    1.958100] megaraid: 2.20.5.1 (Release Date: Thu Nov 16 15:32:35 EST 2006)
+[    1.958465] megasas: 07.727.03.00-rc1
+[    1.958851] mpt3sas version 48.100.00.00 loaded
+[    1.962413] i2c_dev: i2c /dev entries driver
+```
+
+这里需要和dts里的virtio-mmio区域区分，实际上hvisor-tool需要拿到这块区域的信息，然后和这部分共享内存进行交互（virtqueue等）。问题：virtio-console如何知道自己应该用哪个virtio mmio？dts里是可以添加许多virtio mmio的，各种设备如何知道用哪个？
+
+在QEMU内测试nonroot，发现virtio console的driver注册了，但是并没有创建vport设备，调查一下。
+
+```c
+/*
+ * Once we're further in boot, we get probed like any other virtio
+ * device.
+ *
+ * If the host also supports multiple console ports, we check the
+ * config space to see how many ports the host has spawned.  We
+ * initialize each port found.
+ */
+static int virtcons_probe(struct virtio_device *vdev)
+```
+
+这样大概明白了，virtio_mmio空间实际上在vm启动时，hypervisor就应当写好相应的config信息，使得linux在boot时通过virtio console driver对这些区域进行probe（如果是console类型则probe到/dev/vportNpn注册真正的device）。
+
+### 在hvisor上启动virtio nonroot
+
+看了一下hvisor-tool的virtio逻辑,目前的还是有一些问题:
+
+1. virtio部分可能需要在loongarch下进行移植,目前只支持ARM/RISCV,之前zone start部分我是自己移植好的,适配了loongarch下的linux 6.9.8内核接口以及地址格式
+2. root linux需要添加一个hvisor设备树,用于hvisor注入中断触发hvisor-tool virtio守护进程,这部分hvisor和hvisor-tool都需要针对loongarch进行中断功能的移植,loongarch和ARM的中断以及虚拟化存在差异virt
+
+https://rootw.github.io/2019/09/firecracker-virtio/
+
+![](imgs/20240807_hvisor_loongarch64_port/example.png)
+
+hvisor-tool update
+
+中断注入zone0 virtio daemon
+
+<!-- <img src="imgs/20240807_hvisor_loongarch64_port/virtio.drawio.png" alt="virtio.drawio" style="zoom: 33%;" /> -->
+
+[![virtio.drawio](imgs/20240807_hvisor_loongarch64_port/virtio.drawio.png)](imgs/20240807_hvisor_loongarch64_port/virtio.drawio.png)
+
+## 2024.9.24 记录
+
+周末和李国玮同学讨论了一下hvisor-tool里virtio部分的细节，包括最近对hvisor和hvisor-tool的修改适配（结构体调整等），并将loongarch下的virtio-daemon修改为非signal触发型。目前存在的几个问题：
+
+1. 目前还不知道loongarch虚拟化下如何进行**中断注入**，手册中资料较少，关于中断控制器的虚拟化则完全没有资料
+2. IPI之间存在奇怪的延迟，zone0发出boot nonroot的IPI后，zone3（举例）等了几秒钟之后才开始进行启动，原因？
+
+一些思路：
+
+1. 虽然没有关于中断虚拟化的资料，但是至少龙芯在KVM中是实现了相关的中断功能的，研究一下KVM源码关于中断的部分
+2. 测试+debug一下整个IPI流程，看是否有异常
+
+目前进度是已经能够拦截对virtio-mmio区域的请求并译码，发送给zone0的virtio-daemon，但是李国玮同学说virtio请求完成后，只能以中断注入的形式通知zone3（举例），所以无论如何都需要实现loongarch虚拟化下中断相关机制。
+
+### IPI问题调查
+
+已解决，原因是ecfg.lie中少enable了ipi，导致虽然南桥芯片ipi相关mmio虽然配置好了，但是CPU并不会响应ipi中断，之前能运行的原因是我在每个CPU开了10秒一次的timer irq，所以实际上是每次timer陷入时才读到芯片ipi mmio相关的信息，在ecfg中添加ipi位后正常，顺便把timer irq关了。
+
+### virtio-mmio驱动debug
+
+从设备树virtio-mmio节点解析idx=0的irq编号失败了，返回错误-517，debug之后在include/linux/errno.h中找到了错误码：
+```c
+/*
+ * These should never be seen by user programs.  To return one of ERESTART*
+ * codes, signal_pending() MUST be set.  Note that ptrace can observe these
+ * at syscall exit tracing, but they will never be left for the debugged user
+ * process to see.
+ */
+#define ERESTARTSYS	512
+#define ERESTARTNOINTR	513
+#define ERESTARTNOHAND	514	/* restart if no handler.. */
+#define ENOIOCTLCMD	515	/* No ioctl command */
+#define ERESTART_RESTARTBLOCK 516 /* restart by calling sys_restart_syscall */
+#define EPROBE_DEFER	517	/* Driver requests probe retry */
+#define EOPENSTALE	518	/* open found a stale dentry */
+#define ENOPARAM	519	/* Parameter not supported */
+```
+
+即EPROBE_DEFER错误，调查一下原因
+
+```c
+/**
+ * irq_find_matching_fwspec() - Locates a domain for a given fwspec
+ * @fwspec: FW specifier for an interrupt
+ * @bus_token: domain-specific data
+ */
+struct irq_domain *irq_find_matching_fwspec(struct irq_fwspec *fwspec,
+					    enum irq_domain_bus_token bus_token)
+{
+	struct irq_domain *h, *found = NULL;
+	struct fwnode_handle *fwnode = fwspec->fwnode;
+	int rc;
+
+	pr_info("[WHEATFOX] irq_find_matching_fwspec, fwnode@%p, bus_token=%d\n", fwnode, bus_token);	
+
+	/* We might want to match the legacy controller last since
+	 * it might potentially be set to match all interrupts in
+	 * the absence of a device node. This isn't a problem so far
+	 * yet though...
+	 *
+	 * bus_token == DOMAIN_BUS_ANY matches any domain, any other
+	 * values must generate an exact match for the domain to be
+	 * selected.
+	 */
+	mutex_lock(&irq_domain_mutex);
+	list_for_each_entry(h, &irq_domain_list, link) {
+		if (h->ops->select && bus_token != DOMAIN_BUS_ANY)
+			rc = h->ops->select(h, fwspec, bus_token);
+		else if (h->ops->match)
+			rc = h->ops->match(h, to_of_node(fwnode), bus_token);
+		else
+			rc = ((fwnode != NULL) && (h->fwnode == fwnode) &&
+			      ((bus_token == DOMAIN_BUS_ANY) ||
+			       (h->bus_token == bus_token)));
+
+		if (rc) {
+			found = h;
+			break;
+		}
+	}
+	mutex_unlock(&irq_domain_mutex);
+	return found;
+}
+```
+
+调查到最后是这个函数返回的NULL，研究一下这个在做什么并且为啥失败了。
+
+```c
+static LIST_HEAD(irq_domain_list);
+static DEFINE_MUTEX(irq_domain_mutex);
+static struct irq_domain *irq_default_domain;
+
+/**
+ * struct irq_domain - Hardware interrupt number translation object
+ * @link:	Element in global irq_domain list.
+ * @name:	Name of interrupt domain
+ * @ops:	Pointer to irq_domain methods
+ * @host_data:	Private data pointer for use by owner.  Not touched by irq_domain
+ *		core code.
+ * @flags:	Per irq_domain flags
+ * @mapcount:	The number of mapped interrupts
+ * @mutex:	Domain lock, hierarchical domains use root domain's lock
+ * @root:	Pointer to root domain, or containing structure if non-hierarchical
+ *
+ * Optional elements:
+ * @fwnode:	Pointer to firmware node associated with the irq_domain. Pretty easy
+ *		to swap it for the of_node via the irq_domain_get_of_node accessor
+ * @gc:		Pointer to a list of generic chips. There is a helper function for
+ *		setting up one or more generic chips for interrupt controllers
+ *		drivers using the generic chip library which uses this pointer.
+ * @dev:	Pointer to the device which instantiated the irqdomain
+ *		With per device irq domains this is not necessarily the same
+ *		as @pm_dev.
+ * @pm_dev:	Pointer to a device that can be utilized for power management
+ *		purposes related to the irq domain.
+ * @parent:	Pointer to parent irq_domain to support hierarchy irq_domains
+ * @msi_parent_ops: Pointer to MSI parent domain methods for per device domain init
+ *
+ * Revmap data, used internally by the irq domain code:
+ * @revmap_size:	Size of the linear map table @revmap[]
+ * @revmap_tree:	Radix map tree for hwirqs that don't fit in the linear map
+ * @revmap:		Linear table of irq_data pointers
+ */
+struct irq_domain {
+	struct list_head		link;
+	const char			*name;
+	const struct irq_domain_ops	*ops;
+	void				*host_data;
+	unsigned int			flags;
+	unsigned int			mapcount;
+	struct mutex			mutex;
+	struct irq_domain		*root;
+
+	/* Optional data */
+	struct fwnode_handle		*fwnode;
+	enum irq_domain_bus_token	bus_token;
+	struct irq_domain_chip_generic	*gc;
+	struct device			*dev;
+	struct device			*pm_dev;
+#ifdef	CONFIG_IRQ_DOMAIN_HIERARCHY
+	struct irq_domain		*parent;
+#endif
+#ifdef CONFIG_GENERIC_MSI_IRQ
+	const struct msi_parent_ops	*msi_parent_ops;
+#endif
+
+	/* reverse map data. The linear map gets appended to the irq_domain */
+	irq_hw_number_t			hwirq_max;
+	unsigned int			revmap_size;
+	struct radix_tree_root		revmap_tree;
+	struct irq_data __rcu		*revmap[] __counted_by(revmap_size);
+};
+
+/**
+ * struct irq_domain_ops - Methods for irq_domain objects
+ * @match: Match an interrupt controller device node to a host, returns
+ *         1 on a match
+ * @map: Create or update a mapping between a virtual irq number and a hw
+ *       irq number. This is called only once for a given mapping.
+ * @unmap: Dispose of such a mapping
+ * @xlate: Given a device tree node and interrupt specifier, decode
+ *         the hardware irq number and linux irq type value.
+ *
+ * Functions below are provided by the driver and called whenever a new mapping
+ * is created or an old mapping is disposed. The driver can then proceed to
+ * whatever internal data structures management is required. It also needs
+ * to setup the irq_desc when returning from map().
+ */
+struct irq_domain_ops {
+	int (*match)(struct irq_domain *d, struct device_node *node,
+		     enum irq_domain_bus_token bus_token);
+	int (*select)(struct irq_domain *d, struct irq_fwspec *fwspec,
+		      enum irq_domain_bus_token bus_token);
+	int (*map)(struct irq_domain *d, unsigned int virq, irq_hw_number_t hw);
+	void (*unmap)(struct irq_domain *d, unsigned int virq);
+	int (*xlate)(struct irq_domain *d, struct device_node *node,
+		     const u32 *intspec, unsigned int intsize,
+		     unsigned long *out_hwirq, unsigned int *out_type);
+#ifdef	CONFIG_IRQ_DOMAIN_HIERARCHY
+	/* extended V2 interfaces to support hierarchy irq_domains */
+	int (*alloc)(struct irq_domain *d, unsigned int virq,
+		     unsigned int nr_irqs, void *arg);
+	void (*free)(struct irq_domain *d, unsigned int virq,
+		     unsigned int nr_irqs);
+	int (*activate)(struct irq_domain *d, struct irq_data *irqd, bool reserve);
+	void (*deactivate)(struct irq_domain *d, struct irq_data *irq_data);
+	int (*translate)(struct irq_domain *d, struct irq_fwspec *fwspec,
+			 unsigned long *out_hwirq, unsigned int *out_type);
+#endif
+#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+	void (*debug_show)(struct seq_file *m, struct irq_domain *d,
+			   struct irq_data *irqd, int ind);
+#endif
+};
+
+/*
+ * Should several domains have the same device node, but serve
+ * different purposes (for example one domain is for PCI/MSI, and the
+ * other for wired IRQs), they can be distinguished using a
+ * bus-specific token. Most domains are expected to only carry
+ * DOMAIN_BUS_ANY.
+ */
+enum irq_domain_bus_token {
+	DOMAIN_BUS_ANY		= 0,
+	DOMAIN_BUS_WIRED,
+	DOMAIN_BUS_GENERIC_MSI,
+	DOMAIN_BUS_PCI_MSI,
+	DOMAIN_BUS_PLATFORM_MSI,
+	DOMAIN_BUS_NEXUS,
+	DOMAIN_BUS_IPI,
+	DOMAIN_BUS_FSL_MC_MSI,
+	DOMAIN_BUS_TI_SCI_INTA_MSI,
+	DOMAIN_BUS_WAKEUP,
+	DOMAIN_BUS_VMD_MSI,
+	DOMAIN_BUS_PCI_DEVICE_MSI,
+	DOMAIN_BUS_PCI_DEVICE_MSIX,
+	DOMAIN_BUS_DMAR,
+	DOMAIN_BUS_AMDVI,
+	DOMAIN_BUS_PCI_DEVICE_IMS,
+	DOMAIN_BUS_DEVICE_MSI,
+	DOMAIN_BUS_WIRED_TO_MSI,
+};
+```
+
+linux irq中断子系统
+
+http://www.wowotech.net/irq_subsystem/interrupt_subsystem_architecture.html 
+
+linux pr_info 打印指针：
+
+```
+Plain Pointers
+%p      abcdef12 or 00000000abcdef12
+Pointers printed without a specifier extension (i.e unadorned %p) are hashed to prevent leaking information about the kernel memory layout. This has the added benefit of providing a unique identifier. On 64-bit machines the first 32 bits are zeroed. The kernel will print (ptrval) until it gathers enough entropy. If you really want the address see %px below.
+
+Symbols/Function Pointers
+%pS     versatile_init+0x0/0x110
+%ps     versatile_init
+%pF     versatile_init+0x0/0x110
+%pf     versatile_init
+%pSR    versatile_init+0x9/0x110
+        (with __builtin_extract_return_addr() translation)
+%pB     prev_fn_of_versatile_init+0x88/0x88
+The S and s specifiers are used for printing a pointer in symbolic format. They result in the symbol name with (S) or without (s) offsets. If KALLSYMS are disabled then the symbol address is printed instead.
+
+Note, that the F and f specifiers are identical to S (s) and thus deprecated. We have F and f because on ia64, ppc64 and parisc64 function pointers are indirect and, in fact, are function descriptors, which require additional dereferencing before we can lookup the symbol. As of now, S and s perform dereferencing on those platforms (when needed), so F and f exist for compatibility reasons only.
+
+The B specifier results in the symbol name with offsets and should be used when printing stack backtraces. The specifier takes into consideration the effect of compiler optimisations which may occur when tail-calls are used and marked with the noreturn GCC attribute.
+
+Kernel Pointers
+%pK     01234567 or 0123456789abcdef
+For printing kernel pointers which should be hidden from unprivileged users. The behaviour of %pK depends on the kptr_restrict sysctl - see Documentation/sysctl/kernel.txt for more details.
+
+Unmodified Addresses
+%px     01234567 or 0123456789abcdef
+For printing pointers when you really want to print the address. Please consider whether or not you are leaking sensitive information about the kernel memory layout before printing pointers with %px. %px is functionally equivalent to %lx (or %lu). %px is preferred because it is more uniquely grep’able. If in the future we need to modify the way the kernel handles printing pointers we will be better equipped to find the call sites.
+```
+
+把设备树里virtio-mmio的interrupt-parent去掉后（不挂载在cpuic控制器上），此时错误变成了
+
+```
+[    2.487297] virtio-mmio 10001000.virtio_mmio: error -ENXIO: IRQ index 0 not found
+```
+
+估计还是设备树的编写有问题，继续研究。
+
+### loongarch KVM 中断注入逻辑
+
+arch/loongarch/kvm/interrupt.c
+
+```c
+static int kvm_irq_deliver(struct kvm_vcpu *vcpu, unsigned int priority)
+{
+	unsigned int irq = 0;
+
+	clear_bit(priority, &vcpu->arch.irq_pending); // 由于我们要注入priority irq，所以直接在irq_pending里去掉这一位
+	if (priority < EXCCODE_INT_NUM)
+		irq = priority_to_irq[priority]; // 将编号翻译为32位，例如irq 11-> (1 << 11)
+
+	switch (priority) {
+	case INT_TI:
+	case INT_IPI:
+	case INT_SWI0:
+	case INT_SWI1:
+		set_gcsr_estat(irq); // Timer IPI Softirq通过直接用gcsr指令修改guest estate实现
+		break;
+
+	case INT_HWI0 ... INT_HWI7:
+		set_csr_gintc(irq); // 硬件irq则是通过host csr中GINTC寄存器（LVZ拓展）注入irq
+		break;
+
+	default:
+		break;
+	}
+
+	return 1;
+}
+```
+
+kvm_irq_deliver负责向vCPU注入irq，可以看到不同的irq有两套注入机制。kvm_irq_clear同理。
+
+```c
+void kvm_deliver_intr(struct kvm_vcpu *vcpu)
+{
+	unsigned int priority;
+	unsigned long *pending = &vcpu->arch.irq_pending;
+	unsigned long *pending_clr = &vcpu->arch.irq_clear;
+
+	if (!(*pending) && !(*pending_clr))
+		return;
+
+	if (*pending_clr) {
+		priority = __ffs(*pending_clr);
+		while (priority <= INT_IPI) {
+			kvm_irq_clear(vcpu, priority);
+			priority = find_next_bit(pending_clr,
+					BITS_PER_BYTE * sizeof(*pending_clr),
+					priority + 1);
+		}
+	}
+
+	if (*pending) {
+		priority = __ffs(*pending);
+		while (priority <= INT_IPI) {
+			kvm_irq_deliver(vcpu, priority); // 逐位处理
+			priority = find_next_bit(pending,
+					BITS_PER_BYTE * sizeof(*pending),
+					priority + 1);
+		}
+	}
+}
+```
+
+kvm_deliver_intr通过检查vcpu->arch里面的irq_pending和irq_clear的bits依次处理每个irq。
+
+## 2024.10.9记录
+
+在修改了nonroot设备树的interrupt tree后，virtio-mmio和virtio-console驱动在nonroot目前都挂上了，但是当driver发好数据进行queue notify的时候似乎后端直接段错误退出了，并且导致req list直接用完报错（因为后端以及没了自然没有办法处理req请求），查一下问题：
+
+```
+[   28.903211] hvisor_irq in dtb is 18
+[   28.906696] hvisor init done!!!
+[   28.921552] virtio bridge mmap succeed!
+[   28.926395] non root region mmap succeed!
+[   36.164682] non root region mmap succeed!
+[   36.193662] non root region mmap succeed!
+[   36.227087] hvisor_zone_start
+[   40.656788] do_page_fault(): sending SIGSEGV to hvisor-virtio for invalid read access from 00007fff09b5d000
+[   40.679622] do_page_fault(): sending SIGSEGV to hvisor-virtio for invalid read access from 00007fff09b5c402
+[   40.702769] era = 0000000120003a34 in hvisor[120000000+b9000]
+[   40.722182] era = 0000000120003bd0 in hvisor[120000000+b9000]
+[   40.743560] ra  = 000000012000663c in hvisor[120000000+b9000]
+[   40.763086] ra  = 0000000120006b10 in hvisor[120000000+b9000]
+```
+
+hvisor-virtio就是hvisor创建的virtio daemon：
+
+```c
+int virtio_init()
+{
+    // The higher log level is , faster virtio-blk will be.
+    int err;
+
+	sigset_t block_mask;
+	sigfillset(&block_mask);
+	pthread_sigmask(SIG_BLOCK, &block_mask, NULL);
+
+    prctl(PR_SET_NAME, "hvisor-virtio", 0, 0, 0); // 设置进程名称
+	multithread_log_init();
+    initialize_log();
+
+    log_info("hvisor init");
+    ...
+}
+```
+
+考虑到之前在virtio mmio配置空间交互是没有问题的，我猜测这里可能是因为访问virtqueue空间但是这部分root linux无法访问？
+
+```
+[DEBUG 3] (hvisor::device::virtio_trampoline:34) notify !!!, cpu id is 3
+[DEBUG 3] (hvisor::device::virtio_trampoline:142) hvisor req queue full
+[ERROR 3] (hvisor::panic:6) panic occurred: PanicInfo {
+    payload: Any { .. },
+    message: Some(
+        hvisor req queue full,
+    ),
+    location: Location {
+        file: "src/device/virtio_trampoline.rs",
+        line: 143,
+        col: 13,
+    },
+    can_unwind: true,
+    force_no_backtrace: false,
+}
+
+[root@dedsec /]# cat nohup.out | tail -n 10
+00:00:21 INFO  virtio.c:448: virtio mmio read at offset=0x70, size=4, vdev=0x14cf43fe0
+00:00:21 INFO  virtio.c:528: virtio mmio write at offset=0x70, value=0xf, size=4, vdev=0x14cf43fe0
+00:00:21 INFO  virtio.c:528: virtio mmio write at offset=0x50, value=0, size=4, vdev=0x14cf43fe0
+00:00:21 INFO  virtio.c:587: [WHEATFOX] (virtio_mmio_write) queue notify, value is 0, vdev->vqs_len is 2
+00:00:21 INFO  virtio.c:590: [WHEATFOX] (virtio_mmio_write) queue notify ready, handler addr is 0x20006ff4
+00:00:21 INFO  virtio_console.c:125: [WHEATFOX] (virtio_console_rxq_notify_handler) start, vq@0x4cf44090
+00:00:21 INFO  virtio_console.c:129: [WHEATFOX] (virtio_console_rxq_notify_handler) dev@0x4cf44060, dev->rx_ready is -1
+00:00:21 INFO  virtio_console.c:133: [WHEATFOX] (virtio_console_rxq_notify_handler) calling virtqueue_disable_notify
+00:00:21 INFO  virtio.c:266: [WHEATFOX] (virtqueue_disable_notify) start, vq@0x4cf44090, vq_idx=0, desc_table@0x9f5c000, avail_ring@0x9f5c400, used_ring@0x9f5d000
+00:00:21 INFO  virtio.c:268: [WHEATFOX] (virtqueue_disable_notify) vq->event_idx_enabled is 0
+
+[root@dedsec /]# dmesg | tail -n 10
+[   13.226414] non root region mmap succeed!
+[   18.423786] non root region mmap succeed!
+[   18.453652] non root region mmap succeed!
+[   18.487079] hvisor_zone_start
+[   22.916950] do_page_fault(): sending SIGSEGV to hvisor-virtio for invalid read access from 00007fff09d5d000
+[   22.938929] do_page_fault(): sending SIGSEGV to hvisor-virtio for invalid read access from 00007fff09d5c402
+[   22.962072] era = 0000000120003a34 in hvisor[120000000+ba000]
+[   22.981832] era = 0000000120003bd0 in hvisor[120000000+ba000]
+[   23.001479] ra  = 0000000120006acc in hvisor[120000000+ba000]
+[   23.021956] ra  = 000000012000702c in hvisor[120000000+ba000]
+[root@dedsec /]# 
+```
+
+hvisor.ko的地址：
+```
+[root@dedsec /]# cat /proc/modules 
+hvisor 12288 0 - Live 0xffff800002002000 (O)
+```
+
+调查发现page fault位于：
+
+```c
+vq->used_ring->flags |= (uint16_t)VRING_USED_F_NO_NOTIFY;
+```
+
+说明在访问vq->used_ring->flags时被root linux拒绝进行访问，调查一下这个flags地址
+
+```c
+// include/linux/virtio_ring.h
+typedef struct vring_used_elem __attribute__((aligned(VRING_USED_ALIGN_SIZE)))
+	vring_used_elem_t;
+
+struct vring_used {
+	__virtio16 flags;
+	__virtio16 idx;
+	vring_used_elem_t ring[];
+};
+
+
+// include/linux/virtio_types.h
+/*
+ * __virtio{16,32,64} have the following meaning:
+ * - __u{16,32,64} for virtio devices in legacy mode, accessed in native endian
+ * - __le{16,32,64} for standard-compliant virtio devices
+ */
+
+typedef __u16 __bitwise __virtio16;
+typedef __u32 __bitwise __virtio32;
+typedef __u64 __bitwise __virtio64;
+```
+
+flags是一个16位unsigned short，用来保存virtio used ring flags信息，那就说明是vring_used本身的地址不能访问
+
+问了一下李国玮他说正在修复这个问题，之前arm下hvisor-tool的映射是默认1对1映射的，loongarch下不一样所以有问题：
+
+```c
+virt_addr = mmap(NULL, mem_size, PROT_READ | PROT_WRITE, MAP_SHARED, ko_fd, (off_t) phys_addr);
+```
+
+## 2024.10.11记录
+
+国玮兄修好了hvisor-tool的映射问题，目前不再出现page fault了，但是virtio backend的rx通道在readv时无法打开fd：
+
+```bash
+[root@dedsec /]# [ERROR 3] (hvisor::panic:6) panic occurred: PanicInfo {
+    payload: Any { .. },
+    message: Some(
+        hvisor req queue full,
+    ),
+    location: Location {
+        file: "src/device/virtio_trampoline.rs",
+        line: 143,
+        col: 13,
+    },
+    can_unwind: true,
+    force_no_backtrace: false,
+}
+
+[root@dedsec /]# cat nohup.out | tail -n20
+00:00:21 INFO  virtio_console.c:53: [WHEATFOX] (virtio_console_event_handler) iov[0] is [](0)
+00:00:21 INFO  virtio_console.c:60: [WHEATFOX] (virtio_console_event_handler) readv done, len is -1
+00:00:21 INFO  virtio_console.c:69: [WHEATFOX] (virtio_console_event_handler) Failed to read from console, errno is 2[No such file or directory]
+00:00:21 INFO  virtio_console.c:79: [WHEATFOX] (virtio_console_event_handler) virtio_inject_irq done
+00:00:21 INFO  virtio.c:361: [WHEATFOX] (process_descriptor_chain) start, vq@0x258a33b0
+00:00:21 INFO  virtio.c:435: [WHEATFOX] (process_descriptor_chain) end, chain_len is 1
+00:00:21 INFO  virtio_console.c:50: [WHEATFOX] (virtio_console_event_handler) process_descriptor_chain done, n is 1
+00:00:21 INFO  virtio_console.c:53: [WHEATFOX] (virtio_console_event_handler) iov[0] is [](0)
+00:00:21 INFO  virtio_console.c:60: [WHEATFOX] (virtio_console_event_handler) readv done, len is -1
+00:00:21 INFO  virtio_console.c:69: [WHEATFOX] (virtio_console_event_handler) Failed to read from console, errno is 2[No such file or directory]
+00:00:21 INFO  virtio_console.c:79: [WHEATFOX] (virtio_console_event_handler) virtio_inject_irq done
+00:00:21 INFO  virtio.c:361: [WHEATFOX] (process_descriptor_chain) start, vq@0x258a33b0
+00:00:21 INFO  virtio.c:435: [WHEATFOX] (process_descriptor_chain) end, chain_len is 1
+00:00:21 INFO  virtio_console.c:50: [WHEATFOX] (virtio_console_event_handler) process_descriptor_chain done, n is 1
+00:00:21 INFO  virtio_console.c:53: [WHEATFOX] (virtio_console_event_handler) iov[0] is [](0)
+00:00:21 INFO  virtio_console.c:60: [WHEATFOX] (virtio_console_event_handler) readv done, len is -1
+00:00:21 INFO  virtio_console.c:69: [WHEATFOX] (virtio_console_event_handler) Failed to read from console, errno is 2[No such file or directory]
+00:00:21 INFO  virtio_console.c:79: [WHEATFOX] (virtio_console_event_handler) virtio_inject_irq done
+00:00:21 INFO  virtio.c:361: [WHEATFOX] (process_descriptor_chain) start, vq@0x258a33b0
+00:00:21 INFO  virtio.c:435: [WHEATFOX] (process_descriptor_chain) end, chain_len is 1
+[root@dedsec /]# cat nohup.out | head -n20
+hello00:00:08 INFO  virtio.c:928: hvisor init
+00:00:08 INFO  virtio.c:950: hvisor init okay!
+00:00:08 INFO  virtio.c:124: create virtio device type 3, zone id 3, base addr 10001000, len 200, irq id 76
+00:00:08 WARN  virtio_console.c:105: char device redirected to /dev/pts/0
+00:00:08 INFO  virtio.c:164: create virtio device 3 success
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0[VIRTIO_MMIO_MAGIC_VALUE], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0x4[VIRTIO_MMIO_VERSION], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0x8[VIRTIO_MMIO_DEVICE_ID], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0xc[VIRTIO_MMIO_VENDOR_ID], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:620: WRITE virtio mmio at offset=0x70[VIRTIO_MMIO_STATUS], value=0, size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0x70[VIRTIO_MMIO_STATUS], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:620: WRITE virtio mmio at offset=0x70[VIRTIO_MMIO_STATUS], value=0x1, size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0x70[VIRTIO_MMIO_STATUS], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:620: WRITE virtio mmio at offset=0x70[VIRTIO_MMIO_STATUS], value=0x3, size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:620: WRITE virtio mmio at offset=0x14[VIRTIO_MMIO_DEVICE_FEATURES_SEL], value=0x1, size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0x10[VIRTIO_MMIO_DEVICE_FEATURES], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:620: WRITE virtio mmio at offset=0x14[VIRTIO_MMIO_DEVICE_FEATURES_SEL], value=0, size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:539: READ  virtio mmio at offset=0x10[VIRTIO_MMIO_DEVICE_FEATURES], size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:620: WRITE virtio mmio at offset=0x24[VIRTIO_MMIO_DRIVER_FEATURES_SEL], value=0x1, size=4, vdev=0x1258a3300
+00:00:13 INFO  virtio.c:620: WRITE virtio mmio at offset=0x20[VIRTIO_MMIO_DRIVER_FEATURES], value=0x1, size=4, vdev=0x1258a3300
+[root@dedsec /]# 
+```
+
+可以看到：
+```
+00:00:21 INFO  virtio_console.c:69: [WHEATFOX] (virtio_console_event_handler) Failed to read from console, errno is 2[No such file or directory]
+```
+
+调查一下readv系统调用：
+
+```c
+// fs/read_write.c
+SYSCALL_DEFINE3(readv, unsigned long, fd, const struct iovec __user *, vec,
+		unsigned long, vlen)
+{
+	return do_readv(fd, vec, vlen, 0);
+}
+
+static ssize_t do_readv(unsigned long fd, const struct iovec __user *vec,
+			unsigned long vlen, rwf_t flags)
+{
+	struct fd f = fdget_pos(fd);
+	ssize_t ret = -EBADF;
+
+	if (f.file) {
+		loff_t pos, *ppos = file_ppos(f.file);
+		if (ppos) {
+			pos = *ppos;
+			ppos = &pos;
+		}
+		ret = vfs_readv(f.file, vec, vlen, ppos, flags);
+		if (ret >= 0 && ppos)
+			f.file->f_pos = pos;
+		fdput_pos(f);
+	}
+
+	if (ret > 0)
+		add_rchar(current, ret);
+	inc_syscr(current);
+	return ret;
+}
+```
+
+dev->master_fd在这时一依然是open的，有几个问题：
+
+1. 这个RX的event handler函数为什么要对/dev/pts/0(dev->master_d)进行readv？以及为什么报错no such file or directory？
+2. nonroot的virtio-console驱动首先应该尝试“输出”一些字符（？）然后将这些数据放在virtqueue+desc table里，backend如何拿到这些数据？
+
+## 2024.10.14记录
+
+查一下virtio-console官方的文档，在手册5.3节
+
+device id = 3
+
+**virtqueues:**
+
+```
+0 receiveq(port0)
+1 transmitq(port0)
+2 control receiveq
+3 control transmitq
+4 receiveq(port1)
+5 transmitq(port1)
+...
+```
+
+其中port0是必须实现的
+
+## 2024.10.15记录
+
+现在errno 2的问题解决了，添加了额外的mount devpts命令后不报错errno 2了，但是变成了errno  5(input/output error)
+
+而且查看debug日志，nonroot linux的virtio console看起来并没有向外输出数据，log中的txd（即backend接收driver发的数据的通道）没有任何数据出现，怀疑nonroot可能并没有成功向virtio console输出？之前提到过virtio-console驱动会注册vport{index}p{port_id}的设备，试着debug一下或者在用户态手动使用一下这个设备进行输出？
+
+目前通过screen可以正常打开/dev/pts/0并可以退出，但是目前没有字符被显示，输入字符时的中断可以正常触发，CPU0向CPU3发送一个ipi，要求CPU3注入virtio-console注册的irq，这部分需要研究一下，之前只搞清楚了硬件层面如何在虚拟化环境进行中断注入，如何和linux的irq对接是一个问题。
+
+```c
+// drivers/char/virtio_console.c
+// add_port
+port->dev = device_create(&port_class, &port->portdev->vdev->dev,
+              devt, port, "vport%up%u",
+              port->portdev->vdev->index, id);
+```
+
+nonroot bootconsole
+
+```
+[    1.437945] virtio-mmio: [WHEATFOX] virtio_mmio_probe
+[    1.437968] virtio-mmio: [WHEATFOX] virtio_mmio_probe: base = ffff80001200e000, now checking magic value
+[    1.437990] virtio-mmio: [WHEATFOX] virtio_mmio_probe: magic value is correct -> 0x74726976
+[    1.438001] virtio-mmio: [WHEATFOX] virtio_mmio_probe: version is 2
+[    1.438012] virtio-mmio: [WHEATFOX] virtio_mmio_probe: device id = 3, vendor id = 1213614419
+[    1.438117] [WHEATFOX] __register_virtio_driver, driver->driver.name: virtio_balloon
+[    1.438139] [WHEATFOX] __register_virtio_driver, driver->driver.name: virtio_input
+[    1.440083] Serial: 8250/16550 driver, 16 ports, IRQ sharing enabled
+[    1.442708] [WHEATFOX] platform_get_irq_optional, dev@9000000006859800, num=0, fwnode@900000009fffbfc0
+[    1.442720] [WHEATFOX] platform_get_irq_optional, is_of_node
+[    1.442725] OF: [WHEATFOX] of_irq_get, dev@900000009fffbfa8, index=0
+[    1.442734] OF: [WHEATFOX] of_irq_get, of_irq_parse_one rc=-22
+[    1.442739] [WHEATFOX] platform_get_irq_optional, of_irq_get ret=-22
+[    1.442744] [WHEATFOX] platform_get_irq_optional, r@0000000000000000
+[    1.442748] [WHEATFOX] platform_get_irq, dev@9000000006859800, num=0, platform_get_irq_optional ret=-6
+[    1.442757] of_serial 1fe001e0.serial: error -ENXIO: IRQ index 0 not found
+[    1.443103] 1fe001e0.serial: ttyS0 at MMIO 0x1fe001e0 (irq = 0, base_baud = 6250000) is a 16550A
+[    1.443142] printk: legacy console [ttyS0] enabled
+[    2.469764] [WHEATFOX] virtio_console_init
+[    2.473879] [WHEATFOX] __register_virtio_driver, driver->driver.name: virtio_console
+[    2.481597] [WHEATFOX] virtio_dev_probe, dev->id.device: 3
+[    2.487181] [WHEATFOX] virtio_dev_probe, device_features: 100000001
+[    2.493439] [WHEATFOX] virtio_dev_probe, calling virtio_features_ok
+[    2.499669] [WHEATFOX] virtio_features_ok, dev->id.device: 3
+[    2.505309] [WHEATFOX] virtio_dev_probe, virtio_features_ok -> err: 0
+[    2.511712] [WHEATFOX] virtcons_probe, name: 10001000.virtio_mmio
+[    2.517781] [WHEATFOX] init_vqs, vqs@9000000006b34440, io_callbacks@9000000006b34460, io_names@9000000006b34450, in_vqs@9000000006b3e6f8, out_vqs@9000000006b3e700
+[    2.532229] [WHEATFOX] init_vqs, calling virtio_find_vqs, nr_queues=2
+[    2.538632] [WHEATFOX] platform_get_irq_optional, dev@9000000006858400, num=0, fwnode@900000009fffaeb0
+[    2.547895] [WHEATFOX] platform_get_irq_optional, is_of_node
+[    2.553526] OF: [WHEATFOX] of_irq_get, dev@900000009fffae98, index=0
+[    2.559845] OF: [WHEATFOX] of_irq_get, of_irq_parse_one rc=0
+[    2.565477] OF: [WHEATFOX] irq_find_host, node@900000009fffb200
+[    2.571360] irq: [WHEATFOX] irq_find_matching_fwspec, fwnode@900000009fffb218, bus_token=1
+[    2.579584] irq: [WHEATFOX] irq_find_matching_fwspec, listing, h->name=:interrupt-controller
+[    2.587983] irq: [WHEATFOX] irq_find_matching_fwspec, rc=0
+[    2.593442] OF: [WHEATFOX] irq_find_host, irq_find_matching_host d@0000000000000000
+[    2.601052] irq: [WHEATFOX] irq_find_matching_fwspec, fwnode@900000009fffb218, bus_token=0
+[    2.609275] irq: [WHEATFOX] irq_find_matching_fwspec, listing, h->name=:interrupt-controller
+[    2.617671] irq: [WHEATFOX] irq_find_matching_fwspec, rc=1
+[    2.623129] irq: [WHEATFOX] irq_find_matching_fwspec, found h@9000000006815400
+[    2.630309] OF: [WHEATFOX] irq_find_host, irq_find_matching_host d@9000000006815400
+[    2.637927] OF: [WHEATFOX] of_irq_get, irq_find_host domain@9000000006815400
+[    2.644943] irq: [WHEATFOX] irq_find_matching_fwspec, fwnode@900000009fffb218, bus_token=1
+[    2.653167] irq: [WHEATFOX] irq_find_matching_fwspec, listing, h->name=:interrupt-controller
+[    2.661557] irq: [WHEATFOX] irq_find_matching_fwspec, rc=0
+[    2.667015] irq: [WHEATFOX] irq_find_matching_fwspec, fwnode@900000009fffb218, bus_token=0
+[    2.675239] irq: [WHEATFOX] irq_find_matching_fwspec, listing, h->name=:interrupt-controller
+[    2.683636] irq: [WHEATFOX] irq_find_matching_fwspec, rc=1
+[    2.689086] irq: [WHEATFOX] irq_find_matching_fwspec, found h@9000000006815400
+[    2.696306] [WHEATFOX] platform_get_irq_optional, of_irq_get ret=18
+[    2.702553] [WHEATFOX] platform_get_irq, dev@9000000006858400, num=0, platform_get_irq_optional ret=18
+[    2.711809] virtio-mmio: [WHEATFOX] vm_find_vqs start, vm_dev@9000000006a3e400, irq=18
+[    2.719789] [WHEATFOX] init_vqs, virtio_find_vqs returned 0
+[    2.725340] [WHEATFOX] init_vqs, all ok
+[    2.729157] [WHEATFOX] add_port, name: 10001000.virtio_mmio
+[    2.734783] [WHEATFOX] after device_create, name = vport0p0
+```
+
+可以看到，virtio-console创建了一个vport0p0设备，这个设备理论上应该在/dev下？研究一下linux device hierachy
+
+https://linux-kernel-labs.github.io/refs/heads/master/labs/device_model.html
+
+在nonroot里打印一下/dev
+
+```bash
+... ...
+null           shm            tty37          ttyS12         vga_arbiter
+port           snapshot       tty38          ttyS13         vport0p0
+ptmx           stderr         tty39          ttyS14         zero
+pts            stdin          tty4           ttyS15
+ptyp0          stdout         tty40          ttyS2
+ptyp1          tty            tty41          ttyS3
+
+/dev:
+autofs         ptyp2          tty0           tty42          ttyS4
+btrfs-control  ptyp3          tty1           tty43          ttyS5
+console        ptyp4          tty10          tty44          ttyS6
+dma_heap       ptyp5          tty11          tty45          ttyS7
+fd             ptyp6          tty12          tty46          ttyS8
+full           ptyp7          tty13          tty47          ttyS9
+hvc0           ptyp8          tty14          tty48          ttyp0
+hvc1           ptyp9          tty15          tty49          ttyp1
+hvc2           ptypa          tty16          tty5           ttyp2
+hvc3           ptypb          tty17          tty50          ttyp3
+hvc4           ptypc          tty18          tty51          ttyp4
+hvc5           ptypd          tty19          tty52          ttyp5
+hvc6           ptype          tty2           tty53          ttyp6
+hvc7           ptypf          tty20          tty54          ttyp7
+hwrng          ram0           tty21          tty55          ttyp8
+kmsg           ram1           tty22          tty56          ttyp9
+log            ram10          tty23          tty57          ttypa
+loop-control   ram11          tty24          tty58          ttypb
+loop0          ram12          tty25          tty59          ttypc
+loop1          ram13          tty26          tty6           ttypd
+...
+```
+
+可以看到port0的virtio-console的dev文件是有的，vport0n0是“port”设备，而port设备挂载的hvc console（/dev/hvc0）才是类似tty这样的终端设备
+
+![image-20241015171848117](imgs/20240807_hvisor_loongarch64_port/image-20241015171848117.png)
+
+backend收到了从driver发来的tx数据，但是看起来都是无效字符。接下来研究一下linux内的virtio-console源码，debug一下发送给virtio-console的数据在一开始是否是正确的。
+
+### drivers/char/virtio_console.c
+
+```c
+/*
+ * This is a global struct for storing common data for all the devices
+ * this driver handles.
+ *
+ * Mainly, it has a linked list for all the consoles in one place so
+ * that callbacks from hvc for get_chars(), put_chars() work properly
+ * across multiple devices and multiple ports per device.
+ */
+struct ports_driver_data {
+	/* Used for exporting per-port information to debugfs */
+	struct dentry *debugfs_dir;
+	/* List of all the devices we're handling */
+	struct list_head portdevs; // 该驱动负责的所有devices列表
+	/* All the console devices handled by this driver */
+	struct list_head consoles; // 该驱动负责的所有console devices列表
+};
+static struct ports_driver_data pdrvdata; // 这个驱动需要保存的一些全局数据
+
+/* This struct holds information that's relevant only for console ports */
+struct console {
+	/* We'll place all consoles in a list in the pdrvdata struct */
+	struct list_head list;
+	/* The hvc device associated with this console port */
+	struct hvc_struct *hvc; // 和hvc0的关系？
+	/* The size of the console */
+	struct winsize ws;
+	/*
+	 * This number identifies the number that we used to register
+	 * with hvc in hvc_instantiate() and hvc_alloc(); this is the
+	 * number passed on by the hvc callbacks to us to
+	 * differentiate between the other console ports handled by
+	 * this driver
+	 */
+	u32 vtermno;
+};
+
+struct port_buffer {
+	char *buf;
+	/* size of the buffer in *buf above */
+	size_t size;
+	/* used length of the buffer */
+	size_t len;
+	/* offset in the buf from which to consume data */
+	size_t offset;
+	/* DMA address of buffer */
+	dma_addr_t dma;
+	/* Device we got DMA memory from */
+	struct device *dev;
+	/* List of pending dma buffers to free */
+	struct list_head list;
+	/* If sgpages == 0 then buf is used */
+	unsigned int sgpages;
+	/* sg is used if spages > 0. sg must be the last in is struct */
+	struct scatterlist sg[] __counted_by(sgpages);
+};
+
+/*
+ * This is a per-device struct that stores data common to all the
+ * ports for that device (vdev->priv).
+ */
+struct ports_device {
+	/* Next portdev in the list, head is in the pdrvdata struct */
+	struct list_head list;
+	/*
+	 * Workqueue handlers where we process deferred work after
+	 * notification
+	 */
+	struct work_struct control_work;
+	struct work_struct config_work;
+	struct list_head ports;
+	/* To protect the list of ports */
+	spinlock_t ports_lock;
+	/* To protect the vq operations for the control channel */
+	spinlock_t c_ivq_lock;
+	spinlock_t c_ovq_lock;
+	/* max. number of ports this device can hold */
+	u32 max_nr_ports;
+	/* The virtio device we're associated with */
+	struct virtio_device *vdev;
+	/*
+	 * A couple of virtqueues for the control channel: one for
+	 * guest->host transfers, one for host->guest transfers
+	 */
+	struct virtqueue *c_ivq, *c_ovq;
+	/*
+	 * A control packet buffer for guest->host requests, protected
+	 * by c_ovq_lock.
+	 */
+	struct virtio_console_control cpkt;
+	/* Array of per-port IO virtqueues */
+	struct virtqueue **in_vqs, **out_vqs;
+	/* Major number for this device.  Ports will be created as minors. */
+	int chr_major;
+};
+
+/* This struct holds the per-port data */
+struct port {
+	/* Next port in the list, head is in the ports_device */
+	struct list_head list;
+	/* Pointer to the parent virtio_console device */
+	struct ports_device *portdev;
+	/* The current buffer from which data has to be fed to readers */
+	struct port_buffer *inbuf;
+	/*
+	 * To protect the operations on the in_vq associated with this
+	 * port.  Has to be a spinlock because it can be called from
+	 * interrupt context (get_char()).
+	 */
+	spinlock_t inbuf_lock;
+	/* Protect the operations on the out_vq. */
+	spinlock_t outvq_lock;
+	/* The IO vqs for this port */
+	struct virtqueue *in_vq, *out_vq;
+	/* File in the debugfs directory that exposes this port's information */
+	struct dentry *debugfs_file;
+	/*
+	 * Keep count of the bytes sent, received and discarded for
+	 * this port for accounting and debugging purposes.  These
+	 * counts are not reset across port open / close events.
+	 */
+	struct port_stats stats;
+	/*
+	 * The entries in this struct will be valid if this port is
+	 * hooked up to an hvc console
+	 */
+	struct console cons;
+	/* Each port associates with a separate char device */
+	struct cdev *cdev;
+	struct device *dev;
+	/* Reference-counting to handle port hot-unplugs and file operations */
+	struct kref kref;
+	/* A waitqueue for poll() or blocking read operations */
+	wait_queue_head_t waitqueue;
+	/* The 'name' of the port that we expose via sysfs properties */
+	char *name;
+	/* We can notify apps of host connect / disconnect events via SIGIO */
+	struct fasync_struct *async_queue;
+	/* The 'id' to identify the port with the Host */
+	u32 id;
+	bool outvq_full;
+	/* Is the host device open */
+	bool host_connected;
+	/* We should allow only one process to open a port */
+	bool guest_connected;
+};
+```
+
+hvc operations:（位于tty/hvc）
+
+```c
+// drivers/tty/hvc/hvc_irq.c
+int notifier_add_irq(struct hvc_struct *hp, int irq)
+{
+	int rc;
+
+	if (!irq) {
+		hp->irq_requested = 0;
+		return 0;
+	}
+	rc = request_irq(irq, hvc_handle_interrupt, hp->flags,
+			"hvc_console", hp);
+	if (!rc)
+		hp->irq_requested = 1;
+	return rc;
+}
+
+void notifier_del_irq(struct hvc_struct *hp, int irq)
+{
+	if (!hp->irq_requested)
+		return;
+	free_irq(irq, hp);
+	hp->irq_requested = 0;
+}
+
+void notifier_hangup_irq(struct hvc_struct *hp, int irq)
+{
+	notifier_del_irq(hp, irq);
+}
+
+// drivers/tty/hvc/hvc_console.c
+static struct console hvc_console = {
+	.name		= "hvc",
+	.write		= hvc_console_print,
+	.device		= hvc_console_device,
+	.setup		= hvc_console_setup,
+	.flags		= CON_PRINTBUFFER,
+	.index		= -1,
+};
+
+/*
+ * Initial console vtermnos for console API usage prior to full console
+ * initialization.  Any vty adapter outside this range will not have usable
+ * console interfaces but can still be used as a tty device.  This has to be
+ * static because kmalloc will not work during early console init.
+ */
+static const struct hv_ops *cons_ops[MAX_NR_HVC_CONSOLES];
+static uint32_t vtermnos[MAX_NR_HVC_CONSOLES] =
+	{[0 ... MAX_NR_HVC_CONSOLES - 1] = -1};
+
+
+/*
+ * Console APIs, NOT TTY.  These APIs are available immediately when
+ * hvc_console_setup() finds adapters.
+ */
+static void hvc_console_print(struct console *co, const char *b,
+			      unsigned count)
+{
+	char c[N_OUTBUF] __ALIGNED__;
+	unsigned i = 0, n = 0;
+	int r, donecr = 0, index = co->index;
+
+	/* Console access attempt outside of acceptable console range. */
+	if (index >= MAX_NR_HVC_CONSOLES)
+		return;
+
+	/* This console adapter was removed so it is not usable. */
+	if (vtermnos[index] == -1)
+		return;
+
+	while (count > 0 || i > 0) {
+		if (count > 0 && i < sizeof(c)) {
+			if (b[n] == '\n' && !donecr) {
+				c[i++] = '\r';
+				donecr = 1;
+			} else {
+				c[i++] = b[n++];
+				donecr = 0;
+				--count;
+			}
+		} else {
+			r = cons_ops[index]->put_chars(vtermnos[index], c, i); // 通过下标索引hvc，调用ops中的put_chars函数指针
+			if (r <= 0) {
+				/* throw away characters on error
+				 * but spin in case of -EAGAIN */
+				if (r != -EAGAIN) {
+					i = 0;
+				} else {
+					hvc_console_flush(cons_ops[index],
+						      vtermnos[index]);
+				}
+			} else if (r > 0) {
+				i -= r;
+				if (i > 0)
+					memmove(c, c+r, i);
+			}
+		}
+	}
+	hvc_console_flush(cons_ops[index], vtermnos[index]);
+}
+```
+
+找一下virtio-console的输入输出的实现
+
+```c
+static bool is_console_port(struct port *port)
+{
+	if (port->cons.hvc)
+		return true;
+	return false;
+}
+```
+
+### port fops
+
+```c
+/*
+ * The file operations that we support: programs in the guest can open
+ * a console device, read from it, write to it, poll for data and
+ * close it.  The devices are at
+ *   /dev/vport<device number>p<port number>
+ */
+static const struct file_operations port_fops = {
+	.owner = THIS_MODULE,
+	.open  = port_fops_open,
+	.read  = port_fops_read,
+	.write = port_fops_write,
+	.splice_write = port_fops_splice_write,
+	.poll  = port_fops_poll,
+	.release = port_fops_release,
+	.fasync = port_fops_fasync,
+	.llseek = no_llseek,
+};
+
+/* The operations for console ports. */
+static const struct hv_ops hv_ops = {
+	.get_chars = get_chars,
+	.put_chars = put_chars,
+	.notifier_add = notifier_add_vio,
+	.notifier_del = notifier_del_vio,
+	.notifier_hangup = notifier_del_vio,
+};
+```
+
+## 2024.10.17 记录
+
+目前screen已经可以正常打印从nonroot virtio-console driver发来的console日志输出了，目前只剩下了一个问题就是怎么让CPU3的hvisor注入dts中virtio-mmio区域的中断？
+
+之前在KVM的源码里找到了虚拟化环境下如何通过CSR注入中断，其中的8个HWI、两个SGI和dts中断号的关系？nonroot linux使用的是7A2000的legacy mode还是extended mode？
+
+先看一下linux中龙芯实现的中断控制器driver
+
+```c
+// drivers/irqchip/irq-loongarch-cpu.c
+IRQCHIP_DECLARE(cpu_intc, "loongson,cpu-interrupt-controller", cpuintc_of_init);
+```
+
+同目录下的irq-loongarch-eioint.c是专门处理extend IO mode的driver
+
+```c
+// drivers/irqchip/irq-loongarch-eioint.c
+IRQCHIP_DECLARE(loongson_ls2k0500_eiointc, "loongson,ls2k0500-eiointc", eiointc_of_init);
+IRQCHIP_DECLARE(loongson_ls2k2000_eiointc, "loongson,ls2k2000-eiointc", eiointc_of_init);
+```
+
+可以看到，如果想要使用extend IO控制器的话，设备树需要在compatible指定eiointc，而目前我在设备树里用的是loongson,cpu-interrupt-controller，所以root和nonroot linux都没有使用拓展中断而是传统中断控制（相对简单一些），这就解决了虚拟机到底用的是哪个中断模式的问题。
+
+```c
+/**
+ * irq_domain_xlate_onecell() - Generic xlate for direct one cell bindings
+ *
+ * Device Tree IRQ specifier translation function which works with one cell
+ * bindings where the cell value maps directly to the hwirq number.
+ */
+int irq_domain_xlate_onecell(struct irq_domain *d, struct device_node *ctrlr,
+			     const u32 *intspec, unsigned int intsize,
+			     unsigned long *out_hwirq, unsigned int *out_type)
+{
+	if (WARN_ON(intsize < 1))
+		return -EINVAL;
+	*out_hwirq = intspec[0];
+	*out_type = IRQ_TYPE_NONE;
+	return 0;
+}
+
+// include/linux/irqdomain.h
+/**
+ * struct irq_domain - Hardware interrupt number translation object
+ * @link:	Element in global irq_domain list.
+ * @name:	Name of interrupt domain
+ * @ops:	Pointer to irq_domain methods
+ * @host_data:	Private data pointer for use by owner.  Not touched by irq_domain
+ *		core code.
+ * @flags:	Per irq_domain flags
+ * @mapcount:	The number of mapped interrupts
+ * @mutex:	Domain lock, hierarchical domains use root domain's lock
+ * @root:	Pointer to root domain, or containing structure if non-hierarchical
+ *
+ * Optional elements:
+ * @fwnode:	Pointer to firmware node associated with the irq_domain. Pretty easy
+ *		to swap it for the of_node via the irq_domain_get_of_node accessor
+ * @gc:		Pointer to a list of generic chips. There is a helper function for
+ *		setting up one or more generic chips for interrupt controllers
+ *		drivers using the generic chip library which uses this pointer.
+ * @dev:	Pointer to the device which instantiated the irqdomain
+ *		With per device irq domains this is not necessarily the same
+ *		as @pm_dev.
+ * @pm_dev:	Pointer to a device that can be utilized for power management
+ *		purposes related to the irq domain.
+ * @parent:	Pointer to parent irq_domain to support hierarchy irq_domains
+ * @msi_parent_ops: Pointer to MSI parent domain methods for per device domain init
+ *
+ * Revmap data, used internally by the irq domain code:
+ * @revmap_size:	Size of the linear map table @revmap[]
+ * @revmap_tree:	Radix map tree for hwirqs that don't fit in the linear map
+ * @revmap:		Linear table of irq_data pointers
+ */
+struct irq_domain {
+	struct list_head		link;
+	const char			*name;
+	const struct irq_domain_ops	*ops;
+	void				*host_data;
+	unsigned int			flags;
+	unsigned int			mapcount;
+	struct mutex			mutex;
+	struct irq_domain		*root;
+
+	/* Optional data */
+	struct fwnode_handle		*fwnode;
+	enum irq_domain_bus_token	bus_token;
+	struct irq_domain_chip_generic	*gc;
+	struct device			*dev;
+	struct device			*pm_dev;
+#ifdef	CONFIG_IRQ_DOMAIN_HIERARCHY
+	struct irq_domain		*parent;
+#endif
+#ifdef CONFIG_GENERIC_MSI_IRQ
+	const struct msi_parent_ops	*msi_parent_ops;
+#endif
+
+	/* reverse map data. The linear map gets appended to the irq_domain */
+	irq_hw_number_t			hwirq_max;
+	unsigned int			revmap_size;
+	struct radix_tree_root		revmap_tree;
+	struct irq_data __rcu		*revmap[] __counted_by(revmap_size);
+};
+```
+
+loongarch架构中dts里interrupts cell长度为1，并且龙芯的中断控制器driver使用内核提供的默认xlate函数进行翻译——cell中写的数值（单个数字）即等于hwirq
+
+ops中的map才是将virtual irq（linux内部使用）映射到hwirq：
+
+```c
+// include/linux/irqdomain.h
+/**
+ * struct irq_domain_ops - Methods for irq_domain objects
+ * @match: Match an interrupt controller device node to a host, returns
+ *         1 on a match
+ * @map: Create or update a mapping between a virtual irq number and a hw
+ *       irq number. This is called only once for a given mapping.
+ * @unmap: Dispose of such a mapping
+ * @xlate: Given a device tree node and interrupt specifier, decode
+ *         the hardware irq number and linux irq type value.
+ *
+ * Functions below are provided by the driver and called whenever a new mapping
+ * is created or an old mapping is disposed. The driver can then proceed to
+ * whatever internal data structures management is required. It also needs
+ * to setup the irq_desc when returning from map().
+ */
+struct irq_domain_ops {
+	int (*match)(struct irq_domain *d, struct device_node *node,
+		     enum irq_domain_bus_token bus_token);
+	int (*select)(struct irq_domain *d, struct irq_fwspec *fwspec,
+		      enum irq_domain_bus_token bus_token);
+	int (*map)(struct irq_domain *d, unsigned int virq, irq_hw_number_t hw); // virq -> hwirq
+	void (*unmap)(struct irq_domain *d, unsigned int virq);
+	int (*xlate)(struct irq_domain *d, struct device_node *node,
+		     const u32 *intspec, unsigned int intsize,
+		     unsigned long *out_hwirq, unsigned int *out_type); // dts cell -> hwirq
+#ifdef	CONFIG_IRQ_DOMAIN_HIERARCHY
+	/* extended V2 interfaces to support hierarchy irq_domains */
+	int (*alloc)(struct irq_domain *d, unsigned int virq,
+		     unsigned int nr_irqs, void *arg);
+	void (*free)(struct irq_domain *d, unsigned int virq,
+		     unsigned int nr_irqs);
+	int (*activate)(struct irq_domain *d, struct irq_data *irqd, bool reserve);
+	void (*deactivate)(struct irq_domain *d, struct irq_data *irq_data);
+	int (*translate)(struct irq_domain *d, struct irq_fwspec *fwspec,
+			 unsigned long *out_hwirq, unsigned int *out_type);
+#endif
+#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+	void (*debug_show)(struct seq_file *m, struct irq_domain *d,
+			   struct irq_data *irqd, int ind);
+#endif
+};
+```
+
+注意到handle_cpu_irq函数：
+
+```c
+// drivers/irqchip/irq-loongarch-cpu.c
+static void handle_cpu_irq(struct pt_regs *regs)
+{
+	int hwirq;
+	unsigned int estat = read_csr_estat() & CSR_ESTAT_IS;
+
+	while ((hwirq = ffs(estat))) {
+		estat &= ~BIT(hwirq - 1);
+		generic_handle_domain_irq(irq_domain, hwirq - 1);
+	}
+}
+```
+
+<!-- <img src="imgs/20240807_hvisor_loongarch64_port/loongarch_irq.png" alt="LoongArch-Irq" style="zoom:67%;" /> -->
+
+[LoongArch-Irq](imgs/20240807_hvisor_loongarch64_port/loongarch_irq.png)
+
+IS是ESTATE寄存器的12:0位，virtio中断注入的话考虑HWI[7:0]和SWI[1:0]。可以看到handle_cpu_irq函数从IS中低位依次取出为1的bit作为hwirq（ffs找到低位第一个bit的“位置/下标”，例如bit1=1则应返回2,表示第2个位置为1），然后函数清除了这一位，并将下标-1发送给generic_handle_domain_irq（ffs的结果-1才能映射为从0开始的“下标”）。
+
+所以说，driver认为[12:0]的中断都是一种“hwirq”？不只是HWI，所有的硬件层面的中断对应的bits都是hwirq。
+
+看一下龙芯给2K2000写的设备树：
+
+```c
+cpuintc: interrupt-controller {
+    compatible = "loongson,cpu-interrupt-controller";
+    #interrupt-cells = <1>;
+    interrupt-controller;
+};
+bus@10000000 {
+	...
+		liointc: interrupt-controller@1fe01400 {
+			compatible = "loongson,liointc-1.0";
+			reg = <0x0 0x1fe01400 0x0 0x64>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupt-parent = <&cpuintc>;
+			interrupts = <2>;
+			interrupt-names = "int0";
+			loongson,parent_int_map = <0xffffffff>, /* int0 */
+						  <0x00000000>, /* int1 */
+						  <0x00000000>, /* int2 */
+						  <0x00000000>; /* int3 */
+		};
+		eiointc: interrupt-controller@1fe01600 {
+			compatible = "loongson,ls2k2000-eiointc";
+			reg = <0x0 0x1fe01600 0x0 0xea00>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&cpuintc>;
+			interrupts = <3>;
+		};
+		pic: interrupt-controller@10000000 {
+			compatible = "loongson,pch-pic-1.0";
+			reg = <0x0 0x10000000 0x0 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			loongson,pic-base-vec = <0>;
+			interrupt-parent = <&eiointc>;
+		};
+		msi: msi-controller@1fe01140 {
+			compatible = "loongson,pch-msi-1.0";
+			reg = <0x0 0x1fe01140 0x0 0x8>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			msi-controller;
+			loongson,msi-base-vec = <64>;
+			loongson,msi-num-vecs = <192>;
+			interrupt-parent = <&eiointc>;
+		};
+    	...
+        uart0: serial@1fe001e0 {
+			compatible = "ns16550a";
+			reg = <0x0 0x1fe001e0 0x0 0x10>;
+			clock-frequency = <100000000>;
+			interrupt-parent = <&liointc>;
+			interrupts = <10 IRQ_TYPE_LEVEL_HIGH>;
+			no-loopback-test;
+			status = "disabled";
+		};
+}
+```
+
+## 2024.10.19记录
+
+目前设计的中断注入机制：将virtio-mmio挂在cpuintc上（interrupt-parent），分配interrupts=<4>，之前查看代码可知cpuintc将cell value直接翻译为hwirq，并且对应estate.is中的13个bit（即0-12位都对应一个hwirq），由2K2000默认设备树（linux 源码中arch/loongarch/boot/dts）可知，liointc挂在hwirq=2，eiointc挂在hwirq=3，正好对应estate.is中的HWI0和HWI1，所以给virtio-mmio分配一个假的hwirq=4并让virtio-console注册对应的virtual irq，这样通过之前从KVM找到的LVZ中断注入机制写入hwirq=4的硬件中断，就可以触发virtio-console的软件中断，使其向backend进行irq assert并处理新数据。
+
+目前的问题，backend处理中断相关的mmio read报错，并且在通过screen输入之前，backend就已经开始向driver注入中断了，why？
+
+先调查一下virtio对相关机制的设计。
+
+### virtio v1.2 chapter 2.3 notification
+
+总共有三种notification：
+
+1. configuration change
+2. available buffer notification
+3. used buffer notification
+
+其中1和3是device（backend）发出的，driver进行接收。
+
+## 2024.11.3记录
+
+拿到了新3A5000主机，固件是2310版本，不出意外UEFI出现了问题：
+
+![image-20241104114304693](imgs/20240807_hvisor_loongarch64_port/image-20241104114304693.png)
+
+是一个页表dirty异常，地址是UART0的区域，之前的代码默认沿用了UEFI固件的部分页表，所以直接访问0x1fe001e0区域（实际上是物理地址）是没问题的，如果dirty异常则说明之前写这个区域被CPU在页表置dirty但软件没有清理dirty bit。由于这部分UEFI页表的详细信息hvisor无法拿到，目前想到的解决办法是换为DMW访问。
+
+## 2024.11.5记录
+
+uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区域即可，然后遇到了第二个问题，root linux启动到一半就崩溃了：
+
+![image-20241105152202547](imgs/20240807_hvisor_loongarch64_port/image-20241105152202547.png)
+
+之后尝试打开一个全量的kernel debug log调试一下
+
+这周还需要补一个hvisor在loongarch的快速上手，之前在做hvisor-loongarh64 port时把uefi和rust的部分进行了分离，但是除了hvisor本身，uefi、linux、rootfs这部分实际上编译的过程相当复杂，并且由于loongarch这里所有dtb和rootfs都是编译时层层打包好的，所以目前需要做的一个事情是重构hvisor_uefi_packer，添加Kconfig系统：
+
+1. 支持配置hvisor代码目录
+2. 支持选择内嵌启动的vmlinux.bin的文件位置，由于vmlinux（root linux，并且内嵌了root dtb和rootlinux rootfs，其中rootlinux rootfs中存放non root vmlinux（包含nonroot dtb和nonroot rootfs））这部分过于复杂，涉及到我自己的多个仓库，并且rootfs部分由于相关原因不方便开源，所以我将直接提供一个最终的root linux vmlinux.bin文件
+
+## 2024.12 - 2025.1 记录
+
+<https://www.oscommunity.cn/2024/11/28/20241107-syswonder-report/>
+
+<https://www.oscommunity.cn/2024/11/28/20241114-syswonder-report/>
+
+<https://www.oscommunity.cn/2024/11/28/20241128-syswonder-report/>
+
+修复了 liointc、hvc 等相关的诸多问题，root linux 和 nonroot linux 均可启动，但从 root linux 的 screen 向 nonroot 进行输入输出时有随机卡死的情况。
+
+## 2025.2.11记录
+
+修好了 nonroot 的 screen 经常在输入或输出时随机卡死的问题，有时候 CPU0 依次发送了两个 IPI event，但是只有一个触发了对应 CPU 的 trap handler，这就导致频繁的出现 IRQ injection 之后没有清除或者没有即时 IRQ injection的情况，从而导致每次输入的字符因为没有正常触发 nonroot 的驱动从而进行及时的 echo 或者程序输出。由于 virtio console 中 nonroot 向 root 的 pts 输出时仍然需要进行一些 IRQ injection，所以之前在输出时也会出现卡死的问题。
+
+经过 deubg 和分析，发现出现这种情况的原因是 loongarch 架构在进入异常处理时，CPU 默认会将中断位关闭，具体流程可以参见 loongarch 手册第一卷的相关说明：<https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#general-hardware-exception-handling-of-general-exceptions>
+
+> When a general exception is triggered, the processor does the following: Store PLV and IE in CSR.CRMD to PPLV and PIE in CSR.PRMD, **then set PLV in CSR.CRMD to 0 and IE to 0**; For implementations that support the Watch function, also store WE in CSR.CRMD to PWE in CSR.PRMD and then set WE in CSR.CRMD to 0; Record PC that triggered the exception by CSR.ERA; Jump to the exception entry to fetch instructions. When the software executes the ERTN instruction returning from general exceptions, the processor does the following: Restore PPLV and PIE in CSR.PRMD to PLV and IE in CSR.CRMD; For implementations that support the Watch function, also restore PWE in CSR.PRMD to WE in CSR.CRMD; Jump to the address recorded by CSR.ERA to fetch instructions. For the above hardware implementation, the software needs to save PPLV and PIE in CSR.PRMD if the interrupt needs to be enabled during the exception handling, and restore the saved contents to CSR.PRMD before the exception returns.
+
+这也就导致在中断处理过程中收到的新中断被丢弃了，而在ertn时从 PRMD 再把中断位恢复回来，所以在中断处理过程中，CPU 会忽略掉新的中断请求。
+
+![](imgs/20240807_hvisor_loongarch64_port/v1.png)
+
+解决方案是在 loongarch target 下，hvisor 的 send event 强制要求对方 CPU 处理完自己的上一个 IPI 请求，当前 CPU 才能发送新的 IPI 过去（blocking），解决了这个问题，nonroot 的 virtio console 中的 bash 不再出现随机卡死的问题：
+
+![](imgs/20240807_hvisor_loongarch64_port/v2.png)
