@@ -3276,17 +3276,19 @@ static void in_intr(struct virtqueue *vq)
 #define SMP_IRQ_WORK		BIT(ACTION_IRQ_WORK)
 ```
 
-从 screen 读取输入并传递给 nonroot virtio driver 的数据通路已经调试好了，没有问题了，但是之前设计的中断注入流程跑得还是有问题，nonroot 在输入或输出时经常卡死。
+之后运行在 nonroot 对应 CPU 上的 hvisor 会进行中断注入，通知 hwirq=4 的 virtio-mmio 设备处理外部中断，然后 virtio-mmio driver 再通过 virtqueue 拿取从 root 的 screen 发来的数据（通过 root 中的 hvisor-tool virtio daemon中的对 pts 的 epoll 拿到输入的数据然后存到 virtqueue。
+
+从 screen 读取输入并传递给 nonroot virtio driver 的数据通路已经调试好了，没有问题了，但是之前设计的中断注入流程跑得还是有问题，nonroot 在输入或输出时经常卡死，有时候输入过快或者输出的字符过多就直接卡死不再有任何反应了。
 
 ## 2025.2.11记录
 
-修好了 nonroot 的 screen 经常在输入或输出时随机卡死的问题，有时候 CPU0 依次发送了两个 IPI event，但是只有一个触发了对应 CPU 的 trap handler，这就导致频繁的出现 IRQ injection 之后没有清除或者没有即时 IRQ injection的情况，从而导致每次输入的字符因为没有正常触发 nonroot 的驱动从而进行及时的 echo 或者程序输出。由于 virtio console 中 nonroot 向 root 的 pts 输出时仍然需要进行一些 IRQ injection，所以之前在输出时也会出现卡死的问题。
+修好了 nonroot 的 screen 经常在输入或输出时随机卡死的问题，有时候 CPU0 依次发送了两个 IPI event，但是只有一个触发了对应 CPU 的 trap handler，这就导致频繁的出现 IRQ injection 之后没有清除或者没有及时 IRQ injection的情况，从而导致每次输入的字符因为没有正常触发 nonroot 的驱动从而进行及时的 echo 或者程序输出。由于 virtio console 中 nonroot 向 root 的 pts 输出时仍然需要进行一些 IRQ injection，所以之前在输出时也会出现卡死的问题。
 
 经过 deubg 和分析，发现出现这种情况的原因是 loongarch 架构在进入异常处理时，CPU 默认会将中断位关闭，具体流程可以参见 loongarch 手册第一卷的相关说明：<https://loongson.github.io/LoongArch-Documentation/LoongArch-Vol1-EN.html#general-hardware-exception-handling-of-general-exceptions>
 
 > When a general exception is triggered, the processor does the following: Store PLV and IE in CSR.CRMD to PPLV and PIE in CSR.PRMD, **then set PLV in CSR.CRMD to 0 and IE to 0**; For implementations that support the Watch function, also store WE in CSR.CRMD to PWE in CSR.PRMD and then set WE in CSR.CRMD to 0; Record PC that triggered the exception by CSR.ERA; Jump to the exception entry to fetch instructions. When the software executes the ERTN instruction returning from general exceptions, the processor does the following: Restore PPLV and PIE in CSR.PRMD to PLV and IE in CSR.CRMD; For implementations that support the Watch function, also restore PWE in CSR.PRMD to WE in CSR.CRMD; Jump to the address recorded by CSR.ERA to fetch instructions. For the above hardware implementation, the software needs to save PPLV and PIE in CSR.PRMD if the interrupt needs to be enabled during the exception handling, and restore the saved contents to CSR.PRMD before the exception returns.
 
-这也就导致在中断处理过程中收到的新中断被丢弃了，而在ertn时从 PRMD 再把中断位恢复回来，所以在中断处理过程中，CPU 会忽略掉新的中断请求。
+这也就导致在中断处理过程中收到的新中断被丢弃了，而在 `ertn` 时从 PRMD 再把中断位恢复回来，所以在中断处理过程中，CPU 会忽略掉新的中断请求。
 
 ![](imgs/20240807_hvisor_loongarch64_port/v1.png)
 
@@ -3295,3 +3297,10 @@ static void in_intr(struct virtqueue *vq)
 ![](imgs/20240807_hvisor_loongarch64_port/v2.png)
 
 至此 3A5000 的 root 和 nonroot 适配基本完成。
+
+# 参考文献
+
+- epoll(7) — Linux manual page. https://man7.org/linux/man-pages/man7/epoll.7.html
+- linux loongarch64 source code. https://github.com/torvalds/linux/tree/master/arch/loongarch
+- virtio manual. https://docs.oasis-open.org/virtio/virtio/v1.1/csprd01/virtio-v1.1-csprd01.html
+- virtio-mmio driver. https://github.com/torvalds/linux/blob/master/drivers/virtio/virtio_mmio.c
