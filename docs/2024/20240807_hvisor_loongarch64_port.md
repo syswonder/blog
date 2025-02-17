@@ -3096,6 +3096,188 @@ uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区
 
 修复了 liointc、hvc 等相关的诸多问题，root linux 和 nonroot linux 均可启动，但从 root linux 的 screen 向 nonroot 进行输入输出时有随机卡死的情况。
 
+## 2024.11.11 记录
+
+经过排查，新机器进不去root linux的“罪魁祸首”是liointc，目前写的dts能够在之前的板子上运行并成功挂载uart中断，但是新板子（uefi固件202310）在启动时初始化liointc时崩溃了，CPU直接不响应了（JTAG在CPU0卡住之后也读不出CPU0的数据了，但是CPU1-3仍然能够正常用JTAG）
+
+原因：大概率是dts中liointc部分有问题，目前实际上是直接用的龙芯提供的默认dts（即2K系列的设备树中的liointc），研究一下到底是哪里写的不对。
+
+## 2024.11.20 记录
+
+目前修复了关于irqchip初始化和page fault mmio的一些bug，在新板子上virtio可以正常输出了，但是nonroot从/dev/hvc0读数据仍然不对。
+
+好消息是root这边screen的输入后端是可以成功拿到并放入used ring然后inject irq通知nonroot的driver的，接下来调试一下driver拿到的数据到底有没有问题
+
+```c
+// drivers/virtio/virtio_ring.c
+/**
+ * vring_interrupt - notify a virtqueue on an interrupt
+ * @irq: the IRQ number (ignored)
+ * @_vq: the struct virtqueue to notify
+ *
+ * Calls the callback function of @_vq to process the virtqueue
+ * notification.
+ */
+irqreturn_t vring_interrupt(int irq, void *_vq)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+
+	if (!more_used(vq)) {
+		pr_debug("virtqueue interrupt with no work for %p\n", vq);
+		return IRQ_NONE;
+	}
+
+	if (unlikely(vq->broken)) {
+#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
+		dev_warn_once(&vq->vq.vdev->dev,
+			      "virtio vring IRQ raised before DRIVER_OK");
+		return IRQ_NONE;
+#else
+		return IRQ_HANDLED;
+#endif
+	}
+
+	/* Just a hint for performance: so it's ok that this can be racy! */
+	if (vq->event)
+		vq->event_triggered = true;
+
+	pr_debug("virtqueue callback for %p (%p)\n", vq, vq->vq.callback);
+	if (vq->vq.callback)
+		vq->vq.callback(&vq->vq); // for virtio_console, it's in_intr()
+
+	return IRQ_HANDLED;
+}
+EXPORT_SYMBOL_GPL(vring_interrupt);
+
+// drivers/char/virtio_console.c
+/*
+ * get_chars() is the callback from the hvc_console infrastructure
+ * when an interrupt is received.
+ *
+ * We call out to fill_readbuf that gets us the required data from the
+ * buffers that are queued up.
+ */
+static ssize_t get_chars(u32 vtermno, u8 *buf, size_t count)
+{
+	struct port *port;
+
+	port = find_port_by_vtermno(vtermno);
+	if (!port)
+		return -EPIPE;
+
+	/* If we don't have an input queue yet, we can't get input. */
+	BUG_ON(!port->in_vq);
+
+	return fill_readbuf(port, (__force u8 __user *)buf, count, false);
+}
+
+/*
+ * Give out the data that's requested from the buffer that we have
+ * queued up.
+ */
+static ssize_t fill_readbuf(struct port *port, u8 __user *out_buf,
+			    size_t out_count, bool to_user)
+{
+	struct port_buffer *buf;
+	unsigned long flags;
+
+	if (!out_count || !port_has_data(port))
+		return 0;
+
+	buf = port->inbuf;
+	out_count = min(out_count, buf->len - buf->offset);
+
+	if (to_user) {
+		ssize_t ret;
+
+		ret = copy_to_user(out_buf, buf->buf + buf->offset, out_count);
+		if (ret)
+			return -EFAULT;
+	} else {
+		memcpy((__force u8 *)out_buf, buf->buf + buf->offset,
+		       out_count);
+	}
+
+	buf->offset += out_count;
+
+	if (buf->offset == buf->len) {
+		/*
+		 * We're done using all the data in this buffer.
+		 * Re-queue so that the Host can send us more data.
+		 */
+		spin_lock_irqsave(&port->inbuf_lock, flags);
+		port->inbuf = NULL;
+
+		if (add_inbuf(port->in_vq, buf) < 0)
+			dev_warn(port->dev, "failed add_buf\n");
+
+		spin_unlock_irqrestore(&port->inbuf_lock, flags);
+	}
+	/* Return the number of bytes actually copied */
+	return out_count;
+}
+
+static void in_intr(struct virtqueue *vq)
+{
+	struct port *port;
+	unsigned long flags;
+
+	port = find_port_by_vq(vq->vdev->priv, vq);
+	if (!port) {
+		flush_bufs(vq, false);
+		return;
+	}
+
+	spin_lock_irqsave(&port->inbuf_lock, flags);
+	port->inbuf = get_inbuf(port);
+
+	/*
+	 * Normally the port should not accept data when the port is
+	 * closed. For generic serial ports, the host won't (shouldn't)
+	 * send data till the guest is connected. But this condition
+	 * can be reached when a console port is not yet connected (no
+	 * tty is spawned) and the other side sends out data over the
+	 * vring, or when a remote devices start sending data before
+	 * the ports are opened.
+	 *
+	 * A generic serial port will discard data if not connected,
+	 * while console ports and rproc-serial ports accepts data at
+	 * any time. rproc-serial is initiated with guest_connected to
+	 * false because port_fops_open expects this. Console ports are
+	 * hooked up with an HVC console and is initialized with
+	 * guest_connected to true.
+	 */
+
+	if (!port->guest_connected && !is_rproc_serial(port->portdev->vdev))
+		discard_port_data(port);
+
+	/* Send a SIGIO indicating new data in case the process asked for it */
+	send_sigio_to_port(port);
+
+	spin_unlock_irqrestore(&port->inbuf_lock, flags);
+
+	wake_up_interruptible(&port->waitqueue);
+
+	if (is_console_port(port) && hvc_poll(port->cons.hvc))
+		hvc_kick(); // 通知hvc0
+}
+```
+
+在往screen输入一个字符后，nonroot会触发一个0x8的IPI注入，但是由于是在虚拟机里，所以这个ipi实际上是被hvisor handle了
+
+```c
+#define ACTION_BOOT_CPU	0
+#define ACTION_RESCHEDULE	1
+#define ACTION_CALL_FUNCTION	2
+#define ACTION_IRQ_WORK		3 // 0x8 是这个
+#define SMP_BOOT_CPU		BIT(ACTION_BOOT_CPU)
+#define SMP_RESCHEDULE		BIT(ACTION_RESCHEDULE)
+#define SMP_CALL_FUNCTION	BIT(ACTION_CALL_FUNCTION)
+#define SMP_IRQ_WORK		BIT(ACTION_IRQ_WORK)
+```
+
+从 screen 读取输入并传递给 nonroot virtio driver 的数据通路已经调试好了，没有问题了，但是之前设计的中断注入流程跑得还是有问题，nonroot 在输入或输出时经常卡死。
+
 ## 2025.2.11记录
 
 修好了 nonroot 的 screen 经常在输入或输出时随机卡死的问题，有时候 CPU0 依次发送了两个 IPI event，但是只有一个触发了对应 CPU 的 trap handler，这就导致频繁的出现 IRQ injection 之后没有清除或者没有即时 IRQ injection的情况，从而导致每次输入的字符因为没有正常触发 nonroot 的驱动从而进行及时的 echo 或者程序输出。由于 virtio console 中 nonroot 向 root 的 pts 输出时仍然需要进行一些 IRQ injection，所以之前在输出时也会出现卡死的问题。
@@ -3111,3 +3293,5 @@ uefi的问题解决了，通过修改uefi stub中的console地址指向UC DMW区
 解决方案是在 loongarch target 下，hvisor 的 send event 强制要求对方 CPU 处理完自己的上一个 IPI 请求，当前 CPU 才能发送新的 IPI 过去（blocking），解决了这个问题，nonroot 的 virtio console 中的 bash 不再出现随机卡死的问题：
 
 ![](imgs/20240807_hvisor_loongarch64_port/v2.png)
+
+至此 3A5000 的 root 和 nonroot 适配基本完成。
