@@ -23,7 +23,11 @@ Ubiquitous/XiZi_IIoT/board：存放不同开发板的BSP
 移植过程：
 
 1. 运行裸机hello world程序：从nxp厂商提供的BSP中，找到一个裸机hello world程序对应的所有源文件以及编译链接流程，编译完成后通过uboot在M核上启动。
+
 2. 将裸机hello world程序对接到xiuos：将裸机程序的BSP移植到board目录，将print hello world作为应用程序运行。主要是编译链接会出各种问题。
+
+   移植过程中，重点需要关注的外设是uart。因为xiuos采用总线机制统一各种驱动接口，因此裸机程序的BSP中的uart驱动需要和xiuos进行对接，对接时需要编写connect_uart.c，该文件如何编写可参考其他board的类似文件。
+
 3. 为xiuos实现rpmsg功能：将rpmsg-lite移植到xiuos，并写一个利用rpmsg与A核通信的应用程序。
 
 rpmsg-lite是nxp为M核开发的一个轻量级rpmsg框架，应用程序利用rpmsg-lite即可通信。移植rpmsg-lite的主要工作：
@@ -156,10 +160,32 @@ M7核地址空间的0x4000_0000 -- 0xBFFF_FFFF和A53的是共享的，地址也�
 
 <img src="https://mdpics4lgw.oss-cn-beijing.aliyuncs.com/aliyun/2024/rpmsg示例程序.drawio.png" alt="rpmsg示例程序.drawio" style="zoom: 67%;" />
 
-* 运行示例图
+* 运行步骤
 
-![image-20250212190002615](https://mdpics4lgw.oss-cn-beijing.aliyuncs.com/aliyun/2024/image-20250212190002615.png)
+目前支持在M核上运行rpmsg例程，与A核上的Linux应用程序通过RPMsg通信。具体方式如下：
+
+1. 通过uboot在M核上运行XiUOS：
+
+   ```
+   fatload mmc 1:1 0x80000000 XiZi-imx8mp.bin
+   dcache flush
+   bootaux 0x80000000
+   ```
+
+   然后在letter shell中输入CreateRPMsgTask，按下回车，启动rpmsg例程。例程将等待A核上的Linux初始化RPMsg通信通道。
+
+2. 通过uboot在A核上启动Linux，Linux启动后，执行示例程序。
+
+3. 在Linux端可观察到：
+
+   ![image-20250305145941655](https://mdpics4lgw.oss-cn-beijing.aliyuncs.com/aliyun/2024/image-20250305145941655.png)
+
+4. 在XiUOS上可观察到：
+
+   ![image-20250305150018190](https://mdpics4lgw.oss-cn-beijing.aliyuncs.com/aliyun/2024/image-20250305150018190.png)
 
 * 程序代码
 
-TODO：将代码提交到hvisor-tool和xiuos官方仓库后，将补充这一部分内容。
+xiuos中的rpmsg代码可见：[xiuos](https://www.gitlink.org.cn/xuos/xiuos/tree/prepare_for_master/Ubiquitous%2FXiZi_IIoT%2Fboard%2Fimx8mp%2Frpmsg_remote.c)。
+
+Linux端的rpmsg应用程序可见：[hvisor-tool](https://github.com/syswonder/hvisor-tool/blob/main/tools/rpmsg_demo.c)。
