@@ -1,5 +1,55 @@
 # 矽望社区技术报告 - 2024
 
+## Linux CCF分析
+
+时间：2024/12/26
+
+作者：李国玮
+
+摘要：介绍Arm Linux如何对时钟进行管理，以及nxp一些实例分析。
+
+[正文](20241226_linux_ccf.md)
+
+## ITS原理及虚拟化实现
+
+时间：2024/10/8
+
+作者：徐仲锴
+
+摘要：介绍ITS是如何处理LPI中断的，以及如何实现对于ITS的虚拟化。
+
+[正文](20241008_ITS_tutorial.md)
+
+## 在NXP上将GPU直通给Zone0和Zone1
+
+时间：2024/10/4
+
+作者：李国玮
+
+摘要：介绍如何在NXP上，在hvisor虚拟化环境中将GPU直通给Zone 0和Zone1
+
+[正文](20241004_GPU_ON_NXP.md)
+
+## 移植hvisor到LoongArch64架构
+
+时间：2024年8月7日
+
+作者：韩喻泷
+
+摘要：介绍在hvisor移植到LoongArch64架构时的记录和问题解决
+
+[正文](20240807_hvisor_loongarch64_port.md)
+
+## 在QEMU上运行riscv hvisor
+
+时间：2024年6月13日
+
+作者：李国玮
+
+摘要：介绍如何在QEMU上运行riscv hvisor
+
+[正文](20240613_Run_riscv_hvisor.md)
+
 ## hvisor的初始化过程
 
 时间：2024年5月22日
@@ -19,6 +69,16 @@
 摘要：介绍如何在hvisor上使用Virtio-blk和Virtio-net设备。
 
 [正文](20240415_Virtio_devices_tutorial.md)
+
+## 在hvisor(loongarch)里启动linux vm
+
+时间：2024年4月3日
+
+作者：韩喻泷
+
+摘要：介绍在龙芯3A5000硬件上通过FDT设备树启动虚拟机Linux的若干问题
+
+[正文](20240403_loongarch_linux.md)
 
 ## RISC-V APLIC 线中断总结
 

@@ -1,6 +1,49 @@
-# 矽望社区技术博客文章节选
+<div style="display: flex; align-items: center; justify-content: flex-start; font-size: 24px; font-weight: bold; color: #333; padding-bottom: 20px;">
+    <img src="https://www.syswonder.org/_media/logo.svg" width="64" height="64" style="margin-right: 10px;">
+    <div style="display: flex; align-items: center; font-size: 25pt;">矽望社区技术博客文章节选</div>
+</div>
 
-## 在hvisor上使用Virtio磁盘和网络设备
+### Linux CCF（Clock Common Framework）分析
+
+**时间：** 2024年12月26日
+
+**作者：** 李国玮
+
+摘要：介绍Arm Linux如何对时钟进行管理，以及nxp一些实例分析。
+
+[正文](2024/20241226_linux_ccf.md)
+
+### 在NXP上将GPU直通给Zone0和Zone1
+
+**时间：** 2024年10月4日
+
+**作者：** 李国玮
+
+摘要：介绍如何在NXP上，在hvisor虚拟化环境中将GPU直通给Zone 0和Zone1
+
+[正文](2024/20241004_GPU_ON_NXP.md)
+
+### 移植hvisor到LoongArch64架构
+
+**时间：** 2024年8月7日
+
+**作者：** 韩喻泷
+
+摘要：介绍了在LoongArch64架构上移植hvisor的过程、遇到的问题以及解决方案。
+
+[正文](2024/20240807_hvisor_loongarch64_port.md)
+
+### ZCU102 FPGA launch RocketChip with H-extension and Boot Riscv64 Linux.
+
+**时间：** 2024年7月8日
+
+**作者：** 杨竣轶
+
+摘要：一份在ZCU102上启动RocketChip + H-extension + Riscv64 Linux的操作手册。
+
+[正文](2024/20240706_FPGA_Supported_Rocketchip.md)
+
+### 在hvisor上使用Virtio磁盘和网络设备
 
 时间：2024年4月15日
 
@@ -10,7 +53,7 @@
 
 [正文](2024/20240415_Virtio_devices_tutorial.md)
 
-## RISC-V APLIC 线中断总结
+### RISC-V APLIC 线中断总结
 
 **时间：** 2024年3月11日
 
@@ -20,7 +63,7 @@
 
 [正文](2024/20240311_APLIC.md)
 
-## 在RuxOS上支持c++
+### 在RuxOS上支持c++
 
 **时间：** 2024年2月29日
 
@@ -31,7 +74,7 @@
 [正文](2024/20240229_Support_c++_on_RuxOS.md)
 
 
-## NXP OK8MP 开发板启动Jailhouse
+### NXP OK8MP 开发板启动Jailhouse
 
 **时间：** 2024年2月23日
 
@@ -42,7 +85,7 @@
 [正文](2023/20240223_NXP_Boot_Jailhouse_Tutorial.md)
 
 
-## RukOS中9pfs的实现与使用
+### RukOS中9pfs的实现与使用
 
 **时间：** 2023年12月6日
 
@@ -53,7 +96,7 @@
 [正文](2023/20231113_how-9pfs-is-integrated-to-rukos.md)
 
 
-## 在 rukos 上支持 musl libc
+### 在 rukos 上支持 musl libc
 
 **时间：** 2023年11月15日
 
@@ -64,7 +107,7 @@
 [正文](2023/20231115_MUSL_on_Rukos.md)
 
 
-## C程序的启动过程
+### C程序的启动过程
 
 **时间：** 2023年11月9日
 
@@ -75,7 +118,7 @@
 [正文](2023/20231109_cstart.md)
 
 
-## Linux中的Memory HotPlug机制
+### Linux中的Memory HotPlug机制
 
 **时间：** 2023年7月21日
 
@@ -86,7 +129,7 @@
 [正文](2023/20230721_Linux_Memory_Hotplug.md)
 
 
-## 如何让jailhouse运行在模拟ARM AArch64的QEMU上
+### 如何让jailhouse运行在模拟ARM AArch64的QEMU上
 
 **时间：** 2023年4月21日
 
@@ -97,7 +140,7 @@
 [正文](2023/20230421_ARM64-QEMU-jailhouse.md)
 
 
-## 使用gdb调试jailhouse步骤
+### 使用gdb调试jailhouse步骤
 
 **时间：** 2023年4月14日
 
@@ -108,7 +151,7 @@
 [正文](2023/20230414_gdb_debug_jailhouse.md)
 
 
-## 各种参考手册（重要）
+### 各种参考手册（重要）
 
 <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
 
