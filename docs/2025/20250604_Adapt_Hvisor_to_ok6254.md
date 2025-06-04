@@ -268,15 +268,3 @@ id号；memory_region内存映射区域；devicesvirtio设备树
 5.zone1启动后物理串口设备未成功启动：zone1的物理串口使用的时钟被zone0占用，需要修改为fix clock
 
 6./bin/sh后未正常输出：zone1.json中未正确配置相关中断，sh程序需要串口的相关中断才能正常运行。
-
-
-
-
-
-
-
-
-
-
-
-
