@@ -365,6 +365,10 @@ nohup ./hvisor virtio start virtio_cfg.json &
 ./hvisor zone shutdown -id 1
 ```
 
+正常启动zone0 和 zone1
+
+![image-20250609163608346](img/20250604_Adapt_Hvisor_to_ok6254.pic/image-20250609163608346.png)
+
 ## 3.5 zone1启动过程中所遇到的问题
 
 1.hvisor-tool加载hvisor.ko内核模块运行提示没有virtio-device：没有添加设备树节点

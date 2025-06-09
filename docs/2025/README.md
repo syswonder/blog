@@ -19,3 +19,13 @@
 摘要：介绍hvisor如何适配新板子，以aarch64 rk3568为例
 
 [正文](20250403_How_to_Adapt_Hvisor_to_a_New_Board--A_Case_Study_of_AArch64_RK3568.md)
+
+## hvisor适配ok6254的流程
+
+时间：2025/6/4
+
+作者：侯云龙
+
+摘要：介绍hvisor适配新板子ok6254的流程
+
+[正文](20250604_Adapt_Hvisor_to_ok6254.md)
