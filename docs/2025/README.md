@@ -1,14 +1,14 @@
 # 矽望社区技术报告 - 2025
 
-## 在NXP上通过RPMsg实现Linux与Xiuos通信
+## hvisor适配ok6254的流程
 
-时间：2025/2/17
+时间：2025/6/4
 
-作者：李国玮
+作者：侯云龙
 
-摘要：介绍如何在nxp imx8mp板子上，通过rpmsg实现Linux与Xiuos的通信
+摘要：介绍hvisor适配新板子ok6254的流程
 
-[正文](20250217_RPMSG_on_NXP.md)
+[正文](20250604_Adapt_Hvisor_to_ok6254.md)
 
 ## hvisor如何适配新板子——以aarch64 rk3568为例
 
@@ -19,3 +19,14 @@
 摘要：介绍hvisor如何适配新板子，以aarch64 rk3568为例
 
 [正文](20250403_How_to_Adapt_Hvisor_to_a_New_Board--A_Case_Study_of_AArch64_RK3568.md)
+
+
+## 在NXP上通过RPMsg实现Linux与Xiuos通信
+
+时间：2025/2/17
+
+作者：李国玮
+
+摘要：介绍如何在nxp imx8mp板子上，通过rpmsg实现Linux与Xiuos的通信
+
+[正文](20250217_RPMSG_on_NXP.md)
