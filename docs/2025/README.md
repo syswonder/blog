@@ -10,6 +10,16 @@
 
 [正文](20250604_Adapt_Hvisor_to_ok6254.md)
 
+## 在rk3588上通过hvisor启动64位zephyr
+
+时间：2025/5/31
+
+作者：李国玮
+
+摘要：介绍zephyr，以及如何将zephyr移植到rk3588上，并通过hvisor将zephyr作为non root zone启动。
+
+[正文](20250531_Zephyr_on_hvisor.md)
+
 ## hvisor如何适配新板子——以aarch64 rk3568为例
 
 时间：2025/4/3
