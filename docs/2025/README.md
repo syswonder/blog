@@ -40,3 +40,13 @@
 摘要：介绍如何在nxp imx8mp板子上，通过rpmsg实现Linux与Xiuos的通信
 
 [正文](20250217_RPMSG_on_NXP.md)
+
+## RuxOs伪终端的实现与其在sshd上的应用
+
+时间：2025/6/20
+
+作者：石全
+
+摘要：介绍在RuxOS中如何实现伪终端并且介绍伪终端在ssh中的作用
+
+[正文](20250620_SSHD_Support_for_RuxOs.md)
