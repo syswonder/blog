@@ -1,16 +1,26 @@
 # 矽望社区技术报告 - 2025
 
-## 在RuxOS中支持FUSE用户空间文件系统
+## EIC7700x SoC上的L3 Cache Controller介绍
+
+时间：2025/7/22
+
+作者：刘景宇
+
+摘要：介绍ESWIN的EIC7700x Soc上的L3 Cache Controller及其虚拟化的简要实现介绍
+
+[正文](20250722_Cache_Contoller.md)
+
+## Hvisor 在 Megrez 上的适配(zone0 启动)
 
 时间：2025/7/10
 
 作者：刘景宇
 
-摘要：Hvisor 在 Megrez 上的适配(zone0 启动)
+摘要：描述了Hvisor在Megrez上启动zone0的过程，为zone1的启动以及其他risc-v开发板的移植提供参考
 
 [正文](20250710_Megrez_Start_Zone0.md)
 
-## 在RuxOS中支持FUSE用户空间文件系统
+## RuxOS伪终端的实现与其在sshd上的应用
 
 时间：2025/6/20
 
