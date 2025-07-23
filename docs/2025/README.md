@@ -60,6 +60,16 @@
 
 [正文](20250531_Zephyr_on_hvisor.md)
 
+## 在NXP上使用Hvisor运行ruxos
+
+时间：2025/5/06
+
+作者：刘昊文
+
+摘要：介绍如何在NXP OK8MP开发板上通过hvisor将ruxos系统运行在non root zone上
+
+[正文](20250506_Hvisor_Rux.md)
+
 ## hvisor如何适配新板子——以aarch64 rk3568为例
 
 时间：2025/4/3
