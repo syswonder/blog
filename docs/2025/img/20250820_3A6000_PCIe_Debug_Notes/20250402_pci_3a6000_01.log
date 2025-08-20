@@ -1,0 +1,1195 @@
+PROGRESS CODE: V01010004 I0
+PROGRESS CODE: V01010003 I0
+PROGRESS CODE: V01010006 I0
+PROGRESS CODE: V01010001 I0
+PROGRESS CODE: V01011001 I0
+PROGRESS CODE: V01020003 I0
+PROGRESS CODE: V01020006 I0
+PROGRESS CODE: V01020004 I0
+PROGRESS CODE: V02020006 I0
+PROGRESS CODE: V01010002 I0
+PROGRESS CODE: V01020002 I0
+
+[INFO] arch_init done
+                     [INFO] ok, ready to jump to hvisor entry...
+                                                                Hello, HVISOR!
+Heap allocator initialization finished: 0x90000001000ca6d0..0x90000001001ca6d0
+heap_test passed!
+Booting CPU 0: 0x90000001001cb000 arch:0x90000001001cb020, DTB: 0xfe430018
+Hello, HVISOR!
+Hello, HVISOR!
+Hello, HVISOR!
+Booting CPU 1: 0x900000010024b000 arch:0x900000010024b020, DTB: 0x9000000000000000
+Booting CPU 3: 0x900000010034b000 arch:0x900000010034b020, DTB: 0x9000000000000000
+Booting CPU 2: 0x90000001002cb000 arch:0x90000001002cb020, DTB: 0x9000000000000000
+Secondary CPU 1 has entered.
+Primary CPU 0 has entered.
+Secondary CPU 3 has entered.
+Secondary CPU 2 has entered.
+[INFO  0] (hvisor:117) Logging is enabled.
+[INFO  0] (hvisor:118) __core_end = 0x90000001001cb000
+[INFO  0] (hvisor:121) Hypervisor initialization in progress...
+[INFO  0] (hvisor:122) build_mode: debug, log_level: info, arch: loongarch64, stats: off
+[INFO  0] (hvisor::memory::frame:282) Frame allocator initialization finished: 0x90000001003cb000..0x90000001013cb000
+[INFO  0] (hvisor::memory::frame:302) frame_allocator_test passed!
+[INFO  0] (hvisor::device::irqchip::ls7a2000:38) loongarch64: irqchip: primary_init_early: checking iochip configs
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:565) loongarch64: print_chip_info: chip config version: 0x14
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:569) loongarch64: print_chip_info: chip feature extioi support: true
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:573) loongarch64: print_chip_info: manufacturer name: Loongson
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:577) loongarch64: print_chip_info: chip name: 3A6000-L
+[INFO  0] (hvisor::device::irqchip::ls7a2000:43) loongarch64: irqchip: testing percore IPI feature
+[INFO  0] (hvisor::device::irqchip::ls7a2000:45) loongarch64: irqchip: percore IPI feature: true
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x200000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x90000000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0xF0000000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0xC0000000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x1FE00000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x10000000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0xFE00000000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x18408000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x60000000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x10010000
+[INFO  0] (hvisor::memory::mm:112) region.start: 0x0
+[INFO  0] (hvisor::memory::mm:112) region.start: 0xF0000
+[INFO  0] (hvisor::zone:222) zone cpu_set: 0b1
+[WARN  1] (hvisor:154) zone is not created for cpu 1
+[INFO  0] (hvisor:159) CPU 0 hv_pt_install OK.
+[INFO  1] (hvisor:159) CPU 1 hv_pt_install OK.
+[WARN  3] (hvisor:154) zone is not created for cpu 3
+[WARN  2] (hvisor:154) zone is not created for cpu 2
+[INFO  3] (hvisor:159) CPU 3 hv_pt_install OK.
+[INFO  2] (hvisor:159) CPU 2 hv_pt_install OK.
+[INFO  3] (hvisor::device::irqchip::ls7a2000:56) loongarch64: irqchip: percpu_init: running percpu_init
+[INFO  2] (hvisor::device::irqchip::ls7a2000:56) loongarch64: irqchip: percpu_init: running percpu_init
+[INFO  3] (hvisor::arch::loongarch64::ipi:298) ecfg ipi enabled on cpu 3, current lie: IPI
+[INFO  0] (hvisor::device::irqchip::ls7a2000:56) loongarch64: irqchip: percpu_init: running percpu_init
+[INFO  1] (hvisor::device::irqchip::ls7a2000:56) loongarch64: irqchip: percpu_init: running percpu_init
+[INFO  0] (hvisor::arch::loongarch64::ipi:298) ecfg ipi enabled on cpu 0, current lie: TIMER | IPI
+[INFO  1] (hvisor::arch::loongarch64::ipi:298) ecfg ipi enabled on cpu 1, current lie: IPI
+[INFO  3] (hvisor::device::irqchip::ls7a2000:60) loongarch64: irqchip: percpu_init: dumping ipi registers
+[INFO  1] (hvisor::device::irqchip::ls7a2000:60) loongarch64: irqchip: percpu_init: dumping ipi registers
+[INFO  0] (hvisor::device::irqchip::ls7a2000:60) loongarch64: irqchip: percpu_init: dumping ipi registers
+[INFO  1] (hvisor::arch::loongarch64::ipi:317) dump_ipi_registers: dumping IPI registers for this cpu 1
+[INFO  0] (hvisor::arch::loongarch64::ipi:317) dump_ipi_registers: dumping IPI registers for this cpu 0
+ipi_status: 0x0, ipi_enable: 0xffffffff
+ipi_status: 0x0, ipi_enable: 0xffffffff
+mailbox0: 0x100010000, mailbox1: 0x0, mailbox2: 0x0, mailbox3: 0x0
+mailbox0: 0x9007aae0, mailbox1: 0x0, mailbox2: 0x0, mailbox3: 0x901fe000
+[INFO  3] (hvisor::arch::loongarch64::ipi:317) dump_ipi_registers: dumping IPI registers for this cpu 3
+[INFO  2] (hvisor::arch::loongarch64::ipi:298) ecfg ipi enabled on cpu 2, current lie: IPI
+ipi_status: 0x0, ipi_enable: 0xffffffff
+[INFO  2] (hvisor::device::irqchip::ls7a2000:60) loongarch64: irqchip: percpu_init: dumping ipi registers
+mailbox0: 0x100010000, mailbox1: 0x0, mailbox2: 0x0, mailbox3: 0x0
+[INFO  2] (hvisor::arch::loongarch64::ipi:317) dump_ipi_registers: dumping IPI registers for this cpu 2
+ipi_status: 0x0, ipi_enable: 0xffffffff
+mailbox0: 0x100010000, mailbox1: 0x0, mailbox2: 0x0, mailbox3: 0x0
+[INFO  0] (hvisor:146) Primary CPU init late...
+[INFO  0] (hvisor::device::irqchip::ls7a2000:51) loongarch64: irqchip: primary_init_late: probing pci
+[WARN  0] (hvisor::device::irqchip::ls7a2000::chip:966) loongarch64: probe_pci: probing PCI devices @ 0x800000001a000000
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 0: vendor id = 0x14, device id = 0x7a00, name = [Loongson Technology LLC] Hyper Transport Bridge Controller	
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 4: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 5: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 6: vendor id = 0x14, device id = 0x7a25, name = [Loongson Technology LLC] LG100 GPU
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 7: vendor id = 0x14, device id = 0x7a07, name = [Loongson Technology LLC] HDA (High Definition Audio) Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 8: vendor id = 0x14, device id = 0x7a18, name = [Loongson Technology LLC] SATA 3 AHCI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 9: vendor id = 0x14, device id = 0x7a49, name = [Loongson Technology LLC] PCIe x4 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 10: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 11: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 12: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 13: vendor id = 0x14, device id = 0x7a49, name = [Loongson Technology LLC] PCIe x4 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 15: vendor id = 0x14, device id = 0x7a69, name = [Loongson Technology LLC] PCIe x16 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 16: vendor id = 0x14, device id = 0x7a59, name = [Loongson Technology LLC] PCIe x8 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 19: vendor id = 0x14, device id = 0x7a59, name = [Loongson Technology LLC] PCIe x8 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 22: vendor id = 0x14, device id = 0x7a1b, name = [Loongson Technology LLC] SPI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 25: vendor id = 0x14, device id = 0x7a34, name = [Loongson Technology LLC] xHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 26: vendor id = 0x14, device id = 0x7a1f, name = [Loongson Technology LLC] Unknown Device
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 36: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 37: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 38: vendor id = 0x14, device id = 0x7a25, name = [Loongson Technology LLC] LG100 GPU
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 39: vendor id = 0x14, device id = 0x7a07, name = [Loongson Technology LLC] HDA (High Definition Audio) Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 40: vendor id = 0x14, device id = 0x7a18, name = [Loongson Technology LLC] SATA 3 AHCI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 54: vendor id = 0x14, device id = 0x7a1b, name = [Loongson Technology LLC] SPI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 57: vendor id = 0x14, device id = 0x7a34, name = [Loongson Technology LLC] xHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:978) loongarch64: probe_pci: device 58: vendor id = 0x14, device id = 0x7a1f, name = [Loongson Technology LLC] Unknown Device
+[WARN  0] (hvisor::device::irqchip::ls7a2000::chip:987) loongarch64: probe_pci: probing PCI devices @ 0x80000efdfe000000
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 0: vendor id = 0x14, device id = 0x7a00, name = [Loongson Technology LLC] Hyper Transport Bridge Controller	
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 4: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 5: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 6: vendor id = 0x14, device id = 0x7a25, name = [Loongson Technology LLC] LG100 GPU
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 7: vendor id = 0x14, device id = 0x7a07, name = [Loongson Technology LLC] HDA (High Definition Audio) Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 8: vendor id = 0x14, device id = 0x7a18, name = [Loongson Technology LLC] SATA 3 AHCI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 9: vendor id = 0x14, device id = 0x7a49, name = [Loongson Technology LLC] PCIe x4 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 10: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 11: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 12: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 13: vendor id = 0x14, device id = 0x7a49, name = [Loongson Technology LLC] PCIe x4 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 15: vendor id = 0x14, device id = 0x7a69, name = [Loongson Technology LLC] PCIe x16 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 16: vendor id = 0x14, device id = 0x7a59, name = [Loongson Technology LLC] PCIe x8 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 19: vendor id = 0x14, device id = 0x7a59, name = [Loongson Technology LLC] PCIe x8 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 22: vendor id = 0x14, device id = 0x7a1b, name = [Loongson Technology LLC] SPI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 25: vendor id = 0x14, device id = 0x7a34, name = [Loongson Technology LLC] xHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 26: vendor id = 0x14, device id = 0x7a1f, name = [Loongson Technology LLC] Unknown Device
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 36: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 37: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 38: vendor id = 0x14, device id = 0x7a25, name = [Loongson Technology LLC] LG100 GPU
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 39: vendor id = 0x14, device id = 0x7a07, name = [Loongson Technology LLC] HDA (High Definition Audio) Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 40: vendor id = 0x14, device id = 0x7a18, name = [Loongson Technology LLC] SATA 3 AHCI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 54: vendor id = 0x14, device id = 0x7a1b, name = [Loongson Technology LLC] SPI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 57: vendor id = 0x14, device id = 0x7a34, name = [Loongson Technology LLC] xHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:998) loongarch64: probe_pci: device 58: vendor id = 0x14, device id = 0x7a1f, name = [Loongson Technology LLC] Unknown Device
+[WARN  0] (hvisor::device::irqchip::ls7a2000::chip:1007) loongarch64: probe_pci: probing PCI devices @ 0x80000efe00000000
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 0: vendor id = 0x14, device id = 0x7a00, name = [Loongson Technology LLC] Hyper Transport Bridge Controller	
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 4: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 5: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 6: vendor id = 0x14, device id = 0x7a25, name = [Loongson Technology LLC] LG100 GPU
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 7: vendor id = 0x14, device id = 0x7a07, name = [Loongson Technology LLC] HDA (High Definition Audio) Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 8: vendor id = 0x14, device id = 0x7a18, name = [Loongson Technology LLC] SATA 3 AHCI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 9: vendor id = 0x14, device id = 0x7a49, name = [Loongson Technology LLC] PCIe x4 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 10: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 11: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 12: vendor id = 0x14, device id = 0x7a39, name = [Loongson Technology LLC] PCIe x1 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 13: vendor id = 0x14, device id = 0x7a49, name = [Loongson Technology LLC] PCIe x4 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 15: vendor id = 0x14, device id = 0x7a69, name = [Loongson Technology LLC] PCIe x16 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 16: vendor id = 0x14, device id = 0x7a59, name = [Loongson Technology LLC] PCIe x8 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 19: vendor id = 0x14, device id = 0x7a59, name = [Loongson Technology LLC] PCIe x8 Root Port
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 22: vendor id = 0x14, device id = 0x7a1b, name = [Loongson Technology LLC] SPI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 25: vendor id = 0x14, device id = 0x7a34, name = [Loongson Technology LLC] xHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 26: vendor id = 0x14, device id = 0x7a1f, name = [Loongson Technology LLC] Unknown Device
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 36: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 37: vendor id = 0x14, device id = 0x7a24, name = [Loongson Technology LLC] OHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 38: vendor id = 0x14, device id = 0x7a25, name = [Loongson Technology LLC] LG100 GPU
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 39: vendor id = 0x14, device id = 0x7a07, name = [Loongson Technology LLC] HDA (High Definition Audio) Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 40: vendor id = 0x14, device id = 0x7a18, name = [Loongson Technology LLC] SATA 3 AHCI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 54: vendor id = 0x14, device id = 0x7a1b, name = [Loongson Technology LLC] SPI Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 57: vendor id = 0x14, device id = 0x7a34, name = [Loongson Technology LLC] xHCI USB Controller
+[INFO  0] (hvisor::device::irqchip::ls7a2000::chip:1018) loongarch64: probe_pci: device 58: vendor id = 0x14, device id = 0x7a1f, name = [Loongson Technology LLC] Unknown Device
+[INFO  0] (hvisor::device::irqchip::ls7a2000:53) loongarch64: irqchip: primary_init_late finished
+[INFO  1] (hvisor::percpu:70) CPU1: Idling the CPU before starting VM...
+[INFO  0] (hvisor::percpu:73) CPU0: Running the VM...
+[INFO  1] (hvisor::arch::loongarch64::cpu:140) loongarch64: ArchCpu::idle: cpuid=1
+[INFO  0] (hvisor::arch::loongarch64::s2pt:168) loongarch64: S2PTInstr::activate: root_pa: 0x90000001003cb000
+[INFO  1] (hvisor::arch::loongarch64::ipi:298) ecfg ipi enabled on cpu 1, current lie: IPI
+[INFO  0] (hvisor::arch::loongarch64::s2pt:180) loongarch64: S2PTInstr::activate: set tlbrentry to 0x100093000 done!
+[INFO  3] (hvisor::percpu:70) CPU3: Idling the CPU before starting VM...
+[INFO  0] (hvisor::arch::loongarch64::cpu:77) loongarch64: CPU0 run@0x9000000000e4b000
+[INFO  2] (hvisor::percpu:70) CPU2: Idling the CPU before starting VM...
+[INFO  3] (hvisor::arch::loongarch64::cpu:140) loongarch64: ArchCpu::idle: cpuid=3
+[INFO  0] (hvisor::arch::loongarch64::cpu:82) loongarch64: @ArchCpu {
+    ctx: LoongArch64ZoneContext {
+        x: [
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+            0x0,
+        ],
+        sepc: 0x9000000000e4b000,
+        gcsr_crmd: 0x8,
+        gcsr_prmd: 0x0,
+        gcsr_euen: 0x0,
+        gcsr_misc: 0x0,
+        gcsr_ectl: 0x10000,
+        gcsr_estat: 0x0,
+        gcsr_era: 0x0,
+        gcsr_badv: 0x0,
+        gcsr_badi: 0x0,
+        gcsr_eentry: 0x1c000000,
+        gcsr_tlbidx: 0xe000000,
+        gcsr_tlbehi: 0x0,
+        gcsr_tlbelo0: 0x0,
+        gcsr_tlbelo1: 0x0,
+        gcsr_asid: 0xa0000,
+        gcsr_pgdl: 0x0,
+        gcsr_pgdh: 0x0,
+        gcsr_pgd: 0x0,
+        gcsr_pwcl: 0x0,
+        gcsr_pwch: 0x0,
+        gcsr_stlbps: 0xe,
+        gcsr_ravcfg: 0x0,
+        gcsr_cpuid: 0x0,
+        gcsr_prcfg1: 0x72f8,
+        gcsr_prcfg2: 0x3ffff000,
+        gcsr_prcfg3: 0x8073f2,
+        gcsr_save0: 0xd3bd7824bc5269cf,
+        gcsr_save1: 0xf924451a5a1807de,
+        gcsr_save2: 0x1ab1929d72f7fa32,
+        gcsr_save3: 0xde074b3cfd9055d0,
+        gcsr_save4: 0x431ee0be3bb357a7,
+        gcsr_save5: 0x535efc5f7ec6a8ec,
+        gcsr_save6: 0x3cce457ac45c4bc7,
+        gcsr_save7: 0x7bcfe8dbd1b5c4ae,
+        gcsr_save8: 0x0,
+        gcsr_save9: 0x0,
+        gcsr_save10: 0x0,
+        gcsr_save11: 0x0,
+        gcsr_save12: 0x0,
+        gcsr_save13: 0x0,
+        gcsr_save14: 0x0,
+        gcsr_save15: 0x0,
+        gcsr_tid: 0x0,
+        gcsr_tcfg: 0x0,
+        gcsr_tval: 0xffffffffffff,
+        gcsr_cntc: 0x0,
+        gcsr_ticlr: 0x0,
+        gcsr_llbctl: 0x0,
+        gcsr_tlbrentry: 0x0,
+        gcsr_tlbrbadv: 0x0,
+        gcsr_tlbrera: 0x0,
+        gcsr_tlbrsave: 0x0,
+        gcsr_tlbrelo0: 0x0,
+        gcsr_tlbrelo1: 0x0,
+        gcsr_tlbrehi: 0x0,
+        gcsr_tlbrprmd: 0x0,
+        gcsr_dmw0: 0x0,
+        gcsr_dmw1: 0x0,
+        gcsr_dmw2: 0x0,
+        gcsr_dmw3: 0x0,
+        pgdl: 0x0,
+        pgdh: 0x0,
+    },
+    stack_top: 0x900000010024b000,
+    cpuid: 0x0,
+    power_on: true,
+    init: true,
+}
+[INFO  2] (hvisor::arch::loongarch64::cpu:140) loongarch64: ArchCpu::idle: cpuid=2
+[INFO  3] (hvisor::arch::loongarch64::ipi:298) ecfg ipi enabled on cpu 3, current lie: IPI
+[INFO  2] (hvisor::arch::loongarch64::ipi:298) ecfg ipi enabled on cpu 2, current lie: IPI
+[INFO  0] (hvisor::arch::loongarch64::trap:1290) csrxchg emulation for CSR 0x80
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x0
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x2
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x1
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x2
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x6
+[INFO  0] (hvisor::arch::loongarch64::trap:1278) csrrd emulation for CSR 0x380
+[INFO  0] (hvisor::arch::loongarch64::trap:1278) csrrd emulation for CSR 0x300
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x93
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x10
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x11
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x12
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x13
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x14
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x1
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x1
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x2
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x4
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x5
+[INFO  0] (hvisor::arch::loongarch64::trap:1278) csrrd emulation for CSR 0x380
+[INFO  0] (hvisor::arch::loongarch64::trap:1278) csrrd emulation for CSR 0x300
+[    0.000000] Linux version 6.13.7 (wheatfox@dedsec-amd0) (loongarch64-unknown-linux-gnu-gcc (GCC) 13.0.1 20230316 (experimental), GNU ld (GNU Binutils) 2.40.50.20230316) #117 PREEMPT_RT Wed Apr  2 09:46:59 CST 2025
+[    0.000000] Loongson-64bit Processor probed (LA664 Core)
+[    0.000000] CPU0 revision is: 0014d000 (Loongson-64bit)
+[    0.000000] FPU0 revision is: 00000000
+[    0.000000] ACPI: Early table checksum verification disabled
+[    0.000000] earlycon: ns16550a0 at MMIO 0x000000001fe001e0 (options '115200n8')
+[    0.000000] printk: legacy bootconsole [ns[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x6
+16550a0] enabled
+[    0.000000] OF: reserved mem: 0x00000000c0000000..0x00000000efffffff (786432 KiB) nomap non-reusable nonroot0xc0000000
+[    0.000000] DMI not present or invalid.
+[    0.000000] The BIOS Version: (null)
+[    0.000000] software IO TLB: area num 1.
+[    0.000000] software IO TLB: mapped [mem 0x0000000004ed0000-0x0000000008ed0000] (64MB)
+[    0.000000] PM: hibernation: Registered nosave memory: [mem 0x04aa4000-0x04aa4fff]
+[    0.000000] Zone ranges:
+[    0.000000]   DMA32    [mem 0x0000000000200000-0x00000000ffffffff]
+[    0.000000]   Normal   empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   nod[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x200
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x201
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x202
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x203
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x204
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x205
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x206
+[INFO  0] (hvisor::arch::loongarch64::trap:1284) csrwr emulation for CSR 0x207
+e   0: [mem 0x0000000000200000-0x000000000effffff]
+[    0.000000]   node   0: [mem 0x0000000090000000-0x000000009fffffff]
+[    0.000000]   node   0: [mem 0x00000000c0000000-0x00000000efffffff]
+[    0.000000]   node   0: [mem 0x00000000f0000000-0x00000000ffffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000000200000-0x00000000ffffffff]
+[    0.000000] On node 0, zone DMA32: 512 pages in unavailable ranges
+[    0.000000] On node 0, zone DMA32: 135168 pages in unavailable ranges
+[    0.000000] pcpu-alloc: s0 r0 d32768 u32768 alloc=1*32768
+[    0.000000] pcpu-alloc: [0] 0 
+[    0.000000] Kernel command line: earlycon console=ttyS0,115200n8 initramfs_async=false rootwait debug 
+[    0.000000] printk: log buffer data + meta data: 262144 + 917504 = 1179648 bytes
+[    0.000000] Dentry cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 388608
+[    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] Dynamic Preempt: full
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU event tracing is enabled.
+[    0.000000] rcu: 	RCU priority boosting: priority 1 delay 500 ms.
+[    0.000000] rcu: 	RCU_SOFTIRQ processing moved to rcuc kthreads.
+[    0.000[INFO  0] (hvisor::arch::loongarch64::trap:1278) csrrd emulation for CSR 0x380
+[INFO  0] (hvisor::arch::loongarch64::trap:1278) csrrd emulation for CSR 0x300
+000] 	No expedited grace period (rcu_normal_after_boot).
+[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000] 	Tracing variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+[    0.000000] RCU Tasks: Setting shift to 0 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=1.
+[    0.000000] RCU Tasks Trace: Setting shift to 0 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=1.
+[    0.000000] NR_IRQS: 832, nr_irqs: 64, preallocated irqs: 16
+[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000] Constant clock event device register
+[    0.000000] clocksource: Constant: mask: 0xffffffffffffffff max_cycles: 0x171024e7e0, max_idle_ns: 440795205315 ns
+[    0.000000] sched_clock: 64 bits at 100MHz, resolution 10ns, wraps every 4398046511100ns
+[    0.000003] Constant clock source device register
+[    0.000259] Console: colour dummy device 80x25
+[    0.000279] Calibrating delay loop (skipped), value calculated using timer frequency.. 200.00 BogoMIPS (lpj=1000000)
+[    0.000286] pid_max: default: 32768 minimum: 301
+[    0.000305] LSM: initializing lsm=capability,yama
+[    0.000322] Yama: becoming mindful.
+[    0.000356] Mount-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[    0.000360] Mountpoint-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[    0.000901] rcu: Hierarchical SRCU implementation.
+[    0.000903] rcu: 	Max phase no-delay instances is 1000.
+[    0.040792] Memory: 586992K/1554432K available (12544K kernel code, 3504K rwdata, 4212K rodata, 57472K init, 781K bss, 965812K reserved, 0K cma-reserved)
+[    0.050807] devtmpfs: initialized
+[    0.051377] Performance counters: loongarch/loongson64 PMU enabled, 4 64-bit counters available to each CPU.
+[    0.182070] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.182075] futex hash table entries: 256 (order: 1, 12288 bytes, linear)
+[    0.182268] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.182581] thermal_sys: Registered thermal governor 'step_wise'
+[    0.252080] hw-breakpoint: Found 0 breakpoint and 0 watchpoint registers.
+[    0.312136] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.312138] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.620476] raid6: lasx     gen() 23344 MB/s
+[    0.786317] raid6: lsx      gen() 13573 MB/s
+[    0.956322] raid6: int64x8  gen()  4090 MB/s
+[    1.126319] raid6: int64x4  gen()  5251 MB/s
+[    1.296317] raid6: int64x2  gen()  4775 MB/s
+[    1.466324] raid6: int64x1  gen()  3707 MB/s
+[    1.466325] raid6: using algorithm lasx gen() 23344 MB/s
+[    1.641588] raid6: .... xor() 13139 MB/s, rmw enabled
+[    1.641590] raid6: using lasx recovery algorithm
+[    1.641647] ACPI: Interpreter disabled.
+[    1.641664] iommu: Default domain type: Translated
+[    1.641665] iommu: DMA domain TLB invalidation policy: strict mode
+[    1.641748] SCSI subsystem initialized
+[    1.641783] libata version 3.00 loaded.
+[    1.641827] pps_core: LinuxPPS API ver. 1 registered
+[    1.641828] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    1.687946] vgaarb: loaded
+[    1.687965] clocksource: Switched to clocksource Constant
+[    1.688032] VFS: Disk quotas dquot_6.6.0
+[    1.688038] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    1.688082] pnp: PnP ACPI: disabled
+[    1.690311] NET: Registered PF_INET protocol family
+[    1.690354] IP idents hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    1.690651] tcp_listen_portaddr_hash hash table entries: 512 (order: 2, 16384 bytes, linear)
+[    1.690656] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    1.690659] TCP established hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    1.690677] TCP bind hash table entries: 8192 (order: 7, 524288 bytes, linear)
+[    1.690742] TCP: Hash tables configured (established 8192 bind 8192)
+[    1.690769] UDP hash table entries: 512 (order: 4, 81920 bytes, linear)
+[    1.690785] UDP-Lite hash table entries: 512 (order: 4, 81920 bytes, linear)
+[    1.690826] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    1.690837] NET: Registered PF_XDP protocol family
+[    1.690840] PCI: CLS 0 bytes, default 64
+[    2.576227] Initialise system trusted keyrings
+[    2.576290] workingset: timestamp_bits=46 max_order=18 bucket_order=0
+[    2.576305] zbud: loaded
+[    2.576445] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    2.576560] SGI XFS with ACLs, security attributes, quota, no debug enabled
+[    2.576713] xor: measuring software checksum speed
+[    2.576951]    8regs           : 13913 MB/sec
+[    2.577308]    8regs_prefetch  :  9235 MB/sec
+[    2.577544]    32regs          : 13963 MB/sec
+[    2.577901]    32regs_prefetch :  9221 MB/sec
+[    2.626222]    lsx             : 13827 MB/sec
+[    2.626412]    lasx            : 17447 MB/sec
+[    2.626413] xor: using function: lasx (17447 MB/sec)
+[    2.626416] Key type asymmetric registered
+[    2.626418] Asymmetric key parser 'x509' registered
+[    2.650568] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 250)
+[    2.650605] io scheduler mq-deadline registered
+[    2.650607] io scheduler kyber registered
+[    2.650616] io scheduler bfq registered
+[    2.652411] shpchp: Standard Hot Plug PCI Controller Driver version: 0.4
+[    2.652442] loongson-pci 1a000000.pcie: host bridge /pcie@1a000000 ranges:
+[    2.652455] loongson-pci 1a000000.pcie:       IO 0x0018408000..0x001840ffff -> 0x0000008000
+[    2.652462] loongson-pci 1a000000.pcie:      MEM 0x0060000000..0x007fffffff -> 0x0060000000
+[    2.652470] [wheatfox] loongson_pci_probe: found bridge pcie
+[    2.652474] [wheatfox] loongson_pci_probe: bridge pcie initialized, calling pci_host_probe
+[    2.652525] loongson-pci 1a000000.pcie: PCI host bridge to bus 0000:00
+[    2.652528] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    2.652532] pci_bus 0000:00: root bus resource [io  0x0000-0x7fff] (bus address [0x8000-0xffff])
+[    2.652534] pci_bus 0000:00: root bus resource [mem 0x60000000-0x7fffffff]
+[    2.652552] pci 0000:00:00.0: [0014:7a00] type 00 class 0x060000 conventional PCI endpoint
+[    2.652634] pci 0000:00:00.1: [0014:7a10] type 00 class 0x060000 conventional PCI endpoint
+[    2.652690] pci 0000:00:00.2: [0014:7a20] type 00 class 0x060000 conventional PCI endpoint
+[    2.652749] pci 0000:00:00.3: [0014:7a30] type 00 class 0x060000 conventional PCI endpoint
+[    2.652820] pci 0000:00:04.0: [0014:7a24] type 00 class 0x0c0310 conventional PCI endpoint
+[    2.652827] pci 0000:00:04.0: BAR 0 [mem 0x45940000-0x45947fff 64bit]
+[    2.652883] pci 0000:00:04.1: [0014:7a14] type 00 class 0x0c0320 conventional PCI endpoint
+[    2.652889] pci 0000:00:04.1: BAR 0 [mem 0x45948000-0x4594ffff 64bit]
+[    2.652946] pci 0000:00:05.0: [0014:7a24] type 00 class 0x0c0310 conventional PCI endpoint
+[    2.652953] pci 0000:00:05.0: BAR 0 [mem 0x45950000-0x45957fff 64bit]
+[    2.653009] pci 0000:00:05.1: [0014:7a14] type 00 class 0x0c0320 conventional PCI endpoint
+[    2.653015] pci 0000:00:05.1: BAR 0 [mem 0x45958000-0x4595ffff 64bit]
+[    2.653072] pci 0000:00:06.0: [0014:7a25] type 00 class 0x040000 conventional PCI endpoint
+[    2.653078] pci 0000:00:06.0: BAR 0 [mem 0x45960000-0x459600ff 64bit]
+[    2.653082] pci 0000:00:06.0: BAR 2 [mem 0x30000000-0x3fffffff 64bit]
+[    2.653086] pci 0000:00:06.0: BAR 4 [mem 0x45900000-0x4590ffff 64bit]
+[    2.653136] pci 0000:00:06.1: [0014:7a36] type 00 class 0x030000 conventional PCI endpoint
+[    2.653142] pci 0000:00:06.1: BAR 0 [mem 0x45910000-0x4591ffff 64bit]
+[    2.653193] pci 0000:00:06.1: vgaarb: setting as boot VGA device
+[    2.653195] pci 0000:00:06.1: vgaarb: bridge control possible
+[    2.653197] pci 0000:00:06.1: vgaarb: VGA device added: decodes=io+mem,owns=io+mem,locks=none
+[    2.653208] pci 0000:00:06.2: [0014:7a37] type 00 class 0x040300 conventional PCI endpoint
+[    2.653214] pci 0000:00:06.2: BAR 0 [mem 0x45920000-0x4592ffff 64bit]
+[    2.653272] pci 0000:00:07.0: [0014:7a07] type 00 class 0x040300 conventional PCI endpoint
+[    2.653277] pci 0000:00:07.0: BAR 0 [mem 0x45930000-0x4593ffff 64bit]
+[    2.653333] pci 0000:00:08.0: [0014:7a18] type 00 class 0x010601 conventional PCI endpoint
+[    2.653344] pci 0000:00:08.0: BAR 5 [mem 0x4596b000-0x4596b3ff]
+[    2.653403] pci 0000:00:09.0: [0014:7a49] type 01 class 0x060400 PCIe Root Port
+[    2.653411] pci 0000:00:09.0: BAR 0 [mem 0x45961000-0x45961fff 64bit]
+[    2.653416] pci 0000:00:09.0: PCI bridge to [bus 01]
+[    2.653445] pci 0000:00:09.0: supports D1 D2
+[    2.653447] pci 0000:00:09.0: PME# supported from D0 D1 D3hot D3cold
+[    2.653538] pci 0000:00:0a.0: [0014:7a39] type 01 class 0x060400 PCIe Root Port
+[    2.653547] pci 0000:00:0a.0: BAR 0 [mem 0x45962000-0x45962fff 64bit]
+[    2.653552] pci 0000:00:0a.0: PCI bridge to [bus 02]
+[    2.653556] pci 0000:00:0a.0:   bridge window [io  0x20000-0x20fff]
+[    2.653559] pci 0000:00:0a.0:   bridge window [mem 0x45800000-0x458fffff]
+[    2.653583] pci 0000:00:0a.0: supports D1 D2
+[    2.653585] pci 0000:00:0a.0: PME# supported from D0 D1 D3hot D3cold
+[    2.653671] pci 0000:00:0b.0: [0014:7a39] type 01 class 0x060400 PCIe Root Port
+[    2.653680] pci 0000:00:0b.0: BAR 0 [mem 0x45963000-0x45963fff 64bit]
+[    2.653685] pci 0000:00:0b.0: PCI bridge to [bus 03]
+[    2.653712] pci 0000:00:0b.0: supports D1 D2
+[    2.653713] pci 0000:00:0b.0: PME# supported from D0 D1 D3hot D3cold
+[    2.653799] pci 0000:00:0c.0: [0014:7a39] type 01 class 0x060400 PCIe Root Port
+[    2.653808] pci 0000:00:0c.0: BAR 0 [mem 0x45964000-0x45964fff 64bit]
+[    2.653812] pci 0000:00:0c.0: PCI bridge to [bus 04]
+[    2.653840] pci 0000:00:0c.0: supports D1 D2
+[    2.653841] pci 0000:00:0c.0: PME# supported from D0 D1 D3hot D3cold
+[    2.653925] pci 0000:00:0d.0: [0014:7a49] type 01 class 0x060400 PCIe Root Port
+[    2.653932] pci 0000:00:0d.0: BAR 0 [mem 0x45965000-0x45965fff 64bit]
+[    2.653935] pci 0000:00:0d.0: PCI bridge to [bus 05]
+[    2.653939] pci 0000:00:0d.0:   bridge window [mem 0x45700000-0x457fffff]
+[    2.653956] pci 0000:00:0d.0: supports D1 D2
+[    2.653958] pci 0000:00:0d.0: PME# supported from D0 D1 D3hot D3cold
+[    2.654042] pci 0000:00:0f.0: [0014:7a69] type 01 class 0x060400 PCIe Root Port
+[    2.654049] pci 0000:00:0f.0: BAR 0 [mem 0x45966000-0x45966fff 64bit]
+[    2.654053] pci 0000:00:0f.0: PCI bridge to [bus 06-07]
+[    2.654057] pci 0000:00:0f.0:   bridge window [mem 0x45200000-0x456fffff]
+[    2.654061] pci 0000:00:0f.0:   bridge window [mem 0x45000000-0x450fffff 64bit pref]
+[    2.654078] pci 0000:00:0f.0: supports D1 D2
+[    2.654080] pci 0000:00:0f.0: PME# supported from D0 D1 D3hot D3cold
+[    2.654163] pci 0000:00:10.0: [0014:7a59] type 01 class 0x060400 PCIe Root Port
+[    2.654172] pci 0000:00:10.0: BAR 0 [mem 0x45967000-0x45967fff 64bit]
+[    2.654176] pci 0000:00:10.0: PCI bridge to [bus 08]
+[    2.654203] pci 0000:00:10.0: supports D1 D2
+[    2.654205] pci 0000:00:10.0: PME# supported from D0 D1 D3hot D3cold
+[    2.654297] pci 0000:00:13.0: [0014:7a59] type 01 class 0x060400 PCIe Root Port
+[    2.654305] pci 0000:00:13.0: BAR 0 [mem 0x45968000-0x45968fff 64bit]
+[    2.654310] pci 0000:00:13.0: PCI bridge to [bus 09]
+[    2.654337] pci 0000:00:13.0: supports D1 D2
+[    2.654338] pci 0000:00:13.0: PME# supported from D0 D1 D3hot D3cold
+[    2.654427] pci 0000:00:16.0: [0014:7a1b] type 00 class 0x088000 conventional PCI endpoint
+[    2.654433] pci 0000:00:16.0: BAR 0 [mem 0x45969000-0x45969fff 64bit]
+[    2.654437] pci 0000:00:16.0: BAR 2 [mem 0x44000000-0x44ffffff 64bit]
+[    2.654497] pci 0000:00:19.0: [0014:7a34] type 00 class 0x0c0330 conventional PCI endpoint
+[    2.654503] pci 0000:00:19.0: BAR 0 [mem 0x45100000-0x451fffff 64bit]
+[    2.654558] pci 0000:00:1a.0: [0014:7a1f] type 00 class 0x080600 conventional PCI endpoint
+[    2.654564] pci 0000:00:1a.0: BAR 0 [mem 0x4596a000-0x4596a3ff 64bit]
+[    2.654568] pci 0000:00:1a.0: BAR 2 [mem 0x40000000-0x43ffffff 64bit]
+[    2.654574] pci 0000:00:1a.0: ROM [mem 0xfffff800-0xffffffff pref]
+[    2.654736] pci 0000:02:00.0: [1f0a:6801] type 00 class 0x020000 PCIe Endpoint
+[    2.654775] pci 0000:02:00.0: BAR 0 [mem 0x45800000-0x45803fff 64bit]
+[    2.654822] pci 0000:02:00.0: BAR 4 [io  0x20000-0x200ff]
+[    2.654976] pci 0000:02:00.0: supports D1
+[    2.654978] pci 0000:02:00.0: PME# supported from D0 D1 D3hot D3cold
+[    2.655258] pci 0000:05:00.0: [1e4b:1202] type 00 class 0x010802 PCIe Endpoint
+[    2.655273] pci 0000:05:00.0: BAR 0 [mem 0x45700000-0x45703fff 64bit]
+[    2.655356] pci 0000:05:00.0: PME# supported from D0 D3hot D3cold
+[    2.655544] pci 0000:06:00.0: [8086:1521] type 00 class 0x020000 PCIe Endpoint
+[    2.655562] pci 0000:06:00.0: BAR 0 [mem 0x45500000-0x455fffff]
+[    2.655589] pci 0000:06:00.0: BAR 3 [mem 0x4560c000-0x4560ffff]
+[    2.655712] pci 0000:06:00.0: PME# supported from D0 D3hot D3cold
+[    2.655749] pci 0000:06:00.0: VF BAR 0 [mem 0x450e0000-0x450e3fff 64bit pref]
+[    2.655751] pci 0000:06:00.0: VF BAR 0 [mem 0x450e0000-0x450fffff 64bit pref]: contains BAR 0 for 8 VFs
+[    2.655775] pci 0000:06:00.0: VF BAR 3 [mem 0x450c0000-0x450c3fff 64bit pref]
+[    2.655777] pci 0000:06:00.0: VF BAR 3 [mem 0x450c0000-0x450dffff 64bit pref]: contains BAR 3 for 8 VFs
+[    2.656009] pci 0000:06:00.1: [8086:1521] type 00 class 0x020000 PCIe Endpoint
+[    2.656027] pci 0000:06:00.1: BAR 0 [mem 0x45400000-0x454fffff]
+[    2.656054] pci 0000:06:00.1: BAR 3 [mem 0x45608000-0x4560bfff]
+[    2.656170] pci 0000:06:00.1: PME# supported from D0 D3hot D3cold
+[    2.656207] pci 0000:06:00.1: VF BAR 0 [mem 0x450a0000-0x450a3fff 64bit pref]
+[    2.656209] pci 0000:06:00.1: VF BAR 0 [mem 0x450a0000-0x450bffff 64bit pref]: contains BAR 0 for 8 VFs
+[    2.656232] pci 0000:06:00.1: VF BAR 3 [mem 0x45080000-0x45083fff 64bit pref]
+[    2.656234] pci 0000:06:00.1: VF BAR 3 [mem 0x45080000-0x4509ffff 64bit pref]: contains BAR 3 for 8 VFs
+[    2.656453] pci 0000:06:00.2: [8086:1521] type 00 class 0x020000 PCIe Endpoint
+[    2.656471] pci 0000:06:00.2: BAR 0 [mem 0x45300000-0x453fffff]
+[    2.656498] pci 0000:06:00.2: BAR 3 [mem 0x45604000-0x45607fff]
+[    2.656614] pci 0000:06:00.2: PME# supported from D0 D3hot D3cold
+[    2.656651] pci 0000:06:00.2: VF BAR 0 [mem 0x45060000-0x45063fff 64bit pref]
+[    2.656653] pci 0000:06:00.2: VF BAR 0 [mem 0x45060000-0x4507ffff 64bit pref]: contains BAR 0 for 8 VFs
+[    2.656676] pci 0000:06:00.2: VF BAR 3 [mem 0x45040000-0x45043fff 64bit pref]
+[    2.656678] pci 0000:06:00.2: VF BAR 3 [mem 0x45040000-0x4505ffff 64bit pref]: contains BAR 3 for 8 VFs
+[    2.656896] pci 0000:06:00.3: [8086:1521] type 00 class 0x020000 PCIe Endpoint
+[    2.656914] pci 0000:06:00.3: BAR 0 [mem 0x45200000-0x452fffff]
+[    2.656941] pci 0000:06:00.3: BAR 3 [mem 0x45600000-0x45603fff]
+[    2.657058] pci 0000:06:00.3: PME# supported from D0 D3hot D3cold
+[    2.657094] pci 0000:06:00.3: VF BAR 0 [mem 0x45020000-0x45023fff 64bit pref]
+[    2.657097] pci 0000:06:00.3: VF BAR 0 [mem 0x45020000-0x4503ffff 64bit pref]: contains BAR 0 for 8 VFs
+[    2.657120] pci 0000:06:00.3: VF BAR 3 [mem 0x45000000-0x45003fff 64bit pref]
+[    2.657123] pci 0000:06:00.3: VF BAR 3 [mem 0x45000000-0x4501ffff 64bit pref]: contains BAR 3 for 8 VFs
+[    2.657402] pci 0000:00:0f.0: bridge window [mem 0x00100000-0x000fffff 64bit pref] to [bus 06-07] add_size 100000 add_align 100000
+[    2.657423] pci 0000:00:06.0: BAR 2 [mem 0x60000000-0x6fffffff 64bit]: assigned
+[    2.657427] pci 0000:00:1a.0: BAR 2 [mem 0x70000000-0x73ffffff 64bit]: assigned
+[    2.657431] pci 0000:00:16.0: BAR 2 [mem 0x74000000-0x74ffffff 64bit]: assigned
+[    2.657435] pci 0000:00:0a.0: bridge window [mem 0x75000000-0x750fffff]: assigned
+[    2.657437] pci 0000:00:0d.0: bridge window [mem 0x75100000-0x751fffff]: assigned
+[    2.657439] pci 0000:00:0f.0: bridge window [mem 0x75200000-0x756fffff]: assigned
+[    2.657442] pci 0000:00:0f.0: bridge window [mem 0x75700000-0x757fffff 64bit pref]: assigned
+[    2.657445] pci 0000:00:19.0: BAR 0 [mem 0x75800000-0x758fffff 64bit]: assigned
+[    2.657449] pci 0000:00:06.0: BAR 4 [mem 0x75900000-0x7590ffff 64bit]: assigned
+[    2.657452] pci 0000:00:06.1: BAR 0 [mem 0x75910000-0x7591ffff 64bit]: assigned
+[    2.657456] pci 0000:00:06.2: BAR 0 [mem 0x75920000-0x7592ffff 64bit]: assigned
+[    2.657460] pci 0000:00:07.0: BAR 0 [mem 0x75930000-0x7593ffff 64bit]: assigned
+[    2.657464] pci 0000:00:04.0: BAR 0 [mem 0x75940000-0x75947fff 64bit]: assigned
+[    2.657467] pci 0000:00:04.1: BAR 0 [mem 0x75948000-0x7594ffff 64bit]: assigned
+[    2.657471] pci 0000:00:05.0: BAR 0 [mem 0x75950000-0x75957fff 64bit]: assigned
+[    2.657475] pci 0000:00:05.1: BAR 0 [mem 0x75958000-0x7595ffff 64bit]: assigned
+[    2.657479] pci 0000:00:09.0: BAR 0 [mem 0x75960000-0x75960fff 64bit]: assigned
+[    2.657483] pci 0000:00:0a.0: BAR 0 [mem 0x75961000-0x75961fff 64bit]: assigned
+[    2.657488] pci 0000:00:0a.0: bridge window [io  0x4000-0x4fff]: assigned
+[    2.657490] pci 0000:00:0b.0: BAR 0 [mem 0x75962000-0x75962fff 64bit]: assigned
+[    2.657495] pci 0000:00:0c.0: BAR 0 [mem 0x75963000-0x75963fff 64bit]: assigned
+[    2.657500] pci 0000:00:0d.0: BAR 0 [mem 0x75964000-0x75964fff 64bit]: assigned
+[    2.657504] pci 0000:00:0f.0: BAR 0 [mem 0x75965000-0x75965fff 64bit]: assigned
+[    2.657508] pci 0000:00:10.0: BAR 0 [mem 0x75966000-0x75966fff 64bit]: assigned
+[    2.657513] pci 0000:00:13.0: BAR 0 [mem 0x75967000-0x75967fff 64bit]: assigned
+[    2.657518] pci 0000:00:16.0: BAR 0 [mem 0x75968000-0x75968fff 64bit]: assigned
+[    2.657522] pci 0000:00:1a.0: ROM [mem 0x75969000-0x759697ff pref]: assigned
+[    2.657524] pci 0000:00:08.0: BAR 5 [mem 0x75969800-0x75969bff]: assigned
+[    2.657527] pci 0000:00:1a.0: BAR 0 [mem 0x75969c00-0x75969fff 64bit]: assigned
+[    2.657531] pci 0000:00:06.0: BAR 0 [mem 0x7596a000-0x7596a0ff 64bit]: assigned
+[    2.657540] pci 0000:00:09.0: PCI bridge to [bus 01]
+[    2.657546] pci 0000:02:00.0: BAR 0 [mem 0x75000000-0x75003fff 64bit]: assigned
+[    2.657563] pci 0000:02:00.0: BAR 4 [io  0x4000-0x40ff]: assigned
+[    2.657570] pci 0000:00:0a.0: PCI bridge to [bus 02]
+[    2.657572] pci 0000:00:0a.0:   bridge window [io  0x4000-0x4fff]
+[    2.657575] pci 0000:00:0a.0:   bridge window [mem 0x75000000-0x750fffff]
+[    2.657579] pci 0000:00:0b.0: PCI bridge to [bus 03]
+[    2.657583] pci 0000:00:0c.0: PCI bridge to [bus 04]
+[    2.657588] pci 0000:05:00.0: BAR 0 [mem 0x75100000-0x75103fff 64bit]: assigned
+[    2.657596] pci 0000:00:0d.0: PCI bridge to [bus 05]
+[    2.657598] pci 0000:00:0d.0:   bridge window [mem 0x75100000-0x751fffff]
+[    2.657606] pci 0000:06:00.0: BAR 0 [mem 0x75200000-0x752fffff]: assigned
+[    2.657610] pci 0000:06:00.1: BAR 0 [mem 0x75300000-0x753fffff]: assigned
+[    2.657615] pci 0000:06:00.2: BAR 0 [mem 0x75400000-0x754fffff]: assigned
+[    2.657619] pci 0000:06:00.3: BAR 0 [mem 0x75500000-0x755fffff]: assigned
+[    2.657624] pci 0000:06:00.0: BAR 3 [mem 0x75600000-0x75603fff]: assigned
+[    2.657628] pci 0000:06:00.0: VF BAR 0 [mem 0x75700000-0x7571ffff 64bit pref]: assigned
+[    2.657634] pci 0000:06:00.0: VF BAR 3 [mem 0x75720000-0x7573ffff 64bit pref]: assigned
+[    2.657640] pci 0000:06:00.1: BAR 3 [mem 0x75604000-0x75607fff]: assigned
+[    2.657645] pci 0000:06:00.1: VF BAR 0 [mem 0x75740000-0x7575ffff 64bit pref]: assigned
+[    2.657651] pci 0000:06:00.1: VF BAR 3 [mem 0x75760000-0x7577ffff 64bit pref]: assigned
+[    2.657656] pci 0000:06:00.2: BAR 3 [mem 0x75608000-0x7560bfff]: assigned
+[    2.657661] pci 0000:06:00.2: VF BAR 0 [mem 0x75780000-0x7579ffff 64bit pref]: assigned
+[    2.657667] pci 0000:06:00.2: VF BAR 3 [mem 0x757a0000-0x757bffff 64bit pref]: assigned
+[    2.657673] pci 0000:06:00.3: BAR 3 [mem 0x7560c000-0x7560ffff]: assigned
+[    2.657677] pci 0000:06:00.3: VF BAR 0 [mem 0x757c0000-0x757dffff 64bit pref]: assigned
+[    2.657683] pci 0000:06:00.3: VF BAR 3 [mem 0x757e0000-0x757fffff 64bit pref]: assigned
+[    2.657692] pci 0000:00:0f.0: PCI bridge to [bus 06-07]
+[    2.657694] pci 0000:00:0f.0:   bridge window [mem 0x75200000-0x756fffff]
+[    2.657696] pci 0000:00:0f.0:   bridge window [mem 0x75700000-0x757fffff 64bit pref]
+[    2.657699] pci 0000:00:10.0: PCI bridge to [bus 08]
+[    2.657704] pci 0000:00:13.0: PCI bridge to [bus 09]
+[    2.657709] pci_bus 0000:00: resource 4 [io  0x0000-0x7fff]
+[    2.657711] pci_bus 0000:00: resource 5 [mem 0x60000000-0x7fffffff]
+[    2.657713] pci_bus 0000:02: resource 0 [io  0x4000-0x4fff]
+[    2.657714] pci_bus 0000:02: resource 1 [mem 0x75000000-0x750fffff]
+[    2.657716] pci_bus 0000:05: resource 1 [mem 0x75100000-0x751fffff]
+[    2.657718] pci_bus 0000:06: resource 1 [mem 0x75200000-0x756fffff]
+[    2.657720] pci_bus 0000:06: resource 2 [mem 0x75700000-0x757fffff 64bit pref]
+[    2.657921] pcieport 0000:00:09.0: PME: Signaling with IRQ 20
+[    3.197993] pcieport 0000:00:09.0: AER: enabled with IRQ 20
+[    3.217981] pcieport 0000:00:0a.0: PME: Signaling with IRQ 22
+[    3.218052] pcieport 0000:00:0a.0: AER: enabled with IRQ 22
+[    3.237985] pcieport 0000:00:0b.0: PME: Signaling with IRQ 24
+[    3.238052] pcieport 0000:00:0b.0: AER: enabled with IRQ 24
+[    3.257985] pcieport 0000:00:0c.0: PME: Signaling with IRQ 26
+[    3.258056] pcieport 0000:00:0c.0: AER: enabled with IRQ 26
+[    3.277985] pcieport 0000:00:0d.0: PME: Signaling with IRQ 28
+[    3.278055] pcieport 0000:00:0d.0: AER: enabled with IRQ 28
+[    3.297984] pcieport 0000:00:0f.0: PME: Signaling with IRQ 30
+[    3.298055] pcieport 0000:00:0f.0: AER: enabled with IRQ 30
+[    3.317980] pcieport 0000:00:10.0: PME: Signaling with IRQ 32
+[    3.318052] pcieport 0000:00:10.0: AER: enabled with IRQ 32
+[    3.337978] pcieport 0000:00:13.0: PME: Signaling with IRQ 34
+[    3.338049] pcieport 0000:00:13.0: AER: enabled with IRQ 34
+[    3.438087] Serial: 8250/16550 driver, 16 ports, IRQ sharing enabled
+[    3.567998] printk: legacy console [ttyS0] disabled
+[    4.144702] 1fe001e0.serial: ttyS0 at MMIO 0x1fe001e0 (irq = 35, base_baud = 6250000) is a 16550A
+[    4.153530] printk: legacy console [ttyS0] enabled
+[    4.153530] printk: legacy console [ttyS0] enabled
+[    4.163042] printk: legacy bootconsole [ns16550a0] disabled
+[    4.163042] printk: legacy bootconsole [ns16550a0] disabled
+[    4.179273] loongson 0000:00:06.1: Found LS7A2000 bridge chipset, revision: 2
+[    4.179304] loongson 0000:00:06.1: [drm] dc: 400MHz, gmc: 1200MHz, gpu: 480MHz
+[    4.179310] loongson 0000:00:06.1: [drm] Dedicated vram start: 0x60000000, size: 256MiB
+[    4.179370] loongson 0000:00:06.1: [drm] VRAM: 65536 pages ready
+[    4.179372] loongson 0000:00:06.1: [drm] GTT: 131072 pages ready
+[    4.179417] loongson 0000:00:06.1: [drm] lsdc-i2c0(sda pin mask=1, scl pin mask=2) created
+[    4.179439] loongson 0000:00:06.1: [drm] lsdc-i2c1(sda pin mask=4, scl pin mask=8) created
+[    4.179446] loongson 0000:00:06.1: [drm] display pipe-0 has HDMI and/or VGA
+[    4.179450] loongson 0000:00:06.1: [drm] display pipe-1 has HDMI 
+[    4.179463] loongson 0000:00:06.1: [drm] Total 2 outputs
+[    4.287716] loongson 0000:00:06.1: [drm] registered irq: 36
+[    4.287950] [drm] Initialized loongson 1.0.0 for 0000:00:06.1 on minor 0
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x0
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x0
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x0
+[    4.497974] random: crng init done
+[    4.567970] ------------[ cut here ]------------
+[    4.567971] [CRTC:45:LS-CRTC-1] vblank wait timed out
+[    4.567986] WARNING: CPU: 0 PID: 1 at drivers/gpu/drm/drm_atomic_helper.c:1682 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[    4.567998] Modules linked in:
+[    4.568002] CPU: 0 UID: 0 PID: 1 Comm: swapper Not tainted 6.13.7 #117
+[    4.568005] pc 9000000000a81234 ra 9000000000a81234 tp 9000000009858000 sp 900000000985b540
+[    4.568007] a0 0000000000000029 a1 9000000004b94d68 a2 900000000985b2c8 a3 9000000004b94d70
+[    4.568009] a4 9000000004b94d68 a5 900000000985b2c0 a6 0000000000000001 a7 0000000000000001
+[    4.568011] t0 22051c6f29eb9a00 t1 22051c6f29eb9a00 t2 0000000000000000 t3 80000000ffffe166
+[    4.568013] t4 00000000ffffe166 t5 0000000000000168 t6 000000000000002f t7 0000000000000063
+[    4.568015] t8 000000000000002d u0 9000000004aae000 s9 0000000000000aef s0 0000000000000038
+[    4.568017] s1 0000000000000002 s2 9000000009fb0000 s3 9000000009fb2cc8 s4 0000000000000038
+[    4.568018] s5 0000000000000001 s6 0000000000000001 s7 900000000998c080 s8 0000000000000000
+[    4.568021]    ra: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[    4.568024]   ERA: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[    4.568027]  CRMD: 000000b0 (PLV0 -IE -DA +PG DACF=CC DACM=CC -WE)
+[    4.568034]  PRMD: 00000004 (PPLV0 +PIE -PWE)
+[    4.568038]  EUEN: 00000000 (-FPE -SXE -ASXE -BTE)
+[    4.568042]  ECFG: 00071c1d (LIE=0,2-4,10-12 VS=7)
+[    4.568046] ESTAT: 000c0000 [BRK] (IS= ECode=12 EsubCode=0)
+[    4.568137]  PRID: 0014d000 (Loongson-64bit, Loongson3)
+[    4.568139] CPU: 0 UID: 0 PID: 1 Comm: swapper Not tainted 6.13.7 #117
+[    4.568142] Stack : 9000000004984000 0000000000000000 900000000023c0c4 9000000009858000
+[    4.568147]         900000000985b1a0 900000000985b1a8 0000000000000000 900000000985b2e8
+[    4.568151]         900000000985b2e0 900000000985b2e0 900000000985b050 0000000000000001
+[    4.568154]         0000000000000001 900000000985b1a8 22051c6f29eb9a00 0000000000000002
+[    4.568158]         80000000ffffe17a 00000000ffffe17a 000000000000017c 0000000000000020
+[    4.568162]         0000000000000063 000000000000000c 0000000000000000 0000000000000aef
+[    4.568166]         0000000000000000 0000000000000000 90000000048fcac0 9000000004aae000
+[    4.568169]         0000000000000009 0000000000000692 0000000000000001 900000000998c080
+[    4.568173]         0000000000000000 0000000000000000 900000000023c0dc 00000001200aff44
+[    4.568176]         00000000000000b0 0000000000000004 0000000000000000 0000000000071c1d
+[    4.568180]         ...
+[    4.568182] Call Trace:
+[    4.568183] [<900000000023c0dc>] show_stack+0x5c/0x180
+[    4.568190] [<900000000023808c>] dump_stack_lvl+0x50/0x78
+[    4.568193] [<9000000000255344>] __warn+0x84/0x104
+[    4.568198] [<9000000000e18828>] report_bug+0x190/0x1f4
+[    4.568205] [<9000000000e499ec>] do_bp+0x264/0x2b4
+[    4.568210] [<0000000000000000>] 0x0
+[    4.568212] [<9000000000a81234>] drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[    4.568215] [<9000000000a82158>] drm_atomic_helper_commit_tail+0x88/0xa4
+[    4.568219] [<9000000000a830d8>] commit_tail+0xac/0x18c
+[    4.568222] [<9000000000a83324>] drm_atomic_helper_commit+0x164/0x190
+[    4.568225] [<9000000000a42038>] drm_atomic_commit+0x8c/0xc4
+[    4.568230] [<9000000000a76520>] drm_client_modeset_commit_atomic+0x23c/0x27c
+[    4.568236] [<9000000000a767c0>] drm_client_modeset_commit_locked+0x6c/0x17c
+[    4.568240] [<9000000000a768fc>] drm_client_modeset_commit+0x2c/0x58
+[    4.568244] [<9000000000a8f4f8>] __drm_fb_helper_restore_fbdev_mode_unlocked+0xb0/0xf8
+[    4.568249] [<9000000000a8f56c>] drm_fb_helper_set_par+0x2c/0x48
+[    4.568252] [<90000000009670c4>] fbcon_init+0x260/0x58c
+[    4.568258] [<9000000000a119a0>] visual_init+0xb8/0x11c
+[    4.568263] [<9000000000a1441c>] do_bind_con_driver.isra.0+0x210/0x454
+[    4.568267] [<9000000000a147a8>] do_take_over_console+0x148/0x1f8
+[    4.568270] [<90000000009640d4>] do_fbcon_takeover+0x60/0xd0
+[    4.568275] [<9000000000968850>] fbcon_fb_registered+0x12c/0x18c
+[    4.568279] [<900000000095c45c>] do_register_framebuffer+0x1e0/0x288
+[    4.568282] [<900000000095c530>] register_framebuffer+0x2c/0x54
+[    4.568285] [<9000000000a8d994>] __drm_fb_helper_initial_config_and_unlock+0x350/0x580
+[    4.568288] [<9000000000a8fa84>] drm_fbdev_client_hotplug+0x80/0xd8
+[    4.568292] [<9000000000a7535c>] drm_client_register+0x5c/0xa0
+[    4.568295] [<9000000000a8fbdc>] drm_fbdev_client_setup+0xa4/0x190
+[    4.568299] [<9000000000a8f890>] drm_client_setup+0x14/0x50
+[    4.568302] [<9000000000aa9cdc>] lsdc_pci_probe+0x464/0x584
+[    4.568307] [<900000000092d704>] pci_device_probe+0xb8/0x154
+[    4.568311] [<9000000000abd75c>] really_probe+0xac/0x2dc
+[    4.568315] [<9000000000abda18>] __driver_probe_device+0x8c/0x128
+[    4.568319] [<9000000000abdbac>] driver_probe_device+0x3c/0x118
+[    4.568322] [<9000000000abde7c>] __driver_attach+0x98/0x194
+[    4.568325] [<9000000000abb420>] bus_for_each_dev+0x88/0xe8
+[    4.568329] [<9000000000abc874>] bus_add_driver+0xf4/0x208
+[    4.568332] [<9000000000abec34>] driver_register+0x68/0x134
+[    4.568335] [<9000000000239154>] do_one_initcall+0x78/0x1cc
+[    4.568338] [<9000000000e60f7c>] kernel_init_freeable+0x1b4/0x224
+[    4.568342] [<9000000000e4b1a4>] kernel_init+0x1c/0x108
+[    4.568345] [<9000000000239fe8>] ret_from_kernel_thread+0xc/0xa4
+[    4.568349] 
+[    4.568350] ---[ end trace 0000000000000000 ]---
+[   15.147970] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   15.147973] loongson 0000:00:06.1: [drm] *ERROR* [CRTC:45:LS-CRTC-1] commit wait timed out
+[   25.387970] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   25.387972] loongson 0000:00:06.1: [drm] *ERROR* [CONNECTOR:35:HDMI-A-2] commit wait timed out
+[   35.627970] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   35.627971] loongson 0000:00:06.1: [drm] *ERROR* [PLANE:41:ls-primary-plane-1] commit wait timed out
+[   35.737969] ------------[ cut here ]------------
+[   35.737971] [CRTC:45:LS-CRTC-1] vblank wait timed out
+[   35.737978] WARNING: CPU: 0 PID: 1 at drivers/gpu/drm/drm_atomic_helper.c:1682 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   35.737983] Modules linked in:
+[   35.737986] CPU: 0 UID: 0 PID: 1 Comm: swapper Tainted: G        W          6.13.7 #117
+[   35.737989] Tainted: [W]=WARN
+[   35.737990] pc 9000000000a81234 ra 9000000000a81234 tp 9000000009858000 sp 900000000985b2c0
+[   35.737992] a0 0000000000000029 a1 9000000004b94d68 a2 900000000985b048 a3 9000000004b94d70
+[   35.737994] a4 9000000004b94d68 a5 900000000985b040 a6 0000000000000001 a7 0000000000000001
+[   35.737996] t0 22051c6f29eb9a00 t1 22051c6f29eb9a00 t2 0000000000000000 t3 80000000ffffe1ba
+[   35.737997] t4 00000000ffffe1ba t5 00000000000001bc t6 000000000000002f t7 0000000000000063
+[   35.737999] t8 000000000000002d u0 9000000004aae000 s9 0000000000001bf3 s0 0000000000000038
+[   35.738000] s1 0000000000000002 s2 9000000009fb0000 s3 9000000009fb2cc8 s4 0000000000000038
+[   35.738002] s5 0000000000000001 s6 0000000000000001 s7 900000000998c080 s8 0000000000000000
+[   35.738003]    ra: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   35.738007]   ERA: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   35.738010]  CRMD: 000000b0 (PLV0 -IE -DA +PG DACF=CC DACM=CC -WE)
+[   35.738016]  PRMD: 00000004 (PPLV0 +PIE -PWE)
+[   35.738019]  EUEN: 00000000 (-FPE -SXE -ASXE -BTE)
+[   35.738023]  ECFG: 00071c1d (LIE=0,2-4,10-12 VS=7)
+[   35.738026] ESTAT: 000c0000 [BRK] (IS= ECode=12 EsubCode=0)
+[   35.738116]  PRID: 0014d000 (Loongson-64bit, Loongson3)
+[   35.738118] CPU: 0 UID: 0 PID: 1 Comm: swapper Tainted: G        W          6.13.7 #117
+[   35.738121] Tainted: [W]=WARN
+[   35.738122] Stack : 9000000004950270 0000000000000000 900000000023c0c4 9000000009858000
+[   35.738126]         900000000985af20 900000000985af28 0000000000000000 900000000985b068
+[   35.738130]         900000000985b060 900000000985b060 900000000985add0 0000000000000001
+[   35.738133]         0000000000000001 900000000985af28 22051c6f29eb9a00 0000000000000002
+[   35.738137]         80000000ffffe1d0 00000000ffffe1d0 00000000000001d2 0000000000000020
+[   35.738141]         0000000000000063 000000000000000c 0000000000000000 0000000000001bf3
+[   35.738144]         0000000000000000 0000000000000000 90000000048fcac0 9000000004aae000
+[   35.738148] Call Trace:
+[   35.738149] [<900000000023c0dc>] show_stack+0x5c/0x180
+[   35.738153] [<900000000023808c>] dump_stack_lvl+0x50/0x78
+[   35.738157] [<9000000000255344>] __warn+0x84/0x104
+[   35.738161] [<9000000000e18828>] report_bug+0x190/0x1f4
+[   35.738165] [<9000000000e499ec>] do_bp+0x264/0x2b4
+[   35.738168] [<0000000000000000>] 0x0
+[   35.738169] [<9000000000a81234>] drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   35.738173] [<9000000000a82158>] drm_atomic_helper_commit_tail+0x88/0xa4
+[   35.738176] [<9000000000a830d8>] commit_tail+0xac/0x18c
+[   35.738179] [<9000000000a83324>] drm_atomic_helper_commit+0x164/0x190
+[   35.738183] [<9000000000a42038>] drm_atomic_commit+0x8c/0xc4
+[   35.738186] [<9000000000a76520>] drm_client_modeset_commit_atomic+0x23c/0x27c
+[   35.738190] [<9000000000a767c0>] drm_client_modeset_commit_locked+0x6c/0x17c
+[   35.738194] [<9000000000a8f0c4>] drm_fb_helper_pan_display+0x100/0x248
+[   35.738198] [<900000000095bc2c>] fb_pan_display+0x74/0x124
+[   35.738201] [<90000000009691d0>] bit_update_start+0x20/0x4c
+[   35.738205] [<90000000009680b0>] fbcon_switch+0x3cc/0x59c
+[   35.738208] [<9000000000a12bc0>] redraw_screen+0xf0/0x298
+[   35.738212] [<9000000000964fa4>] fbcon_prepare_logo+0x470/0x4b8
+[   35.738216] [<900000000096723c>] fbcon_init+0x3d8/0x58c
+[   35.738219] [<9000000000a119a0>] visual_init+0xb8/0x11c
+[   35.738222] [<9000000000a1441c>] do_bind_con_driver.isra.0+0x210/0x454
+[   35.738226] [<9000000000a147a8>] do_take_over_console+0x148/0x1f8
+[   35.738230] [<90000000009640d4>] do_fbcon_takeover+0x60/0xd0
+[   35.738234] [<9000000000968850>] fbcon_fb_registered+0x12c/0x18c
+[   35.738237] [<900000000095c45c>] do_register_framebuffer+0x1e0/0x288
+[   35.738240] [<900000000095c530>] register_framebuffer+0x2c/0x54
+[   35.738243] [<9000000000a8d994>] __drm_fb_helper_initial_config_and_unlock+0x350/0x580
+[   35.738247] [<9000000000a8fa84>] drm_fbdev_client_hotplug+0x80/0xd8
+[   35.738250] [<9000000000a7535c>] drm_client_register+0x5c/0xa0
+[   35.738254] [<9000000000a8fbdc>] drm_fbdev_client_setup+0xa4/0x190
+[   35.738257] [<9000000000a8f890>] drm_client_setup+0x14/0x50
+[   35.738260] [<9000000000aa9cdc>] lsdc_pci_probe+0x464/0x584
+[   35.738264] [<900000000092d704>] pci_device_probe+0xb8/0x154
+[   35.738267] [<9000000000abd75c>] really_probe+0xac/0x2dc
+[   35.738271] [<9000000000abda18>] __driver_probe_device+0x8c/0x128
+[   35.738274] [<9000000000abdbac>] driver_probe_device+0x3c/0x118
+[   35.738277] [<9000000000abde7c>] __driver_attach+0x98/0x194
+[   35.738280] [<9000000000abb420>] bus_for_each_dev+0x88/0xe8
+[   35.738283] [<9000000000abc874>] bus_add_driver+0xf4/0x208
+[   35.738286] [<9000000000abec34>] driver_register+0x68/0x134
+[   35.738289] [<9000000000239154>] do_one_initcall+0x78/0x1cc
+[   35.738292] [<9000000000e60f7c>] kernel_init_freeable+0x1b4/0x224
+[   35.738295] [<9000000000e4b1a4>] kernel_init+0x1c/0x108
+[   35.738298] [<9000000000239fe8>] ret_from_kernel_thread+0xc/0xa4
+[   35.738301] 
+[   35.738302] ---[ end trace 0000000000000000 ]---
+[   35.860228] Console: switching to colour frame buffer device 240x67
+[   45.867972] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   45.867974] loongson 0000:00:06.1: [drm] *ERROR* [CRTC:45:LS-CRTC-1] commit wait timed out
+[   56.107971] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   56.107972] loongson 0000:00:06.1: [drm] *ERROR* [CONNECTOR:35:HDMI-A-2] commit wait timed out
+[   66.347970] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   66.347972] loongson 0000:00:06.1: [drm] *ERROR* [PLANE:41:ls-primary-plane-1] commit wait timed out
+[   66.457971] ------------[ cut here ]------------
+[   66.457972] [CRTC:45:LS-CRTC-1] vblank wait timed out
+[   66.457980] WARNING: CPU: 0 PID: 1 at drivers/gpu/drm/drm_atomic_helper.c:1682 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   66.457986] Modules linked in:
+[   66.457988] CPU: 0 UID: 0 PID: 1 Comm: swapper Tainted: G        W          6.13.7 #117
+[   66.457991] Tainted: [W]=WARN
+[   66.457992] pc 9000000000a81234 ra 9000000000a81234 tp 9000000009858000 sp 900000000985b400
+[   66.457994] a0 0000000000000029 a1 9000000004b94d68 a2 900000000985b188 a3 9000000004b94d70
+[   66.457995] a4 9000000004b94d68 a5 900000000985b180 a6 0000000000000001 a7 0000000000000001
+[   66.457997] t0 22051c6f29eb9a00 t1 22051c6f29eb9a00 t2 0000000000000000 t3 80000000ffffe210
+[   66.457999] t4 00000000ffffe210 t5 0000000000000212 t6 000000000000002f t7 0000000000000063
+[   66.458000] t8 000000000000002d u0 9000000004aae000 s9 0000000000002cae s0 0000000000000038
+[   66.458002] s1 0000000000000002 s2 9000000009fb0000 s3 9000000009fb2cc8 s4 0000000000000038
+[   66.458003] s5 0000000000000001 s6 0000000000000001 s7 9000000092ea6200 s8 0000000000000000
+[   66.458005]    ra: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   66.458008]   ERA: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   66.458011]  CRMD: 000000b0 (PLV0 -IE -DA +PG DACF=CC DACM=CC -WE)
+[   66.458017]  PRMD: 00000004 (PPLV0 +PIE -PWE)
+[   66.458020]  EUEN: 00000000 (-FPE -SXE -ASXE -BTE)
+[   66.458024]  ECFG: 00071c1d (LIE=0,2-4,10-12 VS=7)
+[   66.458027] ESTAT: 000c0000 [BRK] (IS= ECode=12 EsubCode=0)
+[   66.458117]  PRID: 0014d000 (Loongson-64bit, Loongson3)
+[   66.458119] CPU: 0 UID: 0 PID: 1 Comm: swapper Tainted: G        W          6.13.7 #117
+[   66.458122] Tainted: [W]=WARN
+[   66.458123] Stack : 9000000004950270 0000000000000000 900000000023c0c4 9000000009858000
+[   66.458127]         900000000985b060 900000000985b068 0000000000000000 900000000985b1a8
+[   66.458130]         900000000985b1a0 900000000985b1a0 900000000985af10 0000000000000001
+[   66.458134]         0000000000000001 900000000985b068 22051c6f29eb9a00 0000000000000002
+[   66.458138]         80000000ffffe226 00000000ffffe226 0000000000000228 0000000000000020
+[   66.458141]         0000000000000063 000000000000000c 0000000000000000 0000000000002cae
+[   66.458145]         0000000000000000 0000000000000000 90000000048fcac0 9000000004aae000
+[   66.458149]         0000000000000009 0000000000000692 0000000000000001 9000000092ea6200
+[   66.458152]         0000000000000000 0000000000000000 900000000023c0dc 00000001200aff44
+[   66.458156]         00000000000000b0 0000000000000004 0000000000000000 0000000000071c1d
+[   66.458159]         ...
+[   66.458161] Call Trace:
+[   66.458162] [<900000000023c0dc>] show_stack+0x5c/0x180
+[   66.458166] [<900000000023808c>] dump_stack_lvl+0x50/0x78
+[   66.458169] [<9000000000255344>] __warn+0x84/0x104
+[   66.458174] [<9000000000e18828>] report_bug+0x190/0x1f4
+[   66.458178] [<9000000000e499ec>] do_bp+0x264/0x2b4
+[   66.458181] [<0000000000000000>] 0x0
+[   66.458183] [<9000000000a81234>] drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   66.458186] [<9000000000a82158>] drm_atomic_helper_commit_tail+0x88/0xa4
+[   66.458189] [<9000000000a830d8>] commit_tail+0xac/0x18c
+[   66.458193] [<9000000000a83324>] drm_atomic_helper_commit+0x164/0x190
+[   66.458196] [<9000000000a42038>] drm_atomic_commit+0x8c/0xc4
+[   66.458200] [<9000000000a76520>] drm_client_modeset_commit_atomic+0x23c/0x27c
+[   66.458204] [<9000000000a767c0>] drm_client_modeset_commit_locked+0x6c/0x17c
+[   66.458208] [<9000000000a8f0c4>] drm_fb_helper_pan_display+0x100/0x248
+[   66.458211] [<900000000095bc2c>] fb_pan_display+0x74/0x124
+[   66.458214] [<90000000009691d0>] bit_update_start+0x20/0x4c
+[   66.458218] [<90000000009680b0>] fbcon_switch+0x3cc/0x59c
+[   66.458222] [<9000000000a12bc0>] redraw_screen+0xf0/0x298
+[   66.458225] [<9000000000a144f0>] do_bind_con_driver.isra.0+0x2e4/0x454
+[   66.458229] [<9000000000a147a8>] do_take_over_console+0x148/0x1f8
+[   66.458233] [<90000000009640d4>] do_fbcon_takeover+0x60/0xd0
+[   66.458236] [<9000000000968850>] fbcon_fb_registered+0x12c/0x18c
+[   66.458240] [<900000000095c45c>] do_register_framebuffer+0x1e0/0x288
+[   66.458243] [<900000000095c530>] register_framebuffer+0x2c/0x54
+[   66.458245] [<9000000000a8d994>] __drm_fb_helper_initial_config_and_unlock+0x350/0x580
+[   66.458249] [<9000000000a8fa84>] drm_fbdev_client_hotplug+0x80/0xd8
+[   66.458252] [<9000000000a7535c>] drm_client_register+0x5c/0xa0
+[   66.458256] [<9000000000a8fbdc>] drm_fbdev_client_setup+0xa4/0x190
+[   66.458259] [<9000000000a8f890>] drm_client_setup+0x14/0x50
+[   66.458262] [<9000000000aa9cdc>] lsdc_pci_probe+0x464/0x584
+[   66.458266] [<900000000092d704>] pci_device_probe+0xb8/0x154
+[   66.458269] [<9000000000abd75c>] really_probe+0xac/0x2dc
+[   66.458273] [<9000000000abda18>] __driver_probe_device+0x8c/0x128
+[   66.458276] [<9000000000abdbac>] driver_probe_device+0x3c/0x118
+[   66.458279] [<9000000000abde7c>] __driver_attach+0x98/0x194
+[   66.458282] [<9000000000abb420>] bus_for_each_dev+0x88/0xe8
+[   66.458285] [<9000000000abc874>] bus_add_driver+0xf4/0x208
+[   66.458288] [<9000000000abec34>] driver_register+0x68/0x134
+[   66.458291] [<9000000000239154>] do_one_initcall+0x78/0x1cc
+[   66.458295] [<9000000000e60f7c>] kernel_init_freeable+0x1b4/0x224
+[   66.458297] [<9000000000e4b1a4>] kernel_init+0x1c/0x108
+[   66.458300] [<9000000000239fe8>] ret_from_kernel_thread+0xc/0xa4
+[   66.458304] 
+[   66.458304] ---[ end trace 0000000000000000 ]---
+[   66.718664] loongson 0000:00:06.1: [drm] fb0: loongsondrmfb frame buffer device
+[   66.838962] brd: module loaded
+[   66.938104] loop: module loaded
+[   66.958020] megaraid cmm: 2.20.2.7 (Release Date: Sun Jul 16 00:01:03 EST 2006)
+[   66.958052] megaraid: 2.20.5.1 (Release Date: Thu Nov 16 15:32:35 EST 2006)
+[   66.958068] megasas: 07.727.03.00-rc1
+[   66.958097] mpt3sas version 51.100.00.00 loaded
+[   67.128078] ahci 0000:00:08.0: version 3.0
+[   67.128106] ahci 0000:00:08.0: SSS flag set, parallel bus scan disabled
+[   67.128121] ahci 0000:00:08.0: AHCI vers 0001.0300, 32 command slots, 6 Gbps, SATA mode
+[   67.128125] ahci 0000:00:08.0: 4/4 ports implemented (port mask 0xf)
+[   67.128127] ahci 0000:00:08.0: flags: 64bit ncq sntf stag pm led clo only pmp pio slum part ccc apst 
+[   67.128286] nvme nvme0: pci function 0000:05:00.0
+[   67.201498] nvme nvme0: allocated 8 MiB host memory buffer (1 segment).
+[   67.268001] scsi host0: ahci
+[   67.277996] scsi host1: ahci
+[   67.278087] nvme nvme0: 1/0/0 default/read/poll queues
+[   67.278187] scsi host2: ahci
+[   67.281959] scsi host3: ahci
+[   67.282028] ata1: SATA max UDMA/133 abar m1024@0x75969800 port 0x75969900 irq 37 lpm-pol 0
+[   67.282030] ata2: SATA max UDMA/133 abar m1024@0x75969800 port 0x75969980 irq 37 lpm-pol 0
+[   67.282032] ata3: SATA max UDMA/133 abar m1024@0x75969800 port 0x75969a00 irq 37 lpm-pol 0
+[   67.282034] ata4: SATA max UDMA/133 abar m1024@0x75969800 port 0x75969a80 irq 37 lpm-pol 0
+[   67.282116] igb: Intel(R) Gigabit Ethernet Network Driver
+[   67.282117] igb: Copyright (c) 2007-2014 Intel Corporation.
+[   67.587089] nvme nvme0: Ignoring bogus Namespace Identifiers
+[   67.659134] ata1: SATA link down (SStatus 0 SControl 300)
+[   68.490850] igb 0000:06:00.0: Intel(R) Gigabit Ethernet Network Connection
+[   68.490852] igb 0000:06:00.0: eth0: (PCIe:5.0Gb/s:Width x4) 6c:b3:11:9a:e8:74
+[   68.492400]  nvme0n1: p1
+[   68.492522] igb 0000:06:00.0: eth0: PBA No: H47822-001
+[   68.492524] igb 0000:06:00.0: Using MSI-X interrupts. 1 rx queue(s), 1 tx queue(s)
+[   68.492556] pcieport 0000:00:0f.0: of_irq_parse_pci: failed with rc=-22
+[   68.568547] igb 0000:06:00.1: Intel(R) Gigabit Ethernet Network Connection
+[   68.568549] igb 0000:06:00.1: eth1: (PCIe:5.0Gb/s:Width x4) 6c:b3:11:9a:e8:75
+[   68.568871] igb 0000:06:00.1: eth1: PBA No: H47822-001
+[   68.568873] igb 0000:06:00.1: Using MSI-X interrupts. 1 rx queue(s), 1 tx queue(s)
+[   68.568904] pcieport 0000:00:0f.0: of_irq_parse_pci: failed with rc=-22
+[   68.646037] igb 0000:06:00.2: Intel(R) Gigabit Ethernet Network Connection
+[   68.646039] igb 0000:06:00.2: eth2: (PCIe:5.0Gb/s:Width x4) 6c:b3:11:9a:e8:76
+[   68.646362] igb 0000:06:00.2: eth2: PBA No: H47822-001
+[   68.646363] igb 0000:06:00.2: Using MSI-X interrupts. 1 rx queue(s), 1 tx queue(s)
+[   68.646394] pcieport 0000:00:0f.0: of_irq_parse_pci: failed with rc=-22
+[   68.716188] igb 0000:06:00.3: Intel(R) Gigabit Ethernet Network Connection
+[   68.716190] igb 0000:06:00.3: eth3: (PCIe:5.0Gb/s:Width x4) 6c:b3:11:9a:e8:77
+[   68.716513] igb 0000:06:00.3: eth3: PBA No: H47822-001
+[   68.716514] igb 0000:06:00.3: Using MSI-X interrupts. 1 rx queue(s), 1 tx queue(s)
+[   68.716580] i2c_dev: i2c /dev entries driver
+[   68.716873] device-mapper: ioctl: 4.48.0-ioctl (2023-03-01) initialised: dm-devel@lists.linux.dev
+[   68.716894] hid: raw HID events driver (C) Jiri Kosina
+[   68.716991] NET: Registered PF_INET6 protocol family
+[   68.717276] Segment Routing with IPv6
+[   68.717288] In-situ OAM (IOAM) with IPv6
+[   68.717308] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[   68.784318] Loading compiled-in X.509 certificates
+[   68.793524] Btrfs loaded, zoned=yes, fsverity=no
+[   68.803364] OF: fdt: not creating '/sys/firmware/fdt': CRC check failed
+[   68.803378] clk: Disabling unused clocks
+[   68.808406] ata2: SATA link down (SStatus 0 SControl 300)
+[   69.139179] ata3: SATA link down (SStatus 0 SControl 300)
+[   69.469172] ata4: SATA link down (SStatus 0 SControl 300)
+[   69.492196] Freeing unused kernel image (initmem) memory: 57472K
+[   69.492203] This architecture does not have kernel memory protection.
+[   69.492212] Run /init as init process
+[   69.492213]   with arguments:
+[   69.492214]     /init
+[   69.492215]   with environment:
+[   69.492215]     HOME=/
+[   69.492216]     TERM=linux
+Starting syslogd: OK
+Starting klogd: OK
+Running sysctl: OK
+Starting system message bus: done
+Starting telnetd: OK
+Welcome to hvisor(loongarch) root linux! Buildroot/wheatfox 2024
+[root@dedsec /]# [   78.507977] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   78.507982] loongson 0000:00:06.1: [drm] *ERROR* [CRTC:45:LS-CRTC-1] commit wait timed out
+
+[root@dedsec /]# cat [   88.747971] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   88.747974] loongson 0000:00:06.1: [drm] *ERROR* [CONNECTOR:35:HDMI-A-2] commit wait timed out
+/proc/iomem 
+00200000-0effffff : System RAM
+  00200000-00e5ffff : Kernel code
+  00e60000-04e08fff : Kernel data
+  04e09000-04ecc49f : Kernel bss
+  04ecc4a0-08f90fff : Reserved
+  08f92000-09119fff : Reserved
+  0efff000-0effffff : Reserved
+1fe001e0-1fe001ef : serial
+60000000-7fffffff : pcie@1a000000
+  60000000-6fffffff : 0000:00:06.0
+  70000000-73ffffff : 0000:00:1a.0
+  74000000-74ffffff : 0000:00:16.0
+  75000000-750fffff : PCI Bus 0000:02
+    75000000-75003fff : 0000:02:00.0
+  75100000-751fffff : PCI Bus 0000:05
+    75100000-75103fff : 0000:05:00.0
+      75100000-75103fff : nvme
+  75200000-756fffff : PCI Bus 0000:06
+    75200000-752fffff : 0000:06:00.0
+      75200000-752fffff : igb
+    75300000-753fffff : 0000:06:00.1
+      75300000-753fffff : igb
+    75400000-754fffff : 0000:06:00.2
+      75400000-754fffff : igb
+    75500000-755fffff : 0000:06:00.3
+      75500000-755fffff : igb
+    75600000-75603fff : 0000:06:00.0
+      75600000-75603fff : igb
+    75604000-75607fff : 0000:06:00.1
+      75604000-75607fff : igb
+    75608000-7560bfff : 0000:06:00.2
+      75608000-7560bfff : igb
+    7560c000-7560ffff : 0000:06:00.3
+      7560c000-7560ffff : igb
+  75700000-757fffff : PCI Bus 0000:06
+    75700000-7571ffff : 0000:06:00.0
+    75720000-7573ffff : 0000:06:00.0
+    75740000-7575ffff : 0000:06:00.1
+    75760000-7577ffff : 0000:06:00.1
+    75780000-7579ffff : 0000:06:00.2
+    757a0000-757bffff : 0000:06:00.2
+    757c0000-757dffff : 0000:06:00.3
+    757e0000-757fffff : 0000:06:00.3
+  75800000-758fffff : 0000:00:19.0
+  75900000-7590ffff : 0000:00:06.0
+  75910000-7591ffff : 0000:00:06.1
+  75920000-7592ffff : 0000:00:06.2
+  75930000-7593ffff : 0000:00:07.0
+  75940000-75947fff : 0000:00:04.0
+  75948000-7594ffff : 0000:00:04.1
+  75950000-75957fff : 0000:00:05.0
+  75958000-7595ffff : 0000:00:05.1
+  75960000-75960fff : 0000:00:09.0
+  75961000-75961fff : 0000:00:0a.0
+  75962000-75962fff : 0000:00:0b.0
+  75963000-75963fff : 0000:00:0c.0
+  75964000-75964fff : 0000:00:0d.0
+  75965000-75965fff : 0000:00:0f.0
+  75966000-75966fff : 0000:00:10.0
+  75967000-75967fff : 0000:00:13.0
+  75968000-75968fff : 0000:00:16.0
+  75969000-759697ff : 0000:00:1a.0
+  75969800-75969bff : 0000:00:08.0
+    75969800-75969bff : ahci
+  75969c00-75969fff : 0000:00:1a.0
+  7596a000-7596a0ff : 0000:00:06.0
+90000000-9fffffff : System RAM
+c0000000-efffffff : Reserved
+f0000000-ffffffff : System RAM
+  fd800000-ff7fffff : Reserved
+  fffed000-fffeefff : Reserved
+  fffef000-ffff4fff : Reserved
+  ffff5000-ffffbfff : Reserved
+  ffffc000-ffffcfff : Reserved
+  ffffd000-ffffffff : Reserved
+fe00000000-fe1fffffff : 1a000000.pcie pcie@1a000000
+[root@dedsec /]# lspci -k        
+00:08.0 Class 0106: 0014:7a18 ahci
+00:0d.0 Class 0604: 0014:7a49 pcieport
+00:06.1 Class 0300: 0014:7a36 loongson
+00:10.0 Class 0604: 0014:7a59 pcieport
+02:00.0 Class 0200: 1f0a:6801
+00:13.0 Class 0604: 0014:7a59 pcieport
+00:04.0 Class 0c03: 0014:7a24
+00:16.0 Class 0880: 0014:7a1b
+00:07.0 Class 0403: 0014:7a07
+00:0c.0 Class 0604: 0014:7a39 pcieport
+00:00.2 Class 0600: 0014:7a20
+00:19.0 Class 0c03: 0014:7a34
+00:05.1 Class 0c03: 0014:7a14
+06:00.2 Class 0200: 8086:1521 igb
+00:0f.0 Class 0604: 0014:7a69 pcieport
+00:00.0 Class 0600: 0014:7a00
+06:00.0 Class 0200: 8086:1521 igb
+00:06.2 Class 0403: 0014:7a37
+00:1a.0 Class 0806: 0014:7a1f
+00:06.0 Class 0400: 0014:7a25
+00:0b.0 Class 0604: 0014:7a39 pcieport
+05:00.0 Class 0108: 1e4b:1202 nvme
+00:04.1 Class 0c03: 0014:7a14
+00:09.0 Class 0604: 0014:7a49 pcieport
+00:00.3 Class 0600: 0014:7a30
+06:00.3 Class 0200: 8086:1521 igb
+00:00.1 Class 0600: 0014:7a10
+00:05.0 Class 0c03: 0014:7a24
+00:0a.0 Class 0604: 0014:7a39 pcieport
+06:00.1 Class 0200: 8086:1521 igb
+[root@dedsec /]# ip addr
+1: lo: <LOOPBACK> mtu 65536 qdisc noop qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop qlen 1000
+    link/ether 6c:b3:11:9a:e8:74 brd ff:ff:ff:ff:ff:ff
+3: eth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop qlen 1000
+    link/ether 6c:b3:11:9a:e8:75 brd ff:ff:ff:ff:ff:ff
+4: eth2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop qlen 1000
+    link/ether 6c:b3:11:9a:e8:76 brd ff:ff:ff:ff:ff:ff
+5: eth3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop qlen 1000
+    link/ether 6c:b3:11:9a:e8:77 brd ff:ff:ff:ff:ff:ff
+6: sit0@NONE: <NOARP> mtu 1480 qdisc noop qlen 1000
+    link/sit 0.0.0.0 brd 0.0.0.0
+[root@dedsec /]# [   98.987973] loongson 0000:00:06.1: [drm] *ERROR* flip_done timed out
+[   98.987976] loongson 0000:00:06.1: [drm] *ERROR* [PLANE:41:ls-primary-plane-1] commit wait timed out
+[INFO  0] (hvisor::arch::loongarch64::trap:1241) cpucfg emulation, target cpucfg index is 0x0
+[   99.097971] ------------[ cut here ]------------
+[   99.097973] [CRTC:45:LS-CRTC-1] vblank wait timed out
+[   99.097988] WARNING: CPU: 0 PID: 9 at drivers/gpu/drm/drm_atomic_helper.c:1682 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   99.098000] Modules linked in:
+[   99.098005] CPU: 0 UID: 0 PID: 9 Comm: kworker/0:1 Tainted: G        W          6.13.7 #117
+[   99.098009] Tainted: [W]=WARN
+[   99.098011] Workqueue: events output_poll_execute
+[   99.098014] pc 9000000000a81234 ra 9000000000a81234 tp 90000000098b4000 sp 90000000098b7a10
+[   99.098017] a0 0000000000000029 a1 9000000004b94d68 a2 90000000098b7798 a3 9000000004b94d70
+[   99.098019] a4 9000000004b94d68 a5 90000000098b7790 a6 0000000000000001 a7 0000000000000001
+[   99.098020] t0 2cf5fb594cd56c00 t1 2cf5fb594cd56c00 t2 0000000000000000 t3 80000000ffffe2ab
+[   99.098022] t4 00000000ffffe2ab t5 00000000000002ad t6 000000000000002f t7 0000000000000063
+[   99.098024] t8 000000000000002d u0 9000000004aae000 s9 0000000000003db4 s0 0000000000000038
+[   99.098026] s1 0000000000000002 s2 9000000009fb0000 s3 9000000009fb2cc8 s4 0000000000000038
+[   99.098027] s5 0000000000000001 s6 0000000000000001 s7 9000000092f60300 s8 0000000000000000
+[   99.098029]    ra: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   99.098033]   ERA: 9000000000a81234 drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   99.098036]  CRMD: 000000b0 (PLV0 -IE -DA +PG DACF=CC DACM=CC -WE)
+[   99.098043]  PRMD: 00000004 (PPLV0 +PIE -PWE)
+[   99.098047]  EUEN: 00000000 (-FPE -SXE -ASXE -BTE)
+[   99.098051]  ECFG: 00071c1d (LIE=0,2-4,10-12 VS=7)
+[   99.098055] ESTAT: 000c0000 [BRK] (IS= ECode=12 EsubCode=0)
+[   99.098146]  PRID: 0014d000 (Loongson-64bit, Loongson3)
+[   99.098148] CPU: 0 UID: 0 PID: 9 Comm: kworker/0:1 Tainted: G        W          6.13.7 #117
+[   99.098151] Tainted: [W]=WARN
+[   99.098152] Workqueue: events output_poll_execute
+[   99.098156] Stack : ffffffffffffffff 0000000000000000 900000000023c0c4 90000000098b4000
+[   99.098160]         90000000098b7670 90000000098b7678 0000000000000000 90000000098b77b8
+[   99.098164]         90000000098b77b0 90000000098b77b0 90000000098b7500 0000000000000001
+[   99.098168]         0000000000000001 90000000098b7678 2cf5fb594cd56c00 0000000000000002
+[   99.098171]         80000000ffffe2c3 00000000ffffe2c3 00000000000002c5 000000000000002f
+[   99.098175]         0000000000000063 90000000047a804a 0000000000000000 0000000000003db4
+[   99.098179]         0000000000000000 0000000000000000 90000000048fcac0 9000000004aae000
+[   99.098183]         0000000000000009 0000000000000692 0000000000000001 9000000092f60300
+[   99.098186]         0000000000000000 0000000000000000 900000000023c0dc 00007ffff3ef91b0
+[   99.098190]         00000000000000b0 0000000000000004 0000000000000000 0000000000071c1d
+[   99.098194]         ...
+[   99.098196] Call Trace:
+[   99.098198] [<900000000023c0dc>] show_stack+0x5c/0x180
+[   99.098205] [<900000000023808c>] dump_stack_lvl+0x50/0x78
+[   99.098208] [<9000000000255344>] __warn+0x84/0x104
+[   99.098214] [<9000000000e18828>] report_bug+0x190/0x1f4
+[   99.098221] [<9000000000e499ec>] do_bp+0x264/0x2b4
+[   99.098225] [<0000000000000000>] 0x0
+[   99.098228] [<9000000000a81234>] drm_atomic_helper_wait_for_vblanks.part.0+0x230/0x25c
+[   99.098231] [<9000000000a82158>] drm_atomic_helper_commit_tail+0x88/0xa4
+[   99.098235] [<9000000000a830d8>] commit_tail+0xac/0x18c
+[   99.098238] [<9000000000a83324>] drm_atomic_helper_commit+0x164/0x190
+[   99.098242] [<9000000000a42038>] drm_atomic_commit+0x8c/0xc4
+[   99.098247] [<9000000000a76520>] drm_client_modeset_commit_atomic+0x23c/0x27c
+[   99.098252] [<9000000000a767c0>] drm_client_modeset_commit_locked+0x6c/0x17c
+[   99.098256] [<9000000000a768fc>] drm_client_modeset_commit+0x2c/0x58
+[   99.098260] [<9000000000a8f4f8>] __drm_fb_helper_restore_fbdev_mode_unlocked+0xb0/0xf8
+[   99.098264] [<9000000000a8f418>] drm_fb_helper_hotplug_event+0xe8/0x118
+[   99.098267] [<9000000000a75c68>] drm_client_dev_hotplug+0xd8/0x140
+[   99.098271] [<9000000000a8abec>] output_poll_execute+0x27c/0x284
+[   99.098274] [<9000000000271194>] process_one_work+0x17c/0x310
+[   99.098279] [<9000000000271bd0>] worker_thread+0x360/0x48c
+[   99.098283] [<9000000000279014>] kthread+0x108/0x114
+[   99.098287] [<9000000000239fe8>] ret_from_kernel_thread+0xc/0xa4
+[   99.098290] 
+[   99.098291] ---[ end trace 0000000000000000 ]---
+
