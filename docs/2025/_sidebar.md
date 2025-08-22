@@ -1,3 +1,4 @@
+* [龙芯 3A6000 PCIe 虚拟化调试笔记](20250820_3A6000_PCIe_Debug_Notes.md)
 * [EIC7700x SoC上的L3 Cache Controller介绍](20250722_Cache_Contoller.md)
 * [Hvisor 在 Megrez 上的适配(zone0 启动)](20250710_Megrez_Start_Zone0.md)
 * [RuxOS伪终端的实现与其在sshd上的应用](20250620_SSHD_Support_for_RuxOS.md)
