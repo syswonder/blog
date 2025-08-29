@@ -3,6 +3,16 @@
     <div style="display: flex; align-items: center; font-size: 25pt;">矽望社区技术博客文章节选</div>
 </div>
 
+### genesis使用教程
+
+**时间：** 2025年08月28日
+
+**作者：** 赵龙淳
+
+**摘要：** 如何安装使用genesis，以及常见问题说明。
+
+[正文](./2025/20250828_genesis_tutorial.md)
+
 ### hvisor如何适配新板子——以aarch64 rk3568为例
 
 时间：2025/4/3
@@ -162,16 +172,6 @@
 **摘要：** 如何使用gdb调试jailhouse的step by step 说明。
 
 [正文](2023/20230414_gdb_debug_jailhouse.md)
-
-### genesis使用教程
-
-**时间：** 2025年08月28日
-
-**作者：** 赵龙淳
-
-**摘要：** 如何安装使用genesis，以及常见问题说明。
-
-[正文](./2025/20250828_genesis_tutorial.md)
 
 ### 各种参考手册（重要）
 
