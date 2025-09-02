@@ -487,31 +487,50 @@ for i in range(200):
 ##### 约束
 
 关节范围：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$q_{\min}\leq&space;q(t)\leq&space;q_{\max}\,.$$"></div>
+$$
+q_{\min}\leq q(t)\leq q_{\max}\,.
+$$
 
 速度 / 加速度 / 跃度限制：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\|\dot{q}(t)\|\leq&space;v_{\max},\qquad\|\ddot{q}(t)\|\leq&space;a_{\max},\qquad\|\dddot{q}(t)\|\leq&space;j_{\max}\,.$$"></div>
+$$
+\|\dot{q}(t)\|\leq v_{\max},\qquad
+\|\ddot{q}(t)\|\leq a_{\max},\qquad
+\|\dddot{q}(t)\|\leq j_{\max}\,.
+$$
 
 无碰撞（带安全余量）：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$d\big(q(t)\big)\;\geq\;d_{\mathrm{safe}}\,.$$"></div>
+$$
+d\big(q(t)\big)\geq d_{\mathrm{safe}}\,.
+$$
 
-其中 d(q) 表示机器人与障碍物的**最小距离**，由几何库或 SDF 计算。
+其中 $d(q)$ 表示机器人与障碍物的**最小距离**，由几何库或 SDF 计算。
 
 ##### “好路径”的指标
 
 **平滑**（最小二阶导能量）：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\int_0^T\!\|\ddot{q}(t)\|^2\,dt\quad\text{}\quad\sum_{k}\big\|\Delta^2&space;q_k\big\|^2,\qquad\Delta^2&space;q_k:=q_{k&plus;1}-2q_k&plus;q_{k-1}\,.$$"></div>
+$$
+\int_0^T\!\|\ddot{q}(t)\|^2\,dt
+\quad\text{或}\quad
+\sum_{k}\big\|\Delta^2 q_k\big\|^2,\qquad
+\Delta^2 q_k:=q_{k+1}-2q_k+q_{k-1}\,.
+$$
 
 **短**（路径长度 / 弧长）：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\int_0^T\!\|\dot{q}(t)\|\,dt\quad\text{}\quad\sum_{k}\|q_{k&plus;1}-q_k\|\,.$$"></div>
+$$
+\int_0^T\!\|\dot{q}(t)\|\,dt
+\quad\text{或}\quad
+\sum_{k}\|q_{k+1}-q_k\|\,.
+$$
 
 **安全余量**（障碍势场/距离惩罚）：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\sum_{k}\phi\!\big(d(q_k)\big)\,.$$"></div>
-其中 $\phi(\cdot)$ 在距离接近 $d_{\mathrm{safe}}$ 时快速增大。
+$$
+\sum_{k}\phi\!\big(d(q_k)\big)\,.
+$$
 
 **终端精度**（到目标集合/流形的距离）：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\mathrm{err}\big(q(T)\big):=\mathrm{dist}\!\big(q(T),\,\mathcal{Q}_{\mathrm{goal}}\big)\,.$$"></div>
-或直接以**末端位姿误差**度量。
+$$
+\mathrm{err}\big(q(T)\big):=\mathrm{dist}\!\big(q(T),\,\mathcal{Q}_{\mathrm{goal}}\big)\,.
+$$
 
 > 建议对各项做**归一化**或**自适应权重**，避免尺度不一致。
 
@@ -520,42 +539,58 @@ for i in range(200):
 ##### A. 采样—搜索类（PRM / RRT / RRT* / RRT-Connect）
 
 1. 在 $q$ 空间**随机采样**可行点（碰撞检测过滤）；  
-2. 建图连边（PRM）或树扩展（RRT），边段用**局部规划器**；
+2. 建图连边（PRM）或树扩展（RRT），边段用**局部规划器**；  
 3. 找到从起点到目标集合的**无碰撞**路径；  
 4. **后处理**：捷径（shortcutting）、样条拟合（cubic / B-spline）以进一步**缩短**并**平滑**；  
 5. **时间参数化**（见第 4 节）。
 
 **优点**：全局性强、适合复杂障碍；  
-
 **缺点**：原始路径常较“锯齿”，需较多后处理。
 
 ##### B. 优化—轨迹类（CHOMP / TrajOpt / STOMP / 交替凸化）
 
 2. 将“**平滑 + 短 + 安全**”合并为单一目标，碰撞通过**距离场**或**穿模惩罚**表示：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\min_{\{q_k\}}\ \sum_{k}\big\|\Delta^2&space;q_k\big\|^2\;+\;\lambda_1\sum_{k}\|q_{k&plus;1}-q_k\|\;+\;\lambda_2\sum_{k}\phi\!\big(d(q_k)\big)\ \ \text{s.t.}\ \ q_{\min}\leq&space;q_k\leq&space;q_{\max},\ \left\|\dfrac{q_{k&plus;1}-q_k}{\Delta&space;t}\right\|\leq&space;v_{\max},\ \ldots$$"></div>
+$$
+\begin{aligned}
+\min_{\{q_k\}}\quad &
+\sum_{k}\big\|\Delta^2 q_k\big\|^2
++\lambda_1\sum_{k}\|q_{k+1}-q_k\|
++\lambda_2\sum_{k}\phi\!\big(d(q_k)\big) \\
+\text{s.t.}\quad &
+q_{\min}\leq q_k\leq q_{\max},\quad
+\left\|\frac{q_{k+1}-q_k}{\Delta t}\right\|\leq v_{\max},\ \ldots
+\end{aligned}
+$$
 
 3. 用梯度下降、SQP、交替凸化等**迭代优化**，推开障碍、拉直轨迹、抑制抖动；  
 4. **时间参数化**（见第 4 节），确保动态可执行。
 
 **优点**：轨迹天然平滑，可直接考虑动力学/差分约束；  
-
 **缺点**：可能陷入局部极小，依赖初值与稳定的距离场。
 
 #### 3 碰撞检测与距离场
 
 - **广义—精细两阶段**：广义阶段用 AABB/OBB 或体素栅格快速排除，精细阶段用 FCL、GJK/EPA 或 **SDF** 计算最小距离与法向。  
-- **签距场（SDF）**：对工作空间点 $x$ 定义签距 $\sigma(x)$。对构型 $q$，取机器人表面采样点 $\{x_i(q)\}$，配置距离  
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$d(q)\;=\;\min_{i}\ \sigma\!\big(x_i(q)\big)\,.$$"></div>
+- **签距场（SDF）**：对工作空间点 $x$ 定义签距 $\sigma(x)$。对构型 $q$，取机器人表面采样点 $\{x_i(q)\}$，配置距离
+$$
+d(q)=\min_{i}\ \sigma\!\big(x_i(q)\big)\,.
+$$
 优化中可通过雅可比 $J(q)$ 将 $\nabla\sigma$ 映射到关节空间梯度。  
 - **连续碰撞检测（CCD）**：对边段或时间化轨迹进行**稠密采样**或连续检测，避免“穿隧”假阴性。
 
 #### 4 时间参数化（Path–Velocity Decomposition）
 
 给定几何路径 $q(s)$，求 $s(t)$ 使其满足速度/加速度/jerk 上限。链式法则：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\dot{q}(t)=q'(s)\,\dot{s},\qquad\ddot{q}(t)=q''(s)\,\dot{s}^{2}&plus;q'(s)\,\ddot{s}\,.$$"></div>
+$$
+\dot{q}(t)=q'(s)\,\dot{s},\qquad
+\ddot{q}(t)=q''(s)\,\dot{s}^{2}+q'(s)\,\ddot{s}\,.
+$$
 
 将关节限速/加速度变为对 $\dot{s}, \ddot{s}$ 的约束（逐关节 $i$）：
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\left|q_i'(s)\right|\,\dot{s}\leq&space;v_{i,\max},\qquad\left|q_i''(s)\right|\,\dot{s}^{2}&plus;\left|q_i'(s)\right|\,\ddot{s}\leq&space;a_{i,\max}\,.$$"></div>
+$$
+\left|q_i'(s)\right|\,\dot{s}\leq v_{i,\max},\qquad
+\left|q_i''(s)\right|\,\dot{s}^{2}+\left|q_i'(s)\right|\,\ddot{s}\leq a_{i,\max}\,.
+$$
 
 **工程做法**  
 - **梯形速度**或**S 曲线**（jerk 限制更平滑，启动/停止更温和）；  
@@ -571,8 +606,10 @@ for i in range(200):
 
 **数值稳定**：优化中加入小正则，步长自适应；采样—搜索注意随机种子与节点上限。  
 
-**动力学可行性**：若需力矩/接触可行性，将  
-<div style="text-align: center;"><img src="https://latex.codecogs.com/svg.image?$$\tau\;=\;M(q)\,\ddot{q}\;+\;C(q,\dot{q})\,\dot{q}\;+\;g(q)$$"></div>
+**动力学可行性**：若需力矩/接触可行性，将
+$$
+\tau=M(q)\,\ddot{q}+C(q,\dot{q})\,\dot{q}+g(q)\,.
+$$
 的边界写成约束或惩罚项。  
 
 **动态障碍**：用“预测—短视重规划”（MPC 思路），在滚动窗口内频繁更新轨迹与距离场。
@@ -580,12 +617,10 @@ for i in range(200):
 #### 6 小结
 
 **IK** 给目标点；**规划**给整条路；  
-
 **采样—搜索** 负责全局可达；**优化—轨迹** 打磨平滑可执行；  
-
 **SDF/CCD** 保安全；**TOPP-RA/S-curve** 保可执行；  
-
 **混合策略**：RRT-Connect → 轨迹优化 → 时间参数化。
+
 
 
 ## 高级和并行逆运动学(IK)
