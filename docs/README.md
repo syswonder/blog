@@ -3,6 +3,15 @@
     <div style="display: flex; align-items: center; font-size: 25pt;">矽望社区技术博客文章节选</div>
 </div>
 
+### Genesis使用教程
+
+**时间：** 2025/08/28
+
+**作者：** 赵龙淳
+
+**摘要：** 如何安装使用genesis，以及常见问题说明。
+
+[正文](./2025/20250828_genesis_tutorial.md)
 
 ### hvisor如何适配新板子——以aarch64 rk3568为例
 
@@ -94,7 +103,6 @@
 
 [正文](2024/20240229_Support_c++_on_RuxOS.md)
 
-
 ### NXP OK8MP 开发板启动Jailhouse
 
 **时间：** 2024年2月23日
@@ -104,7 +112,6 @@
 **摘要：** 介绍了在NXP OK8MP开发板上启动Jailhouse的详细过程与配置
 
 [正文](2023/20240223_NXP_Boot_Jailhouse_Tutorial.md)
-
 
 ### RukOS中9pfs的实现与使用
 
@@ -116,7 +123,6 @@
 
 [正文](2023/20231113_how-9pfs-is-integrated-to-rukos.md)
 
-
 ### 在 rukos 上支持 musl libc
 
 **时间：** 2023年11月15日
@@ -126,7 +132,6 @@
 **摘要：** 介绍了 musl libc 的调用链和集成过程中遇到的困难，以及 APP 的测试结果
 
 [正文](2023/20231115_MUSL_on_Rukos.md)
-
 
 ### C程序的启动过程
 
@@ -138,7 +143,6 @@
 
 [正文](2023/20231109_cstart.md)
 
-
 ### Linux中的Memory HotPlug机制
 
 **时间：** 2023年7月21日
@@ -148,7 +152,6 @@
 **摘要：** 讲述Linux中的Memory Hotplug机制的原理与实现
 
 [正文](2023/20230721_Linux_Memory_Hotplug.md)
-
 
 ### 如何让jailhouse运行在模拟ARM AArch64的QEMU上
 
@@ -160,7 +163,6 @@
 
 [正文](2023/20230421_ARM64-QEMU-jailhouse.md)
 
-
 ### 使用gdb调试jailhouse步骤
 
 **时间：** 2023年4月14日
@@ -170,7 +172,6 @@
 **摘要：** 如何使用gdb调试jailhouse的step by step 说明。
 
 [正文](2023/20230414_gdb_debug_jailhouse.md)
-
 
 ### 各种参考手册（重要）
 

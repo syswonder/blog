@@ -16,6 +16,22 @@
   <!-- docsify-gitalk-with-footer plugin -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
   <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+  
+  <!-- MathJax configuration -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      }
+    };
+  </script>
 </head>
 
 <body>
@@ -35,6 +51,7 @@
         tables: true,
       },
       themeColor: '#2b5ca2',
+
     }
 	// Listen for changes in hash in the URL. If an MD file is found to have changed,
 	// refresh the page to solve the problem of using a single digital comment issue for the entire website.
@@ -72,14 +89,20 @@
   <script src="//unpkg.com/docsify/lib/plugins/gitalk.min.js"></script>
   <script src="//unpkg.com/gitalk/dist/gitalk.min.js"></script>
   <script src="//unpkg.com/docsify-gitalk@1.0.0/dist/docsify-gitalk.min.js"></script>
-  <!-- LaTeX display engine script Here -->
-  <script src="//cdn.jsdelivr.net/npm/docsify-latex@0"></script>
-  <script src="//cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css" />
-  <script src="//cdn.jsdelivr.net/npm/marked@4"></script>
-
-  <!-- CDN files for docsify-katex -->
-  <script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"></script>
-  <!-- or <script src="//cdn.jsdelivr.net/gh/upupming/docsify-katex@latest/dist/docsify-katex.js"></script> -->
+  <!-- MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+  <!-- Custom script to re-render MathJax when page changes -->
+  <script>
+    // Re-render MathJax when docsify loads new content
+    window.$docsify.plugins = [].concat(function(hook, vm) {
+      hook.doneEach(function() {
+        if (typeof MathJax !== 'undefined') {
+          MathJax.typesetPromise();
+        }
+      });
+    }, window.$docsify.plugins || []);
+  </script>
 </body>
 </html>
