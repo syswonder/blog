@@ -3,9 +3,9 @@
     <div style="display: flex; align-items: center; font-size: 25pt;">矽望社区技术博客文章节选</div>
 </div>
 
-### genesis使用教程
+### Genesis使用教程
 
-**时间：** 2025年08月28日
+**时间：** 2025/08/28
 
 **作者：** 赵龙淳
 

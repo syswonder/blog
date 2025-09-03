@@ -1,5 +1,9 @@
 # Genesis使用教程
 
+时间： 2025/08/28
+
+作者： 赵龙淳
+
 ## 前言
 
 出于配置问题，笔者是在macos系统上安装genesis的，可能遇到的问题与Linux、Windows系统的大相径庭，如果未能帮助到读者，请理解。
@@ -550,16 +554,15 @@ $$
 ##### B. 优化—轨迹类（CHOMP / TrajOpt / STOMP / 交替凸化）
 
 2. 将“**平滑 + 短 + 安全**”合并为单一目标，碰撞通过**距离场**或**穿模惩罚**表示：
+
 $$
-\begin{aligned}
-\min_{\{q_k\}}\quad &
+\min_{\{q_k\}}\quad 
 \sum_{k}\big\|\Delta^2 q_k\big\|^2
 +\lambda_1\sum_{k}\|q_{k+1}-q_k\|
 +\lambda_2\sum_{k}\phi\!\big(d(q_k)\big) \\
-\text{s.t.}\quad &
+\text{s.t.}\quad 
 q_{\min}\leq q_k\leq q_{\max},\quad
 \left\|\frac{q_{k+1}-q_k}{\Delta t}\right\|\leq v_{\max},\ \ldots
-\end{aligned}
 $$
 
 3. 用梯度下降、SQP、交替凸化等**迭代优化**，推开障碍、拉直轨迹、抑制抖动；  
