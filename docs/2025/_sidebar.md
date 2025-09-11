@@ -1,3 +1,5 @@
+* [OK6254-C上运行hvisor的流程](20250911_OK6254-C_Run_hvisor.md)
+* [genesis使用教程](20250828_genesis_tutorial.md)
 * [龙芯 3A6000 PCIe 虚拟化调试笔记](20250820_3A6000_PCIe_Debug_Notes.md)
 * [EIC7700x SoC上的L3 Cache Controller介绍](20250722_Cache_Contoller.md)
 * [Hvisor 在 Megrez 上的适配(zone0 启动)](20250710_Megrez_Start_Zone0.md)
@@ -8,4 +10,3 @@
 * [在NXP上使用Hvisor运行ruxos](20250506_Hvisor_Rux.md)
 * [hvisor如何适配新板子——以aarch64 rk3568为例](20250403_How_to_Adapt_Hvisor_to_a_New_Board--A_Case_Study_of_AArch64_RK3568.md)
 * [在NXP上通过RPMsg实现Linux与Xiuos通信](20250217_RPMSG_on_NXP.md)
-* [genesis使用教程](20250828_genesis_tutorial.md)
