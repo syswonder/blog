@@ -3,7 +3,7 @@
 
 作者：李国玮
 
-本文档主要介绍zephyr，以及如何将zephyr移植到rk3588上，并通过hvisor将zephyr作为non root zone启动。目前支持启动64位zephyr（包括多核），以及AArch32 Zephyr（目前只支持单核）。请关注本文档更新。
+本文档主要介绍zephyr，以及如何将zephyr移植到rk3588上，并通过hvisor将zephyr作为non root zone启动。目前支持启动64位zephyr（包括多核），以及AArch32 Zephyr（只支持单核，限于zephyr不支持armv7下的PSCI）。
 
 ## RTOS的核心概念
 
@@ -386,6 +386,45 @@ ns16550_outbyte(dev_cfg, BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
 
 当然，为了使用uart3，要在root linux里先配置好uart3的时钟。这个方法可以修改设备树和源码，让fiq-debugger捎带配一下。也可以等未来hvisor-tool实现了enable时钟的逻辑，通过hvisor-tool配置。
 
+### 多核支持
+
+一般来讲，zephyr多核启动时，会先启动一个主核，之后主核在初始化smp相关配置时，会通过PCSI唤醒从核。hvisor启动虚拟机也是这个逻辑，主核先启动，从核执行wfi等待PSCI唤醒。
+
+因此，zephyr在hvisor上主核启动后，会依次执行bg_thread_main->z_smp_init：
+
+```c
+// z_smp_init	
+for (int i = 1; i < num_cpus; i++) { // num_cpus为CONFIG_MP_MAX_NUM_CPUS
+    z_init_cpu(i);
+    start_cpu(i, NULL);
+}
+```
+
+可以看到，zephyr会依次对其他cpu执行start_cpu，由于num_cpus等于CONFIG_MP_MAX_NUM_CPUS，要设置CONFIG_MP_MAX_NUM_CPUS等于2（hvisor分配2、3号cpu给zephyr）。
+
+之后会执行start_cpu->arch_cpu_start->pm_cpu_on，通过psci唤醒从核。其中涉及到的数据结构如下：
+
+```c
+const uint64_t cpu_node_list[] = {
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,)) # 保存设备树中cpu节点的各个reg值。
+};
+
+struct boot_params {
+	uint64_t mpid; // 投票胜出的cpu id，表示主核
+	char *sp;
+	uint8_t voting[DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus))]; // 根据设备树中cpu为okay的数量，初始化这个voting数组
+	arch_cpustart_t fn;
+	void *arg;
+	int cpu_num;
+};
+```
+
+可以看到，要想正确配置这些数据结构，需要在设备树中disable掉cpu@0和cpu@100。
+
+之后修改zephyr在hvisor下的zone1.json，修改cpu set为[2, 3]，就可以在hvisor上启动两个核的zephyr啦！
+
+对于aarch32来说，由于aarch32不支持PSCI，只能多个核同时启动才行，而这需要hvisor特殊处理一下，为了不引入特殊处理逻辑，因此aarch32 zephyr目前仅能以单核运行。
+
 ## aarch32 zephyr移植到rk3588
 
 接下来介绍，如何将zephyr以aarch32位模式，在hvisor启动起来。首先介绍一些预备知识：
@@ -656,7 +695,9 @@ pop     {r0, r1}
 
 ## zephyr运行
 
-拉取这个分支：[KouweiLee/zephyr at add_roc_rk3588_aarch32](https://github.com/KouweiLee/zephyr/tree/add_roc_rk3588_aarch32)。待PR均合并后，可以拉取官方仓库。目前需拉取这个。
+在裸机上运行时，请直接使用zephyr官方仓库，官方仓库已支持zephyr在rk3588上启动。
+
+在hvisor上运行时，请拉取这个分支：[KouweiLee/zephyr at rk3588_on_hvisor](https://github.com/KouweiLee/zephyr/tree/rk3588_on_hvisor)，这个分支支持了zephyr在hvisor上运行aarch64和aarch32模式。
 
 ### 利用clangd来支持函数跳转
 
@@ -694,7 +735,7 @@ west build --pristine -b roc_rk3588_pc/rk3588_aarch64/smp samples/synchronizatio
 
 如果只编译单核，则把/smp去掉即可
 
-* 在裸机上运行：
+* 在裸机上运行（在裸机上运行，请直接使用zephyr官方仓库，官方仓库已支持zephyr在rk3588上启动）：
 
 ```
 tftp 0x50000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0x50000000
