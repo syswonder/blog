@@ -2,6 +2,7 @@
 * [genesis使用教程](20250828_genesis_tutorial.md)
 * [龙芯 3A6000 PCIe 虚拟化调试笔记](20250820_3A6000_PCIe_Debug_Notes.md)
 * [EIC7700x SoC上的L3 Cache Controller介绍](20250722_Cache_Contoller.md)
+* [在Riscv-Ruxos中完善缺页中断与进程级fork功能](20250717_Pagefault_and_Fork_in_Riscv_for_Ruxos.md)
 * [Hvisor 在 Megrez 上的适配(zone0 启动)](20250710_Megrez_Start_Zone0.md)
 * [RuxOS伪终端的实现与其在sshd上的应用](20250620_SSHD_Support_for_RuxOS.md)
 * [在RuxOS中支持FUSE用户空间文件系统](20250618_FUSE_In_RuxOS.md)
