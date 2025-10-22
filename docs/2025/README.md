@@ -1,5 +1,15 @@
 # 矽望社区技术报告 - 2025
 
+## DesignWare PCIe iATU介绍
+
+时间： 2025/10/22
+
+作者： 徐仲锴
+
+摘要： 以NXP i.MX8MP的DWC驱动为例，介绍DesignWare PCIe iATU地址转换单元的功能。
+
+[正文](20251022_DesignWare_PCIe_iATU_Notes.md)
+
 ## Hvisor在OK6254-C上的启动流程
 
 时间： 2025/09/11
