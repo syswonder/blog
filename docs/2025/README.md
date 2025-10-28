@@ -30,6 +30,16 @@
 
 [正文](20250828_genesis_tutorial.md)
 
+## hvisor适配Phytium Pi的流程
+
+时间：2025/08/27
+
+作者：包子旭
+
+摘要：介绍hvisor适配新板子Phytium Pi的流程
+
+[正文](20250827_Adapt_Hvisor_to_phytium_pi.md)
+
 ## 龙芯 3A6000 PCIe 虚拟化调试笔记
 
 时间：2025/8/20
