@@ -13,3 +13,4 @@
 * [hvisor如何适配新板子——以aarch64 rk3568为例](20250403_How_to_Adapt_Hvisor_to_a_New_Board--A_Case_Study_of_AArch64_RK3568.md)
 * [在NXP上通过RPMsg实现Linux与Xiuos通信](20250217_RPMSG_on_NXP.md)
 * [hvisor适配飞腾派开发板](20250827_Adapt_Hvisor_to_phytium_pi.md)
+* [从缓存着色到ARM MPAM：虚拟化缓存隔离](20251112_Cache_Partitioning.md)

@@ -160,3 +160,13 @@
 摘要：介绍在Riscv64架构下为Ruxos完善缺页中断与进程级fork的功能，同时提供Riscv64架构下对Busybox的支持
 
 [正文](20250717_Pagefault_and_Fork_in_Riscv_for_Ruxos.md)
+
+## 从缓存着色到ARM MPAM：虚拟化缓存隔离
+
+时间: 2025/11/12
+
+作者: 李昕昊
+
+摘要: 介绍了缓存着色的基本原理及其在虚拟化环境中的必要性，随后详细分析了Xen的软件实现方案，最终基于性能和架构考量选择了ARM MPAM硬件机制, 并给出了完整的实现细节
+
+[正文](20251112_Cache_Partitioning.md)
