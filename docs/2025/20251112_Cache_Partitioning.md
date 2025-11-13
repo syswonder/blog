@@ -973,7 +973,7 @@ register_structs! {
 - **ARM文档**：
     - [MPAM线上文档](https://developer.arm.com/documentation/107768/0100/Arm-Memory-System-Resource-Partitioning-and-Monitoring--MPAM--Extension)
     - Arm® Memory System Resource Partitioning and Monitoring (MPAM) System Component Specification
-    - ACPI for Memory System REsource Partitioning and Monitoring 3.0 beta
+    - ACPI for Memory System Resource Partitioning and Monitoring 3.0 beta
 - **Xen实现**：
     - [Xen project](https://xenproject.org)
     - [Xen Cache Coloring Documentation](https://xenbits.xen.org/docs/4.20-testing/misc/cache-coloring.html)
