@@ -1,3 +1,4 @@
+* [具身智能数据集介绍](20251217_Embodied_Dataset_Introduction.md)
 * [DesignWare PCIe iATU 介绍](20251022_DesignWare_PCIe_iATU_Notes.md)
 * [OK6254-C上运行hvisor的流程](20250911_OK6254-C_Run_hvisor.md)
 * [genesis使用教程](20250828_genesis_tutorial.md)
