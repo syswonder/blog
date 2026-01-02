@@ -1,6 +1,6 @@
 # Meta世界模型：Vjepa2模型介绍与部署测试
 
-时间: 2025/01/02
+时间: 2026/01/02
 
 作者: 刘凯乐
 
@@ -20,7 +20,7 @@
 
 vjepa2世界模型核心训练分成**两大阶段**，结合海量自我监督与学习针对机器人控制的微调
 
-![img](img/20250102_WorldModel_Vjepa2/0.png)
+![img](img/20260102_WorldModel_Vjepa2/0.png)
 
 1. **在第一阶段**使用一百万小时视频数据和一百万张图片进行**自****监督训练**，vjepa2学习从视觉数据中提取深层特征，理解与预测动态变化。
 2. **在第二阶段**主要是三个后训练
@@ -31,7 +31,7 @@ vjepa2世界模型核心训练分成**两大阶段**，结合海量自我监督�
 
 ## 三.vjepa2结构
 
-![img](img/20250102_WorldModel_Vjepa2/2.png)
+![img](img/20260102_WorldModel_Vjepa2/2.png)
 
 V‑JEPA 结构通过将视频帧（T₀, T₁, T₂）输入编码器，提取潜在表示（Z₀, Z₁, Z₂），并结合机器人动作（A₀, A₁, A₂）送入世界模型。该模型预测未来的帧（Z₃），同时通过 T₃（实际的下一帧）与预测的Z₃ 进行对比，计算损失并优化模型。整个过程帮助模型理解机器人动作与环境状态之间的关系，并能够进行未来状态预测。
 
@@ -39,13 +39,13 @@ V‑JEPA 结构通过将视频帧（T₀, T₁, T₂）输入编码器，提取�
 
 在meta的测试中，vjepa2部署在franka机械臂上，展现出极强的泛化性，没有针对场景做任何训练，也没有收集额外的数据，在“抓取与放置”任务能够达到65%-80%的成功率。
 
-![img](img/20250102_WorldModel_Vjepa2/3.png)
+![img](img/20260102_WorldModel_Vjepa2/3.png)
 
 [视频地址](https://video-nrt1-1.xx.fbcdn.net/o1/v/t2/f2/m69/AQOU5sKJ4jWm4-lKzPpiuP-oCK_xhnNQwICxfUaQeFm8wn6igiuWswMnVfszIcGoaRkMyjBjA23GSLHHWtGvKy46.mp4?strext=1&_nc_cat=108&_nc_sid=5e9851&_nc_ht=video-nrt1-1.xx.fbcdn.net&_nc_ohc=Sb3khn13zs4Q7kNvwH46--8&efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5GQUNFQk9PSy4uQzMuMTkyMC5kYXNoX2gyNjQtYmFzaWMtZ2VuMl8xMDgwcCIsInhwdl9hc3NldF9pZCI6MjExMjQxOTE1MjU5NjAwNywiYXNzZXRfYWdlX2RheXMiOjE1MywidmlfdXNlY2FzZV9pZCI6MTA4MjUsImR1cmF0aW9uX3MiOjM0LCJ1cmxnZW5fc291cmNlIjoid3d3In0%3D&ccb=17-1&vs=cc7d0a47b9edbfda&_nc_vs=HBksFQIYOnBhc3N0aHJvdWdoX2V2ZXJzdG9yZS9HTXBnQ2g2dU9yLW9zTklEQUh5U093Yk5acVZOYnY0R0FBQUYVAALIARIAFQIYOnBhc3N0aHJvdWdoX2V2ZXJzdG9yZS9HRm91RFI0TVExTmUxWk1DQUMxYXdORmVONVZxYnY0R0FBQUYVAgLIARIAKAAYABsCiAd1c2Vfb2lsATEScHJvZ3Jlc3NpdmVfcmVjaXBlATEVAAAmzrCok_3OwAcVAigCQzMsF0BBTvnbItDlGBpkYXNoX2gyNjQtYmFzaWMtZ2VuMl8xMDgwcBEAdQJlkqkBAA&_nc_gid=4_0A6munsOGZ-0H_SssuqA&_nc_zt=28&oh=00_Afi8oOKlpbaKnfIZsVwVAGab8TnuHqgWIgDfLg35yDCspw&oe=69124C42&bitrate=504632&tag=dash_h264-basic-gen2_1080p)
 
 使用 V-JEPA 2 编码器来获取当前状态和目标状态的嵌入向量。机器人从观察到的当前状态出发，利用预测器来设想一系列候选动作的后果，并根据候选动作与期望目标的接近程度对其进行评分，从而进行规划。在每个时间步，机器人通过模型预测控制重新规划并执行评分最高的下一个动作，以实现该目标。
 
-![img](img/20250102_WorldModel_Vjepa2/4.png)
+![img](img/20260102_WorldModel_Vjepa2/4.png)
 
 ## 五.实验部署简单测试
 
@@ -253,7 +253,7 @@ if __name__ == "__main__":
 
 在单卡5090上进行推理测试，结果如下所示：
 
-![img](https://ucnkpizt1mcm.feishu.cn/space/api/box/stream/download/asynccode/?code=MThkYjU2N2VkMjQwZWIwOTg0NzZiYjdlY2YzZWRkMmRfUjRsV09tY2VOc2dYSkVGbkM5WXgyRjR4bEVTdkpqTFRfVG9rZW46RWVxM2J4N1Jnb2xzMWJ4UHMyb2Mzbk1VbmdnXzE3NjczNDAyMjI6MTc2NzM0MzgyMl9WNA)
+![img](img/20260102_WorldModel_Vjepa2/6.png)
 
 回答讨论中的几个问题
 
