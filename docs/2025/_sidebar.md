@@ -16,3 +16,4 @@
 * [hvisor适配飞腾派开发板](20250827_Adapt_Hvisor_to_phytium_pi.md)
 * [从缓存着色到ARM MPAM：虚拟化缓存隔离](20251112_Cache_Partitioning.md)
 * [基于NVIDIA Orin的语音识别模块部署及gRPC传输识别结果](20251230_ASR_GRPC.md)
+* [Meta世界模型：Vjepa2模型介绍与部署测试](20250102_WorldModel_Vjepa2.md)
