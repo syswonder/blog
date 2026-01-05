@@ -1,5 +1,16 @@
 # 矽望社区技术报告 - 2025
 
+
+## 基于NVIDIA Orin的语音识别模块部署及gRPC传输识别结果
+
+时间: 2025/12/30
+
+作者: 刘凯乐
+
+摘要: 基于NVIDIA Orin部署ASR模块，实现实时中文语音输入转换成文本输出，采用Google的Conformer中文语音识别模型，能够做到低延时、高精度识别；同时，将一台Orin的识别结果通过gRPC传输到另外一台设备，方便对接其他模块。最终集成系统，实现一键语音识别、发送识别结果的功能。
+
+[正文](20251230_ASR_GRPC.md)
+
 ## 具身智能数据集介绍
 
 时间：2025/12/17
@@ -9,6 +20,16 @@
 摘要：对具身智能目前常见的数据集进行了总结
 
 [正文](20251217_Embodied_Dataset_Introduction.md)
+
+## 从缓存着色到ARM MPAM：虚拟化缓存隔离
+
+时间: 2025/11/12
+
+作者: 李昕昊
+
+摘要: 介绍了缓存着色的基本原理及其在虚拟化环境中的必要性，随后详细分析了Xen的软件实现方案，最终基于性能和架构考量选择了ARM MPAM硬件机制, 并给出了完整的实现细节
+
+[正文](20251112_Cache_Partitioning.md)
 
 ## DesignWare PCIe iATU介绍
 
@@ -69,6 +90,18 @@
 摘要：介绍ESWIN的EIC7700x Soc上的L3 Cache Controller及其虚拟化的简要实现介绍
 
 [正文](20250722_Cache_Contoller.md)
+
+
+## 在Riscv-Ruxos中完善缺页中断与进程级fork功能
+
+时间：2025/7/17
+
+作者：曾俊
+
+摘要：介绍在Riscv64架构下为Ruxos完善缺页中断与进程级fork的功能，同时提供Riscv64架构下对Busybox的支持
+
+[正文](20250717_Pagefault_and_Fork_in_Riscv_for_Ruxos.md)
+
 
 ## Hvisor 在 Megrez 上的适配(zone0 启动)
 
@@ -150,53 +183,3 @@
 摘要：介绍如何在nxp imx8mp板子上，通过rpmsg实现Linux与Xiuos的通信
 
 [正文](20250217_RPMSG_on_NXP.md)
-
-## RuxOS伪终端的实现与其在sshd上的应用
-
-时间：2025/6/20
-
-作者：石全
-
-摘要：介绍在RuxOS中如何实现伪终端并且介绍伪终端在ssh中的作用
-
-[正文](20250620_SSHD_Support_for_RuxOS.md)
-
-## 在Riscv-Ruxos中完善缺页中断与进程级fork功能
-
-时间：2025/7/17
-
-作者：曾俊
-
-摘要：介绍在Riscv64架构下为Ruxos完善缺页中断与进程级fork的功能，同时提供Riscv64架构下对Busybox的支持
-
-[正文](20250717_Pagefault_and_Fork_in_Riscv_for_Ruxos.md)
-
-## 从缓存着色到ARM MPAM：虚拟化缓存隔离
-
-时间: 2025/11/12
-
-作者: 李昕昊
-
-摘要: 介绍了缓存着色的基本原理及其在虚拟化环境中的必要性，随后详细分析了Xen的软件实现方案，最终基于性能和架构考量选择了ARM MPAM硬件机制, 并给出了完整的实现细节
-
-[正文](20251112_Cache_Partitioning.md)
-
-## 基于NVIDIA Orin的语音识别模块部署及gRPC传输识别结果
-
-时间: 2025/12/30
-
-作者: 刘凯乐
-
-摘要: 基于NVIDIA Orin部署ASR模块，实现实时中文语音输入转换成文本输出，采用Google的Conformer中文语音识别模型，能够做到低延时、高精度识别；同时，将一台Orin的识别结果通过gRPC传输到另外一台设备，方便对接其他模块。最终集成系统，实现一键语音识别、发送识别结果的功能。
-
-[正文](20251230_ASR_GRPC)
-
-## Meta世界模型：Vjepa2模型介绍与部署测试
-
-时间: 2026/01/02
-
-作者: 刘凯乐
-
-摘要: 本文介绍了Meta最新提出的世界模型vjepa2，对其模型结构、实验效果做了分析，同时在本地推理了vjepa2的模型，测试其对于视频的理解效果。
-
-[正文](20260102_WorldModel_Vjepa2.md)
