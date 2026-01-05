@@ -7,12 +7,10 @@ server at the docs directory is ok.
 
 For example
 
-```
+```bash
 git clone https://github.com/syswonder/blog
-
 cd blog/docs
-
-python -m http.server
+python3 -m http.server
 
 ```
 
