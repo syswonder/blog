@@ -10,22 +10,12 @@
 
 [正文](20260102_WorldModel_Vjepa2.md)
 
-## webots 开发日志（一）webots 开发环境配置说明
+## webots 开发日志：webots 上手指南
 
 时间: 2026/01/06
 
 作者: 陈衍廷
 
-摘要: 本文介绍了如何配置 webots 与 ROS2 联合仿真的开发环境， 包括 webots 以及 webots_ros2 包的安装与下载等。
+摘要: 本文介绍了如何配置 webots 与 ROS2 联合仿真的开发环境， 包括 webots 以及 webots_ros2 包的安装与下载等。同时对 webots 一些经常使用的功能以及核心概念做了介绍，主要包括世界文件、场景树（Scene Tree）、节点、铰链等。
 
-[正文](20260106_Webots_Tutorial1.md)
-
-## webots 开发日志（二）webots 上手指南
-
-时间: 2026/01/06
-
-作者: 陈衍廷
-
-摘要: 本文主要对 webots 一些经常使用的功能以及核心概念做了介绍，主要包括世界文件、场景树（Scene Tree）、节点、铰链等。
-
-[正文](20260106_Webots_Tutorial2.md)
+[正文](20260106_Webots_Tutoria.md)
