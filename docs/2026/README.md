@@ -9,3 +9,13 @@
 摘要: 本文介绍了Meta最新提出的世界模型vjepa2，对其模型结构、实验效果做了分析，同时在本地推理了vjepa2的模型，测试其对于视频的理解效果。
 
 [正文](20260102_WorldModel_Vjepa2.md)
+
+## 以共享内存优化数据传输的相关调研
+
+时间: 2026/01/09
+
+作者: 王善上
+
+摘要：本文对使用共享内存优化数据传输的dora-rs、ros2 loaned message、Fast DDS进行了调研，同时对可以用于实现共享内存传输的boost.interprocess库进行简单介绍。
+
+[正文](20260109_Shared_Memory.md)
